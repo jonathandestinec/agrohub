@@ -31,8 +31,15 @@ export async function GET(
   try {
     const result = await runOnce(`${name}:${utcMinute}`, handler);
     return Response.json({ result });
-  } catch {
-    // Deliberately no error details in the body or logs: jobs may touch secrets.
+  } catch (err) {
+    // Log only the job name and the error's name and message, so failures are
+    // visible. Never log headers, the Authorization value or request bodies.
+    // The response body stays generic.
+    console.error("cron job failed", {
+      job: name,
+      error:
+        err instanceof Error ? { name: err.name, message: err.message } : String(err),
+    });
     return Response.json({ error: "Job failed" }, { status: 500 });
   }
 }

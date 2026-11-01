@@ -86,11 +86,20 @@ describe("cron route", () => {
   });
 
   it("returns 500 without leaking details when the handler throws", async () => {
-    defineJob(jobName, async () => {
-      throw new Error("secret-detail");
-    });
-    const res = await call(jobName, `Bearer ${env.CRON_SECRET}`);
-    expect(res.status).toBe(500);
-    expect(await res.text()).not.toContain("secret-detail");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      defineJob(jobName, async () => {
+        throw new Error("secret-detail");
+      });
+      const res = await call(jobName, `Bearer ${env.CRON_SECRET}`);
+      expect(res.status).toBe(500);
+      expect(await res.text()).not.toContain("secret-detail");
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      const logged = JSON.stringify(errorSpy.mock.calls[0]);
+      expect(logged).toContain(jobName);
+      expect(logged).not.toContain(env.CRON_SECRET);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });
