@@ -11,6 +11,10 @@ import {
   createCooperative,
   uploadDocument,
 } from "@/modules/cooperatives/service";
+import {
+  inviteFarmerByEmail,
+  regenerateInviteLink,
+} from "@/modules/cooperatives/invites";
 import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
 import { setCooperativeBankAccount } from "@/modules/banking/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
@@ -84,6 +88,33 @@ export async function setBankAccountAction(
     });
     revalidatePath("/officer/onboarding");
     return { ok: true, data: result };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function regenerateInviteLinkAction(): Promise<
+  ActionResult<{ url: string }>
+> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    const result = await regenerateInviteLink(actor, actor.cooperativeId);
+    revalidatePath("/officer/invites");
+    return { ok: true, data: result };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function inviteFarmerByEmailAction(
+  form: FormData,
+): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    await inviteFarmerByEmail(actor, actor.cooperativeId, text(form, "email"));
+    return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);
   }

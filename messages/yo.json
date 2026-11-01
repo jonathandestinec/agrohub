@@ -160,6 +160,36 @@
         "enableTwoFactor": "",
         "unavailable": ""
       }
+    },
+    "invites": {
+      "title": "",
+      "intro": "",
+      "notVerified": "",
+      "linkHeading": "",
+      "linkLabel": "",
+      "copy": "",
+      "copied": "",
+      "copyFailed": "",
+      "regenerate": "",
+      "regenerateWarning": "",
+      "regenerateConfirm": "",
+      "regenerateCancel": "",
+      "regenerating": "",
+      "regenerated": "",
+      "emailHeading": "",
+      "emailIntro": "",
+      "emailLabel": "",
+      "emailSend": "",
+      "emailSending": "",
+      "emailSent": "",
+      "errors": {
+        "INVALID_EMAIL": "",
+        "VALIDATION_ERROR": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "COOPERATIVE_NOT_FOUND": "",
+        "INTERNAL": ""
+      }
     }
   },
   "admin": {

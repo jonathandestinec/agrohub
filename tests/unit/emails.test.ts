@@ -3,6 +3,7 @@ import {
   bankChangeAdminAlertEmail,
   bankChangeConfirmEmail,
   cooperativeStatusEmail,
+  farmerInviteEmail,
 } from "@/modules/notifications/emails";
 
 const kinds = ["verified", "rejected", "suspended", "reinstated"] as const;
@@ -87,5 +88,23 @@ describe("bank change emails", () => {
     for (const { subject, html } of [confirm(), alert()]) {
       expect(`${subject} ${html}`).not.toMatch(/escrow/i);
     }
+  });
+});
+
+describe("farmerInviteEmail", () => {
+  it("escapes the cooperative name and the link, and shows the link", () => {
+    const { subject, html } = farmerInviteEmail({
+      cooperativeName: "A & B <Farmers>",
+      link: "http://localhost:3000/join/abc_-123?x=1&y=\"2\"",
+    });
+    expect(html).toContain("A &amp; B &lt;Farmers&gt;");
+    expect(html).not.toContain("<Farmers>");
+    expect(html).toContain('href="http://localhost:3000/join/abc_-123?x=1&amp;y=&quot;2&quot;"');
+    expect(subject).not.toContain("A & B");
+  });
+
+  it("never uses the word escrow", () => {
+    const { subject, html } = farmerInviteEmail({ cooperativeName: "Zaria Growers", link: "http://x/join/t" });
+    expect(`${subject} ${html}`.toLowerCase()).not.toContain("escrow");
   });
 });

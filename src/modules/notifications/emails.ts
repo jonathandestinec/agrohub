@@ -50,6 +50,20 @@ export function cooperativeStatusEmail(
   }
 }
 
+// ---- Farmer invites. The link is the credential; callers must never log it. ----
+
+export function farmerInviteEmail(input: {
+  cooperativeName: string;
+  link: string;
+}): { subject: string; html: string } {
+  const name = escapeHtml(input.cooperativeName);
+  const link = escapeHtml(input.link);
+  return {
+    subject: "You are invited to join a cooperative on AgroHub",
+    html: `<p><strong>${name}</strong> has invited you to join them on AgroHub, where farmers in the cooperative sell their produce together.</p><p><a href="${link}">Accept the invitation</a></p><p>This link is for you only. If it does not work, ask your cooperative officer for a new one.</p>`,
+  };
+}
+
 // ---- Bank account changes. Never include an account number. ----
 
 function formatUtc(date: Date): string {

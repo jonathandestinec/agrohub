@@ -86,6 +86,12 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["bank:change", "BUYER", false],
   ["bank:change", "ADMIN", false],
   ["bank:change", "BOARD_ADMIN", false],
+
+  ["invite:manage", "FARMER", false],
+  ["invite:manage", "OFFICER", true],
+  ["invite:manage", "BUYER", false],
+  ["invite:manage", "ADMIN", false],
+  ["invite:manage", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -95,7 +101,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(55);
+    expect(matrix).toHaveLength(60);
   });
 });
 

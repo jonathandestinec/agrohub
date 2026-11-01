@@ -25,7 +25,8 @@ export type Action =
   | "cooperative:read"
   | "cooperative:upload"
   | "document:view"
-  | "bank:change";
+  | "bank:change"
+  | "invite:manage";
 
 export type Resource = {
   cooperativeId?: string;
@@ -90,6 +91,8 @@ export function can(
         actor.twoFactorEnabled &&
         isOwnCooperative(actor, resource)
       );
+    case "invite:manage":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     default:
       return false;
   }

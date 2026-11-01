@@ -160,6 +160,36 @@
         "enableTwoFactor": "Set up two-factor authentication",
         "unavailable": "Bank details are unavailable right now. Please try again later."
       }
+    },
+    "invites": {
+      "title": "Invite farmers",
+      "intro": "Share this link with farmers in your cooperative, or invite one by email.",
+      "notVerified": "Farmers can join only after your cooperative is verified. You can share the link once that is done.",
+      "linkHeading": "Your invite link",
+      "linkLabel": "Invite link",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "copyFailed": "Could not copy. Select the link and copy it.",
+      "regenerate": "Make a new link",
+      "regenerateWarning": "The old link will stop working. Anyone who only has the old link will need the new one.",
+      "regenerateConfirm": "Yes, make a new link",
+      "regenerateCancel": "Keep the old link",
+      "regenerating": "Making a new link…",
+      "regenerated": "New link ready. The old link no longer works.",
+      "emailHeading": "Invite by email",
+      "emailIntro": "We send the farmer a link that works once, for that email address only.",
+      "emailLabel": "Farmer's email address",
+      "emailSend": "Send invitation",
+      "emailSending": "Sending…",
+      "emailSent": "Invitation sent.",
+      "errors": {
+        "INVALID_EMAIL": "Enter a valid email address.",
+        "VALIDATION_ERROR": "Please check the details and try again.",
+        "UNAUTHENTICATED": "Please sign in again.",
+        "FORBIDDEN": "You cannot do that.",
+        "COOPERATIVE_NOT_FOUND": "We could not find your cooperative.",
+        "INTERNAL": "Something went wrong. Please try again."
+      }
     }
   },
   "admin": {

@@ -135,6 +135,7 @@ model Cooperative {
   createdAt            DateTime              @default(now())
   memberships          Membership[]
   documents            CooperativeDocument[]
+  inviteLinks          InviteLink[]
 
   @@map("cooperative")
 }
@@ -226,4 +227,23 @@ model BankChangeRequest {
 
   @@index([ownerType, ownerId])
   @@map("bank_change_request")
+}
+
+// An officer's shareable link (email null) or a single-use invite bound to one email.
+// The migration adds a partial unique index the schema cannot express:
+// invite_link_one_open_shareable_key ON (cooperativeId) WHERE email IS NULL AND revokedAt IS NULL.
+// Never log a token.
+model InviteLink {
+  id            String      @id @default(cuid())
+  cooperativeId String
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  token         String      @unique
+  email         String?
+  createdBy     String
+  revokedAt     DateTime?
+  usedAt        DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([cooperativeId])
+  @@map("invite_link")
 }
