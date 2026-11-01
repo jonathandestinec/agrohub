@@ -123,7 +123,8 @@
         "waiting": "Waiting for review since {date}",
         "verified": "Your cooperative is verified.",
         "suspended": "Your cooperative is suspended. Contact support.",
-        "changesRequested": "Changes requested: {note}"
+        "changesRequested": "Changes requested: {note}",
+        "certificateExpired": "Your registration certificate has expired. Upload the renewed certificate to be re-verified."
       },
       "errors": {
         "ALREADY_OFFICER": "You already manage a cooperative.",

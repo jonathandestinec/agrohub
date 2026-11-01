@@ -7,7 +7,10 @@ import { AuthCard } from "@/components/auth-ui";
 import { listBanks, type Bank } from "@/lib/paystack";
 import { getCooperativeBankAccount } from "@/modules/banking/service";
 import { formatEffectiveAt } from "@/modules/banking/views";
-import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
+import {
+  CERTIFICATE_EXPIRED_NOTE,
+  DOCUMENT_KINDS,
+} from "@/modules/cooperatives/schema";
 import { getOwnCooperative } from "@/modules/cooperatives/service";
 import {
   toDocumentSummary,
@@ -60,6 +63,8 @@ async function OnboardingStep() {
   else if (view.status === "SUSPENDED") statusText = t("status.suspended");
   else if (view.submittedAt) {
     statusText = t("status.waiting", { date: formatDate(view.submittedAt) });
+  } else if (view.reviewNote === CERTIFICATE_EXPIRED_NOTE) {
+    statusText = t("status.certificateExpired");
   } else if (view.reviewNote) {
     // Rejected: submittedAt was cleared, so re-uploading a document sends it back for review.
     statusText = t("status.changesRequested", { note: view.reviewNote });

@@ -124,3 +124,56 @@ export function farmerStatusEmail(
       };
   }
 }
+
+// ---- Certificate expiry. Names are escaped; dates are UTC calendar dates. ----
+
+function formatDay(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+export function certificateExpiredEmail(input: { cooperativeName: string }): {
+  subject: string;
+  html: string;
+} {
+  const name = escapeHtml(input.cooperativeName);
+  return {
+    subject: "Your AgroHub registration certificate has expired",
+    html: `<p>The registration certificate for <strong>${name}</strong> has expired, so the cooperative is no longer verified on AgroHub.</p><p>Sign in, upload the renewed certificate and we will review it again.</p>`,
+  };
+}
+
+export function certificateReminderEmail(input: {
+  cooperativeName: string;
+  expiresAt: Date;
+}): { subject: string; html: string } {
+  const name = escapeHtml(input.cooperativeName);
+  return {
+    subject: "Your AgroHub registration certificate expires soon",
+    html: `<p>The registration certificate for <strong>${name}</strong> expires on ${formatDay(input.expiresAt)}.</p><p>Upload the renewed certificate before then so the cooperative stays verified on AgroHub.</p>`,
+  };
+}
+
+export type CertificateDigestEntry = { name: string; expiresAt: Date };
+
+export function certificateExpiryDigestEmail(input: {
+  reminded: CertificateDigestEntry[];
+  lapsed: CertificateDigestEntry[];
+}): { subject: string; html: string } {
+  const list = (entries: CertificateDigestEntry[]) =>
+    `<ul>${entries
+      .map(
+        (entry) =>
+          `<li>${escapeHtml(entry.name)} (certificate date ${formatDay(entry.expiresAt)})</li>`,
+      )
+      .join("")}</ul>`;
+  const lapsed = input.lapsed.length
+    ? `<p>No longer verified because the certificate expired:</p>${list(input.lapsed)}`
+    : "";
+  const reminded = input.reminded.length
+    ? `<p>Reminded that the certificate expires within 30 days:</p>${list(input.reminded)}`
+    : "";
+  return {
+    subject: "AgroHub certificate expiry digest",
+    html: `${lapsed}${reminded}`,
+  };
+}

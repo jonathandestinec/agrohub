@@ -123,7 +123,8 @@
         "waiting": "",
         "verified": "",
         "suspended": "",
-        "changesRequested": ""
+        "changesRequested": "",
+        "certificateExpired": ""
       },
       "errors": {
         "ALREADY_OFFICER": "",

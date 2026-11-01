@@ -30,3 +30,6 @@ export type CreateCooperativeInput = Omit<
 > & { state: string };
 
 export const documentKind = z.enum(DOCUMENT_KINDS);
+
+// reviewNote value set when a verified cooperative lapses; the UI maps it to a friendly message.
+export const CERTIFICATE_EXPIRED_NOTE = "CERTIFICATE_EXPIRED";

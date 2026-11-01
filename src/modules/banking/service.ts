@@ -17,6 +17,7 @@ import {
   bankChangeAdminAlertEmail,
   bankChangeConfirmEmail,
 } from "@/modules/notifications/emails";
+import { listActiveAdminEmails } from "@/modules/notifications/recipients";
 import { namesMatch } from "./names";
 import { toBankAccountView, type BankAccountView } from "./views";
 
@@ -237,11 +238,7 @@ export async function confirmBankChange(
 async function alertAdmins(request: BankChangeRequest, effectiveAt: Date): Promise<void> {
   try {
     const owner = await loadOwner({ type: request.ownerType, id: request.ownerId });
-    const admins = await prisma.membership.findMany({
-      where: { role: "ADMIN", status: "ACTIVE" },
-      select: { user: { select: { email: true } } },
-      distinct: ["userId"],
-    });
+    const admins = await listActiveAdminEmails();
     const { subject, html } = bankChangeAdminAlertEmail({
       ownerName: owner.name,
       accountName: request.newAccountName,
@@ -249,7 +246,7 @@ async function alertAdmins(request: BankChangeRequest, effectiveAt: Date): Promi
       effectiveAt,
     });
     const results = await Promise.allSettled(
-      admins.map((admin) => sendEmail({ to: admin.user.email, subject, html })),
+      admins.map((to) => sendEmail({ to, subject, html })),
     );
     for (const result of results) {
       if (result.status === "rejected") logEmailFailure("admin-alert", request.id, result.reason);
