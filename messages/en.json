@@ -17,5 +17,78 @@
     "BUYER": "Buyer",
     "ADMIN": "Administrator",
     "BOARD_ADMIN": "Board administrator"
+  },
+  "header": {
+    "signIn": "Sign in",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "fields": {
+      "name": "Full name",
+      "email": "Email address",
+      "password": "Password",
+      "phone": "Phone number",
+      "code": "6-digit code"
+    },
+    "signUp": {
+      "title": "Create your AgroHub account",
+      "consent": "I have read and accept the <link>privacy notice</link>.",
+      "passwordHint": "At least 8 characters.",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "checkEmailTitle": "Check your email",
+      "checkEmailBody": "We sent a link to {email}. Open it to verify your address, then sign in.",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "emailTaken": "An account with this email already exists. Try signing in.",
+      "passwordTooShort": "Your password must be at least 8 characters.",
+      "consentRequired": "Please accept the privacy notice to continue.",
+      "error": "We could not create your account. Please try again."
+    },
+    "signIn": {
+      "title": "Sign in to AgroHub",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "invalid": "That email and password do not match.",
+      "unverified": "Please verify your email first. Check your inbox for the link.",
+      "error": "We could not sign you in. Please try again.",
+      "noAccount": "New to AgroHub?",
+      "signUpLink": "Create an account"
+    },
+    "verified": {
+      "title": "Email verified",
+      "body": "Your email address is confirmed. You can now sign in.",
+      "failedTitle": "This link did not work",
+      "failedBody": "The verification link is invalid or has expired. Sign in to get a new one.",
+      "signIn": "Sign in"
+    },
+    "twoFactor": {
+      "enrolTitle": "Set up two-factor authentication",
+      "enrolIntro": "Your role needs a second step at sign-in. Confirm your password to get a setup key for your authenticator app.",
+      "start": "Get setup key",
+      "starting": "Preparing…",
+      "wrongPassword": "That password is not correct.",
+      "setupInstructions": "In your authenticator app, add an account with this setup key, or open the link on this phone.",
+      "secretLabel": "Setup key",
+      "uriLabel": "Setup link",
+      "copy": "Copy key",
+      "copied": "Copied",
+      "backupCodesTitle": "Backup codes",
+      "backupCodesBody": "Keep these somewhere safe. Each one signs you in once if you lose your phone.",
+      "enrolConfirm": "Enter the code your app shows to finish setup.",
+      "verifyTitle": "Enter your sign-in code",
+      "verifyIntro": "Open your authenticator app and enter the 6-digit code for AgroHub.",
+      "submit": "Verify",
+      "submitting": "Checking…",
+      "invalidCode": "That code is not correct. Try the newest code.",
+      "expired": "Your sign-in has expired. Please sign in again.",
+      "tooManyAttempts": "Too many attempts. Please sign in again later.",
+      "signInAgain": "Sign in again",
+      "error": "Something went wrong. Please try again."
+    }
+  },
+  "privacy": {
+    "title": "Privacy notice",
+    "comingSoon": "Privacy notice coming soon"
   }
 }

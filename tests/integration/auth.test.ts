@@ -100,4 +100,21 @@ describe("email and password sign-up", () => {
     expect(await prisma.user.count()).toBe(0);
     expect(fakeOutbox.sent).toHaveLength(0);
   });
+
+  it("sends a verification link that returns to /verified, whatever the client asked", async () => {
+    await signUp({
+      name: "Ngozi Eze",
+      email: "ngozi@example.com",
+      password,
+      phone: "+2348033344455",
+      consent: true,
+      callbackURL: "https://evil.example/phish",
+    });
+
+    const href = fakeOutbox.sent[0].html.match(/href="([^"]+)"/)?.[1];
+    const link = new URL((href ?? "").replace(/&amp;/g, "&"));
+    expect(link.pathname).toBe("/api/auth/verify-email");
+    expect(link.searchParams.get("callbackURL")).toBe("/verified");
+    expect(link.searchParams.get("token")).toBeTruthy();
+  });
 });

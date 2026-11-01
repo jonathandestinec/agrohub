@@ -1,0 +1,118 @@
+"use client";
+
+import Link from "next/link";
+import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
+import { Field, FormError, SubmitButton } from "@/components/auth-ui";
+import { authClient } from "@/lib/auth-client";
+
+// Better Auth's client type has no `consent`; the server's user-create hook reads it from the body.
+type SignUpBody = Parameters<typeof authClient.signUp.email>[0] & { consent: boolean };
+
+const ERROR_KEYS: Record<string, string> = {
+  USER_ALREADY_EXISTS: "emailTaken",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "emailTaken",
+  PASSWORD_TOO_SHORT: "passwordTooShort",
+  CONSENT_REQUIRED: "consentRequired",
+};
+
+export function SignUpForm() {
+  const t = useTranslations("auth.signUp");
+  const fields = useTranslations("auth.fields");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    setPending(true);
+    setError(null);
+    const body: SignUpBody = {
+      name: String(form.get("name") ?? "").trim(),
+      email,
+      password: String(form.get("password") ?? ""),
+      phone: String(form.get("phone") ?? "").trim(),
+      // The server stamps consentAcceptedAt; it refuses sign-up without this flag.
+      consent: form.get("consent") === "on",
+      // The server pins verification links to /verified anyway (src/lib/auth.ts).
+      callbackURL: "/verified",
+    };
+    const { error: failure } = await authClient.signUp.email(body);
+    setPending(false);
+    if (failure) {
+      setError(t(ERROR_KEYS[failure.code ?? ""] ?? "error"));
+      return;
+    }
+    setSentTo(email);
+  }
+
+  if (sentTo) {
+    return (
+      <section aria-live="polite" className="flex flex-col gap-2">
+        <h2 className="text-xl font-semibold">{t("checkEmailTitle")}</h2>
+        <p className="text-muted">{t("checkEmailBody", { email: sentTo })}</p>
+      </section>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <Field id="name" name="name" label={fields("name")} autoComplete="name" required />
+      <Field
+        id="email"
+        name="email"
+        type="email"
+        label={fields("email")}
+        autoComplete="email"
+        required
+      />
+      <Field
+        id="password"
+        name="password"
+        type="password"
+        label={fields("password")}
+        hint={t("passwordHint")}
+        autoComplete="new-password"
+        minLength={8}
+        required
+      />
+      <Field
+        id="phone"
+        name="phone"
+        type="tel"
+        label={fields("phone")}
+        autoComplete="tel"
+        inputMode="tel"
+        required
+      />
+      <div className="flex items-start gap-3">
+        <input
+          id="consent"
+          name="consent"
+          type="checkbox"
+          required
+          className="mt-1 size-5 shrink-0 accent-primary"
+        />
+        <label htmlFor="consent" className="text-sm">
+          {t.rich("consent", {
+            link: (chunks) => (
+              <Link href="/privacy" className="text-primary underline">
+                {chunks}
+              </Link>
+            ),
+          })}
+        </label>
+      </div>
+      <FormError message={error} />
+      <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
+      <p className="text-sm text-muted">
+        {t("haveAccount")}{" "}
+        <Link href="/sign-in" className="text-primary underline">
+          {t("signInLink")}
+        </Link>
+      </p>
+    </form>
+  );
+}

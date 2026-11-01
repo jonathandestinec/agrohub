@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
+import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -16,6 +17,16 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Better Auth 1.7 has no config-level emailVerification.callbackURL (it comes from each
+// request body), so the server pins it here: every verification link lands on /verified.
+export const VERIFIED_CALLBACK_PATH = "/verified";
+
+function withVerifiedCallback(url: string): string {
+  const link = new URL(url);
+  link.searchParams.set("callbackURL", VERIFIED_CALLBACK_PATH);
+  return link.toString();
+}
+
 // WARNING: never run the Better Auth CLI with the repo root as cwd (it loads .env); use `npm run auth:generate`.
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
@@ -29,7 +40,7 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
-      const href = escapeHtml(url);
+      const href = escapeHtml(withVerifiedCallback(url));
       await sendEmail({
         to: user.email,
         subject: "Verify your AgroHub email address",
@@ -37,7 +48,8 @@ export const auth = betterAuth({
       });
     },
   },
-  plugins: [twoFactor({ issuer: "AgroHub" })],
+  // nextCookies must stay last: it copies Set-Cookie from auth.api calls in server actions.
+  plugins: [twoFactor({ issuer: "AgroHub" }), nextCookies()],
   user: {
     additionalFields: {
       // Private contact detail: kept out of every Better Auth response and session payload.

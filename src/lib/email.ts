@@ -12,12 +12,18 @@ export type TransportConfig = {
 // TODO: the sending domain is not verified in Resend yet; replace before production.
 const FROM_ADDRESS = "AgroHub <noreply@agrohub.example>";
 
-export const fakeOutbox: { sent: EmailMessage[]; clear(): void } = {
+type FakeOutbox = { sent: EmailMessage[]; clear(): void };
+
+// Kept on globalThis so every module instance shares one outbox: in `next dev` the
+// auth route and /api/dev/outbox can load separate copies of this module.
+const globalForOutbox = globalThis as unknown as { agrohubFakeOutbox?: FakeOutbox };
+
+export const fakeOutbox: FakeOutbox = (globalForOutbox.agrohubFakeOutbox ??= {
   sent: [],
   clear() {
     this.sent.length = 0;
   },
-};
+});
 
 export function selectTransport(config: TransportConfig): "fake" | "resend" {
   if (config.appEnv === "local" || config.nodeEnv === "test") return "fake";

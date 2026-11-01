@@ -17,5 +17,78 @@
     "BUYER": "",
     "ADMIN": "",
     "BOARD_ADMIN": ""
+  },
+  "header": {
+    "signIn": "",
+    "signOut": ""
+  },
+  "auth": {
+    "fields": {
+      "name": "",
+      "email": "",
+      "password": "",
+      "phone": "",
+      "code": ""
+    },
+    "signUp": {
+      "title": "",
+      "consent": "",
+      "passwordHint": "",
+      "submit": "",
+      "submitting": "",
+      "checkEmailTitle": "",
+      "checkEmailBody": "",
+      "haveAccount": "",
+      "signInLink": "",
+      "emailTaken": "",
+      "passwordTooShort": "",
+      "consentRequired": "",
+      "error": ""
+    },
+    "signIn": {
+      "title": "",
+      "submit": "",
+      "submitting": "",
+      "invalid": "",
+      "unverified": "",
+      "error": "",
+      "noAccount": "",
+      "signUpLink": ""
+    },
+    "verified": {
+      "title": "",
+      "body": "",
+      "failedTitle": "",
+      "failedBody": "",
+      "signIn": ""
+    },
+    "twoFactor": {
+      "enrolTitle": "",
+      "enrolIntro": "",
+      "start": "",
+      "starting": "",
+      "wrongPassword": "",
+      "setupInstructions": "",
+      "secretLabel": "",
+      "uriLabel": "",
+      "copy": "",
+      "copied": "",
+      "backupCodesTitle": "",
+      "backupCodesBody": "",
+      "enrolConfirm": "",
+      "verifyTitle": "",
+      "verifyIntro": "",
+      "submit": "",
+      "submitting": "",
+      "invalidCode": "",
+      "expired": "",
+      "tooManyAttempts": "",
+      "signInAgain": "",
+      "error": ""
+    }
+  },
+  "privacy": {
+    "title": "",
+    "comingSoon": ""
   }
 }

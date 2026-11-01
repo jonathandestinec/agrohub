@@ -21,6 +21,24 @@ Required variables in every environment: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `
 
 `.github/workflows/ci.yml` runs on every push and pull request: Postgres 17 service container, `prisma migrate deploy` on `agrohub_test`, lint, typecheck, tests. It needs no repository secrets. Money logic must pass before any deploy.
 
+## Granting an admin role
+
+Admins and board admins are granted from the command line, after the person has signed up and verified their email:
+
+```sh
+DATABASE_URL=<database-url> npm run admin:grant -- <email> <ADMIN|BOARD_ADMIN>
+```
+
+- `DATABASE_URL` must be set inline every time, locally too. The script runs under tsx, and neither tsx nor Prisma reads `.env`, so nothing else chooses the database. For staging or production, use that environment's direct (non-pooled) Neon URL, and keep it out of shell history (for example, start the command with a space under `HISTCONTROL=ignorespace`).
+- The script needs no other variable: it fills the unused `BETTER_AUTH_*` and `CRON_SECRET` with placeholders so `src/lib/env.ts` validates.
+- It creates an ACTIVE membership and writes a `membership.grant` audit row. An unknown email, an unknown role, a missing `DATABASE_URL`, or a role the user already holds exits with code 1 and changes nothing.
+- The first time a page needs the new role, the admin is sent to `/two-factor` to set up an authenticator app.
+
+## Local development pages
+
+- `GET /api/dev/outbox` returns the fake outbox (emails "sent" locally) as JSON. It answers only when `APP_ENV=local` and returns 404 everywhere else. The e2e tests read verification links from it.
+- `npx playwright test` starts its own `next dev` on port 3100 against `agrohub_test`, so a dev server on :3000 is never touched. Integration tests clean that same database, so never run the two at the same time.
+
 ## Operational notes
 
 - Next loads `.env`. Before `npm run dev` or `npm run build`, create `.env.local` with a local `DATABASE_URL`, or set the variables inline, so a real database URL is never picked up by accident.

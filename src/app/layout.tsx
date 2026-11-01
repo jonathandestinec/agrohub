@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { Suspense } from "react";
+import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { RoleSwitcher } from "@/components/role-switcher";
+import { SignOutButton } from "@/components/sign-out-button";
 import { pickActiveMembership } from "@/modules/identity/active-role";
 import { listMemberships } from "@/modules/identity/service";
 import { toSwitcherMembership } from "@/modules/identity/views";
@@ -34,6 +36,17 @@ async function SwitcherSlot() {
   );
 }
 
+async function AccountSlot() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (session) return <SignOutButton />;
+  const t = await getTranslations("header");
+  return (
+    <Link href="/sign-in" className="flex min-h-11 items-center px-2 text-base text-primary underline">
+      {t("signIn")}
+    </Link>
+  );
+}
+
 async function Shell({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
@@ -45,9 +58,14 @@ async function Shell({ children }: { children: React.ReactNode }) {
             <span className="font-[family-name:var(--font-heading)] text-lg font-semibold text-primary">
               AgroHub
             </span>
-            <Suspense fallback={null}>
-              <SwitcherSlot />
-            </Suspense>
+            <div className="flex items-center gap-3">
+              <Suspense fallback={null}>
+                <SwitcherSlot />
+              </Suspense>
+              <Suspense fallback={null}>
+                <AccountSlot />
+              </Suspense>
+            </div>
           </header>
           {children}
         </NextIntlClientProvider>
