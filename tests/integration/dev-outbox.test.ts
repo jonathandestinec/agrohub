@@ -5,6 +5,7 @@ afterEach(() => {
   fakeOutbox.clear();
   vi.doUnmock("@/lib/env");
   vi.doUnmock("next/server");
+  vi.unstubAllEnvs();
   vi.resetModules();
 });
 
@@ -43,4 +44,18 @@ describe("GET /api/dev/outbox", () => {
       expect(await response.text()).not.toContain("a@example.com");
     },
   );
+
+  it("returns 404 when NODE_ENV is production, even with APP_ENV local", async () => {
+    fakeOutbox.sent.push({ to: "a@example.com", subject: "Hi", html: "<p>Hi</p>" });
+    // A deployment that omits APP_ENV gets the "local" default; NODE_ENV still guards it.
+    vi.stubEnv("NODE_ENV", "production");
+    vi.resetModules();
+    const { env } = await import("@/lib/env");
+    expect(env.APP_ENV).toBe("local");
+    const { GET } = await import("@/app/api/dev/outbox/route");
+    const response = await GET();
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).not.toContain("a@example.com");
+  });
 });
