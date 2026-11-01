@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { cooperativeStatusEmail } from "@/modules/notifications/emails";
+import {
+  bankChangeAdminAlertEmail,
+  bankChangeConfirmEmail,
+  cooperativeStatusEmail,
+} from "@/modules/notifications/emails";
 
 const kinds = ["verified", "rejected", "suspended", "reinstated"] as const;
 
@@ -45,6 +49,42 @@ describe("cooperativeStatusEmail", () => {
         cooperativeName: "Zaria Growers",
         reason: "Some reason",
       });
+      expect(`${subject} ${html}`).not.toMatch(/escrow/i);
+    }
+  });
+});
+
+describe("bank change emails", () => {
+  const confirm = () =>
+    bankChangeConfirmEmail({
+      ownerName: "A & B <Farmers>",
+      link: "http://localhost:3000/bank/confirm?token=abc_-123",
+    });
+  const alert = () =>
+    bankChangeAdminAlertEmail({
+      ownerName: "A & B <Farmers>",
+      accountName: "<b>ADA</b>",
+      bankName: "Access Bank",
+      effectiveAt: new Date("2031-06-12T12:00:00Z"),
+    });
+
+  it("escapes names and includes the confirmation link", () => {
+    const { html } = confirm();
+    expect(html).toContain("A &amp; B &lt;Farmers&gt;");
+    expect(html).toContain('href="http://localhost:3000/bank/confirm?token=abc_-123"');
+    expect(html).toMatch(/48 hours/);
+  });
+
+  it("gives admins the owner, account name, bank and effective time", () => {
+    const { html } = alert();
+    expect(html).toContain("A &amp; B &lt;Farmers&gt;");
+    expect(html).toContain("&lt;b&gt;ADA&lt;/b&gt;");
+    expect(html).toContain("Access Bank");
+    expect(html).toContain("2031-06-12 12:00 UTC");
+  });
+
+  it("never uses the word escrow", () => {
+    for (const { subject, html } of [confirm(), alert()]) {
       expect(`${subject} ${html}`).not.toMatch(/escrow/i);
     }
   });

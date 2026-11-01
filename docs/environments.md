@@ -7,12 +7,12 @@ Three environments. Secrets live only in environment variables, validated at sta
 | `APP_ENV` | `local` | `staging` | `production` |
 | Database | Docker Postgres 17 (`npm run db:up`) | A Neon branch of the staging project (`<neon-staging-branch>`) | A separate Neon project (`<neon-production-project>`) |
 | Vercel environment | none (`npm run dev`) | Preview/staging project (`<vercel-staging-project>`) | Production environment (`<vercel-production-project>`) |
-| Paystack keys | Test keys | Test keys only | Live keys, production only |
+| Paystack keys | Fake Paystack (`PAYSTACK_SECRET_KEY` empty) or a test key | `PAYSTACK_SECRET_KEY` = a test key (`sk_test_`) only | `PAYSTACK_SECRET_KEY` = a live key, production only |
 | Email | Fake outbox (`RESEND_API_KEY` empty) | Resend | Resend |
 | Private storage | Fake in-memory store (`STORAGE_*` empty), served at `/api/dev-storage` | R2 bucket `<storage-staging-bucket>`, private, no public access | A separate R2 bucket `<storage-production-bucket>`, private, no public access |
 | Data | Seed/dev data | Seeded demo data | Real data, backups with a tested restore |
 
-Required variables in every environment: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CRON_SECRET`, `APP_ENV`. `RESEND_API_KEY` is required wherever real email is sent. `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID` and `STORAGE_SECRET_ACCESS_KEY` (placeholders only here) are required in staging and production; without them storage calls fail with `STORAGE_NOT_CONFIGURED`. `STORAGE_REGION` defaults to `auto`. Staging and production use separate buckets or at least separate keys, and neither bucket may allow public access: objects are opened only through signed links. Staging must never hold a live Paystack key. On Vercel, `BETTER_AUTH_URL` may be left unset: `src/lib/env.ts` then uses `https://$VERCEL_BRANCH_URL` (or `$VERCEL_URL`), since each preview has its own URL. Set it explicitly for production's custom domain. Staging's `DATABASE_URL` is the pooled URL of the Neon `staging` branch in project `agrohub`. Run `prisma migrate deploy` against its direct (non-pooled) URL.
+Required variables in every environment: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CRON_SECRET`, `APP_ENV`. `RESEND_API_KEY` is required wherever real email is sent. `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY_ID` and `STORAGE_SECRET_ACCESS_KEY` (placeholders only here) are required in staging and production; without them storage calls fail with `STORAGE_NOT_CONFIGURED`. `STORAGE_REGION` defaults to `auto`. Staging and production use separate buckets or at least separate keys, and neither bucket may allow public access: objects are opened only through signed links. Staging must never hold a live Paystack key. The Paystack secret key's variable is named exactly `PAYSTACK_SECRET_KEY`: `src/lib/env.ts` refuses to start when staging's key does not start with `sk_test_` or production's does. On Vercel, set `PAYSTACK_SECRET_KEY` (a variable named `PAYSTACK_TEST_SECRET_KEY` is not read by the app). Without it, staging and production fail at the first Paystack call (bank list, account check) with an error naming `PAYSTACK_SECRET_KEY`. On Vercel, `BETTER_AUTH_URL` may be left unset: `src/lib/env.ts` then uses `https://$VERCEL_BRANCH_URL` (or `$VERCEL_URL`), since each preview has its own URL. Set it explicitly for production's custom domain. Staging's `DATABASE_URL` is the pooled URL of the Neon `staging` branch in project `agrohub`. Run `prisma migrate deploy` against its direct (non-pooled) URL.
 
 ## Health check
 
@@ -35,8 +35,15 @@ DATABASE_URL=<database-url> npm run admin:grant -- <email> <ADMIN|BOARD_ADMIN>
 - It creates an ACTIVE membership and writes a `membership.grant` audit row. An unknown email, an unknown role, a missing `DATABASE_URL`, or a role the user already holds exits with code 1 and changes nothing.
 - The first time a page needs the new role, the admin is sent to `/two-factor` to set up an authenticator app.
 
+## Scheduled jobs
+
+`vercel.json` lists the cron jobs; each calls `GET /api/cron/<job>` with `Authorization: Bearer $CRON_SECRET`.
+
+- `bank-change-apply`, hourly (`0 * * * *`): copies confirmed bank account changes whose 48-hour wait has passed onto the cooperative. Payout code reads the effective account through `effectiveRecipientCode`, so a change counts at its effective time even before the job runs.
+
 ## Local development pages
 
+- With `PAYSTACK_SECRET_KEY` empty and `APP_ENV=local`, Paystack calls use an in-memory fake (`fakePaystack` in `src/lib/paystack.ts`) with five banks and no accounts; an account check fails with `BANK_ACCOUNT_NOT_FOUND` until a test adds one. Bank change confirmation links appear in the fake outbox.
 - `GET /api/dev/outbox` returns the fake outbox (emails "sent" locally) as JSON. It answers only when `APP_ENV=local` and returns 404 everywhere else. The e2e tests read verification links from it.
 - `npx playwright test` starts its own `next dev` on port 3100 against `agrohub_test`, so a dev server on :3000 is never touched. Integration tests clean that same database, so never run the two at the same time.
 

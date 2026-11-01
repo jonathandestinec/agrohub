@@ -12,6 +12,7 @@ import {
   uploadDocument,
 } from "@/modules/cooperatives/service";
 import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
+import { setCooperativeBankAccount } from "@/modules/banking/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
 
 function text(form: FormData, name: string): string {
@@ -65,6 +66,24 @@ export async function uploadDocumentAction(
     });
     revalidatePath("/officer/onboarding");
     return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+// The account number goes straight to the service; it is never logged or returned.
+export async function setBankAccountAction(
+  form: FormData,
+): Promise<ActionResult<{ accountName: string; pending: boolean }>> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    const result = await setCooperativeBankAccount(actor, actor.cooperativeId, {
+      accountNumber: text(form, "accountNumber").replace(/s/g, ""),
+      bankCode: text(form, "bankCode"),
+    });
+    revalidatePath("/officer/onboarding");
+    return { ok: true, data: result };
   } catch (error) {
     return toActionResult(error);
   }

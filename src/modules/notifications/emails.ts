@@ -49,3 +49,33 @@ export function cooperativeStatusEmail(
       };
   }
 }
+
+// ---- Bank account changes. Never include an account number. ----
+
+function formatUtc(date: Date): string {
+  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
+export function bankChangeConfirmEmail(input: {
+  ownerName: string;
+  link: string;
+}): { subject: string; html: string } {
+  const name = escapeHtml(input.ownerName);
+  const link = escapeHtml(input.link);
+  return {
+    subject: "Confirm the new bank account for your AgroHub payouts",
+    html: `<p>Someone asked to change the bank account that receives payouts for <strong>${name}</strong> on AgroHub.</p><p><a href="${link}">Confirm the new bank account</a></p><p>The new account takes effect 48 hours after you confirm. Payouts made before then go to the current account. This link works once and expires in 24 hours.</p><p>If you did not ask for this, do not confirm. Sign in and change your password, then contact AgroHub support.</p>`,
+  };
+}
+
+export function bankChangeAdminAlertEmail(input: {
+  ownerName: string;
+  accountName: string;
+  bankName: string;
+  effectiveAt: Date;
+}): { subject: string; html: string } {
+  return {
+    subject: "AgroHub alert: a payout bank account is changing",
+    html: `<p>A confirmed bank account change for <strong>${escapeHtml(input.ownerName)}</strong> takes effect at ${formatUtc(input.effectiveAt)}.</p><p>New account name: ${escapeHtml(input.accountName)}<br>Bank: ${escapeHtml(input.bankName)}</p><p>If this looks wrong, act before it takes effect.</p>`,
+  };
+}

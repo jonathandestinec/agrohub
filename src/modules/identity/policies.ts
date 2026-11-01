@@ -24,7 +24,8 @@ export type Action =
   | "dispute:resolve"
   | "cooperative:read"
   | "cooperative:upload"
-  | "document:view";
+  | "document:view"
+  | "bank:change";
 
 export type Resource = {
   cooperativeId?: string;
@@ -82,6 +83,13 @@ export function can(
       );
     case "cooperative:upload":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "bank:change":
+      // Farmers change their own account through the self-scoped banking function.
+      return (
+        actor.role === "OFFICER" &&
+        actor.twoFactorEnabled &&
+        isOwnCooperative(actor, resource)
+      );
     default:
       return false;
   }

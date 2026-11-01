@@ -135,7 +135,30 @@
         "NO_FILE": "",
         "UNAUTHENTICATED": "",
         "FORBIDDEN": "",
+        "ACCOUNT_NAME_MISMATCH": "",
+        "BANK_ACCOUNT_NOT_FOUND": "",
+        "UNKNOWN_BANK": "",
+        "INVALID_ACCOUNT_NUMBER": "",
+        "INVALID_BANK_CODE": "",
         "INTERNAL": ""
+      },
+      "bank": {
+        "heading": "",
+        "intro": "",
+        "current": "",
+        "none": "",
+        "bank": "",
+        "bankPlaceholder": "",
+        "accountNumber": "",
+        "accountNumberHint": "",
+        "save": "",
+        "saving": "",
+        "saved": "",
+        "pending": "",
+        "confirmed": "",
+        "needsTwoFactor": "",
+        "enableTwoFactor": "",
+        "unavailable": ""
       }
     }
   },
@@ -188,6 +211,17 @@
         "FORBIDDEN": "",
         "INTERNAL": ""
       }
+    }
+  },
+  "bank": {
+    "confirm": {
+      "title": "",
+      "body": "",
+      "confirm": "",
+      "confirming": "",
+      "done": "",
+      "invalid": "",
+      "error": ""
     }
   }
 }

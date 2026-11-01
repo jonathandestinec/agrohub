@@ -5,25 +5,47 @@ const emptyToUndefined = z
   .optional()
   .transform((value) => (value ? value : undefined));
 
-const schema = z.object({
-  DATABASE_URL: z.string().min(1),
-  BETTER_AUTH_SECRET: z.string().min(1),
-  BETTER_AUTH_URL: z.string().min(1),
-  CRON_SECRET: z.string().min(1),
-  APP_ENV: z.enum(["local", "staging", "production"]).default("local"),
-  STORAGE_ENDPOINT: emptyToUndefined,
-  STORAGE_BUCKET: emptyToUndefined,
-  STORAGE_ACCESS_KEY_ID: emptyToUndefined,
-  STORAGE_SECRET_ACCESS_KEY: emptyToUndefined,
-  STORAGE_REGION: z
-    .string()
-    .optional()
-    .transform((value) => (value ? value : "auto")),
-  RESEND_API_KEY: z
-    .string()
-    .optional()
-    .transform((value) => (value ? value : undefined)),
-});
+const schema = z
+  .object({
+    DATABASE_URL: z.string().min(1),
+    BETTER_AUTH_SECRET: z.string().min(1),
+    BETTER_AUTH_URL: z.string().min(1),
+    CRON_SECRET: z.string().min(1),
+    APP_ENV: z.enum(["local", "staging", "production"]).default("local"),
+    STORAGE_ENDPOINT: emptyToUndefined,
+    STORAGE_BUCKET: emptyToUndefined,
+    STORAGE_ACCESS_KEY_ID: emptyToUndefined,
+    STORAGE_SECRET_ACCESS_KEY: emptyToUndefined,
+    STORAGE_REGION: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : "auto")),
+    RESEND_API_KEY: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    // Optional: local and tests use the fake. Calls fail at call time without it.
+    PAYSTACK_SECRET_KEY: emptyToUndefined,
+  })
+  // Messages name the variable, never its value.
+  .superRefine((value, ctx) => {
+    const key = value.PAYSTACK_SECRET_KEY;
+    if (key === undefined) return;
+    if (value.APP_ENV === "staging" && !key.startsWith("sk_test_")) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["PAYSTACK_SECRET_KEY"],
+        message: "staging must use a Paystack test key (sk_test_)",
+      });
+    }
+    if (value.APP_ENV === "production" && key.startsWith("sk_test_")) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["PAYSTACK_SECRET_KEY"],
+        message: "production must not use a Paystack test key",
+      });
+    }
+  });
 
 export type Env = z.infer<typeof schema>;
 

@@ -131,6 +131,7 @@ model Cooperative {
   reviewNote           String?
   recipientCode        String?
   accountName          String?
+  bankName             String?
   createdAt            DateTime              @default(now())
   memberships          Membership[]
   documents            CooperativeDocument[]
@@ -198,4 +199,31 @@ model JobRun {
   ranAt DateTime @default(now())
 
   @@map("job_run")
+}
+
+enum BankOwnerType {
+  COOPERATIVE
+  FARMER
+}
+
+// A requested payout account change. It takes effect 48 hours after email confirmation.
+// There is deliberately no account-number column: only Paystack holds it.
+// ownerId points at a cooperative or (from Task 8) a farmer profile, so it has no foreign key.
+model BankChangeRequest {
+  id               String        @id @default(cuid())
+  ownerType        BankOwnerType
+  ownerId          String
+  newRecipientCode String
+  newAccountName   String
+  newBankName      String
+  requestedBy      String
+  confirmToken     String        @unique
+  confirmedAt      DateTime?
+  effectiveAt      DateTime?
+  cancelledAt      DateTime?
+  appliedAt        DateTime?
+  createdAt        DateTime      @default(now())
+
+  @@index([ownerType, ownerId])
+  @@map("bank_change_request")
 }

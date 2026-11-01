@@ -25,6 +25,40 @@ describe("parseEnv", () => {
     expect(parseEnv(validRaw).RESEND_API_KEY).toBeUndefined();
   });
 
+  describe("PAYSTACK_SECRET_KEY", () => {
+    it("is optional and empty means unset", () => {
+      expect(parseEnv(validRaw).PAYSTACK_SECRET_KEY).toBeUndefined();
+      expect(parseEnv({ ...validRaw, PAYSTACK_SECRET_KEY: "" }).PAYSTACK_SECRET_KEY).toBeUndefined();
+    });
+
+    it("rejects a non-test key in staging, naming the variable but not the value", () => {
+      let message = "";
+      try {
+        parseEnv({ ...validRaw, APP_ENV: "staging", PAYSTACK_SECRET_KEY: "sk_live_x" });
+      } catch (error) {
+        message = (error as Error).message;
+      }
+      expect(message).toMatch(/PAYSTACK_SECRET_KEY/);
+      expect(message).not.toContain("sk_live_x");
+    });
+
+    it("accepts a test key in staging", () => {
+      const parsed = parseEnv({ ...validRaw, APP_ENV: "staging", PAYSTACK_SECRET_KEY: "sk_test_x" });
+      expect(parsed.PAYSTACK_SECRET_KEY).toBe("sk_test_x");
+    });
+
+    it("rejects a test key in production", () => {
+      expect(() =>
+        parseEnv({ ...validRaw, APP_ENV: "production", PAYSTACK_SECRET_KEY: "sk_test_x" }),
+      ).toThrow(/PAYSTACK_SECRET_KEY/);
+    });
+
+    it("accepts a live key in production", () => {
+      const parsed = parseEnv({ ...validRaw, APP_ENV: "production", PAYSTACK_SECRET_KEY: "sk_live_x" });
+      expect(parsed.PAYSTACK_SECRET_KEY).toBe("sk_live_x");
+    });
+  });
+
   describe("BETTER_AUTH_URL on Vercel", () => {
     const withoutAuthUrl: Record<string, string | undefined> = {
       ...validRaw,

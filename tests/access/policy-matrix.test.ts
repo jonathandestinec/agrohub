@@ -9,8 +9,10 @@ import {
 const COOP = "coop-1";
 const OTHER_COOP = "coop-2";
 
+// twoFactorEnabled is true so the matrix shows each role's best case; only
+// bank:change reads it, and its denial without two-factor is tested below.
 function actor(role: Role, cooperativeId: string | null = null): Actor {
-  return { userId: "user-1", role, cooperativeId, twoFactorEnabled: false };
+  return { userId: "user-1", role, cooperativeId, twoFactorEnabled: true };
 }
 
 // Every action by every role, with a resource that satisfies the scope rules
@@ -78,6 +80,12 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["document:view", "BUYER", false],
   ["document:view", "ADMIN", true],
   ["document:view", "BOARD_ADMIN", false],
+
+  ["bank:change", "FARMER", false],
+  ["bank:change", "OFFICER", true],
+  ["bank:change", "BUYER", false],
+  ["bank:change", "ADMIN", false],
+  ["bank:change", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -87,7 +95,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(50);
+    expect(matrix).toHaveLength(55);
   });
 });
 
@@ -195,5 +203,21 @@ describe("lot approval", () => {
         cooperativeHasOtherOfficer: false,
       }),
     ).toBe(false);
+  });
+});
+
+describe("bank:change", () => {
+  it("denies an officer without two-factor", () => {
+    const officer = { ...actor("OFFICER", COOP), twoFactorEnabled: false };
+    expect(can(officer, "bank:change", { cooperativeId: COOP })).toBe(false);
+  });
+
+  it("denies an officer of another cooperative", () => {
+    expect(can(actor("OFFICER", OTHER_COOP), "bank:change", { cooperativeId: COOP })).toBe(false);
+  });
+
+  it("denies an officer with a null cooperativeId or no resource", () => {
+    expect(can(actor("OFFICER", null), "bank:change", {})).toBe(false);
+    expect(can(actor("OFFICER", COOP), "bank:change")).toBe(false);
   });
 });

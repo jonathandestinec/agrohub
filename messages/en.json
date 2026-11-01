@@ -135,7 +135,30 @@
         "NO_FILE": "Choose a file first.",
         "UNAUTHENTICATED": "Please sign in again.",
         "FORBIDDEN": "You cannot do that.",
+        "ACCOUNT_NAME_MISMATCH": "The name on this account does not match your cooperative's registered name.",
+        "BANK_ACCOUNT_NOT_FOUND": "We could not find that account. Check the bank and the account number.",
+        "UNKNOWN_BANK": "Choose a bank from the list.",
+        "INVALID_ACCOUNT_NUMBER": "Enter the 10-digit account number.",
+        "INVALID_BANK_CODE": "Choose a bank from the list.",
         "INTERNAL": "Something went wrong. Please try again."
+      },
+      "bank": {
+        "heading": "Bank account for payouts",
+        "intro": "Cooperative payouts go to this account. The name on the account must match your cooperative's registered name.",
+        "current": "Payouts go to {accountName} at {bankName}.",
+        "none": "No bank account yet. Add your cooperative's account so it can be paid.",
+        "bank": "Bank",
+        "bankPlaceholder": "Choose a bank",
+        "accountNumber": "Account number",
+        "accountNumberHint": "The 10-digit account number",
+        "save": "Save bank account",
+        "saving": "Checking the account…",
+        "saved": "Saved. The name on the account is {accountName}.",
+        "pending": "Check your email to confirm. The new account takes effect 48 hours after you confirm.",
+        "confirmed": "Your new bank account takes effect on {date}.",
+        "needsTwoFactor": "Turn on two-factor authentication before you add or change the bank account.",
+        "enableTwoFactor": "Set up two-factor authentication",
+        "unavailable": "Bank details are unavailable right now. Please try again later."
       }
     }
   },
@@ -188,6 +211,17 @@
         "FORBIDDEN": "You cannot do that.",
         "INTERNAL": "Something went wrong. Please try again."
       }
+    }
+  },
+  "bank": {
+    "confirm": {
+      "title": "Confirm your new bank account",
+      "body": "Confirm to switch payouts to the new bank account. It takes effect 48 hours after you confirm, and payouts made before then go to the current account.",
+      "confirm": "Confirm new bank account",
+      "confirming": "Confirming…",
+      "done": "Confirmed. The new bank account takes effect on {date}.",
+      "invalid": "This link is invalid, already used or expired. Enter the bank details again to get a new link.",
+      "error": "Something went wrong. Please try again."
     }
   }
 }

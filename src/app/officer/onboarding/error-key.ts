@@ -8,6 +8,11 @@ const KNOWN = [
   "NO_FILE",
   "UNAUTHENTICATED",
   "FORBIDDEN",
+  "ACCOUNT_NAME_MISMATCH",
+  "BANK_ACCOUNT_NOT_FOUND",
+  "UNKNOWN_BANK",
+  "INVALID_ACCOUNT_NUMBER",
+  "INVALID_BANK_CODE",
 ] as const;
 
 // Maps a server action error code to a key under officer.onboarding.errors.
