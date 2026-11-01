@@ -140,6 +140,7 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - resend: sends transactional email (verification and later notifications) in staging and production; local and tests use the in-memory fake outbox.
 - prisma (dev) and @prisma/client: schema, migrations and the typed database client; Prisma 7 reads `prisma.config.ts` and never loads `.env`.
 - @prisma/adapter-pg: the node-postgres driver adapter Prisma 7 needs to connect to Postgres (local Docker and Neon).
-- better-auth: email and password login, email verification and sessions (its two-factor plugin enforces admin 2FA), stored through its Prisma adapter.
+- better-auth: email and password login, email verification and sessions (its two-factor plugin provides TOTP; admin and board-admin enforcement is via `requireSecondFactor`, wired in Phase 1, and nothing is enforced yet), stored through its Prisma adapter.
+- @tailwindcss/turbopack (dev): the Tailwind CSS v4 integration for Next.js Turbopack builds.
 - auth (dev): the Better Auth CLI; `auth generate` writes Better Auth's models into `prisma/schema.prisma`. Run it only through `npm run auth:generate`, which uses an empty temp cwd so the CLI never loads `.env`.
 - next-intl: message loading and translations for the App Router; locale comes from a `locale` cookie (no locale-prefixed routing), and only locales listed in `enabledLocales` are ever served.

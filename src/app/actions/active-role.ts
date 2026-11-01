@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
 import { ForbiddenError, ValidationError } from "@/lib/errors";
 import { getOwnedMembership } from "@/modules/identity/service";
 
@@ -22,6 +23,6 @@ export async function setActiveRole(membershipId: string): Promise<void> {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    secure: process.env.APP_ENV !== "local",
+    secure: env.APP_ENV !== "local",
   });
 }

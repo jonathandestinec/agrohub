@@ -58,8 +58,13 @@ export function can(
           resource.ownerUserId !== actor.userId
         );
       }
-      if (actor.role === "ADMIN")
-        return resource?.cooperativeHasOtherOfficer === false;
+      if (actor.role === "ADMIN") {
+        return (
+          resource?.cooperativeHasOtherOfficer === false &&
+          resource.ownerUserId !== undefined &&
+          resource.ownerUserId !== actor.userId
+        );
+      }
       return false;
     default:
       return false;

@@ -3,10 +3,11 @@
 import { useId, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { setActiveRole } from "@/app/actions/active-role";
+import type { Role } from "@/modules/identity/policies";
 
 export type SwitcherMembership = {
   id: string;
-  role: "FARMER" | "OFFICER" | "BUYER" | "ADMIN" | "BOARD_ADMIN";
+  role: Role;
   cooperativeId: string | null;
 };
 

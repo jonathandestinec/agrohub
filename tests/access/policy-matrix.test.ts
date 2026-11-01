@@ -120,4 +120,24 @@ describe("lot approval", () => {
     ).toBe(false);
     expect(can(admin, "lot:approve")).toBe(false);
   });
+
+  it("admin_cannot_approve_own_lot", () => {
+    const admin = actor("ADMIN");
+    expect(
+      can(admin, "lot:approve", {
+        cooperativeId: COOP,
+        ownerUserId: admin.userId,
+        cooperativeHasOtherOfficer: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("admin_cannot_approve_when_owner_unknown", () => {
+    expect(
+      can(actor("ADMIN"), "lot:approve", {
+        cooperativeId: COOP,
+        cooperativeHasOtherOfficer: false,
+      }),
+    ).toBe(false);
+  });
 });
