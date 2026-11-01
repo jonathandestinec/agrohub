@@ -28,7 +28,9 @@
     "invites": "Invite farmers",
     "farmers": "Farmers",
     "reviewCooperatives": "Review cooperatives",
-    "farm": "My farm"
+    "farm": "My farm",
+    "registerCooperative": "Register your cooperative",
+    "yourFarm": "Your farm"
   },
   "auth": {
     "fields": {
@@ -149,6 +151,9 @@
         "UNKNOWN_BANK": "Choose a bank from the list.",
         "INVALID_ACCOUNT_NUMBER": "Enter the 10-digit account number.",
         "INVALID_BANK_CODE": "Choose a bank from the list.",
+        "CERTIFICATE_EXPIRY_INVALID": "Enter the expiry date on the certificate. It must be a future date.",
+        "ILLEGAL_TRANSITION": "Your cooperative's details can only be changed before it is verified.",
+        "COOPERATIVE_NOT_FOUND": "We could not find your cooperative.",
         "INTERNAL": "Something went wrong. Please try again."
       },
       "bank": {
@@ -168,6 +173,14 @@
         "needsTwoFactor": "Turn on two-factor authentication before you add or change the bank account.",
         "enableTwoFactor": "Set up two-factor authentication",
         "unavailable": "Bank details are unavailable right now. Please try again later."
+      },
+      "certificateExpiryHint": "The expiry date printed on this certificate.",
+      "edit": {
+        "heading": "Correct your cooperative's details",
+        "intro": "You can correct these until your cooperative is verified.",
+        "save": "Save details",
+        "saving": "Saving…",
+        "saved": "Details saved."
       }
     },
     "invites": {
@@ -229,8 +242,10 @@
         "MEMBERSHIP_NOT_FOUND": "We could not find this farmer.",
         "UNAUTHENTICATED": "Please sign in again.",
         "FORBIDDEN": "You cannot do that.",
+        "COOPERATIVE_NOT_VERIFIED": "Your cooperative must be verified before you can approve farmers.",
         "INTERNAL": "Something went wrong. Please try again."
-      }
+      },
+      "rejectWarning": "This farmer will not be able to apply to this cooperative again."
     }
   },
   "admin": {

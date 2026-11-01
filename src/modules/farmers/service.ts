@@ -203,7 +203,7 @@ async function loadFarmerMembership(membershipId: string) {
   const membership = await prisma.membership.findFirst({
     where: { id: membershipId, role: "FARMER", cooperativeId: { not: null } },
     include: {
-      cooperative: { select: { name: true } },
+      cooperative: { select: { name: true, status: true } },
       user: { select: { email: true } },
     },
   });
@@ -286,6 +286,10 @@ export async function approveFarmer(
   const membership = await loadFarmerMembership(membershipId);
   if (!can(actor, "farmer:approve", { cooperativeId: membership.cooperativeId })) {
     throw new ForbiddenError();
+  }
+  // A suspended (or not yet verified) cooperative cannot accept farmers.
+  if (membership.cooperative.status !== "VERIFIED") {
+    throw new ConflictError("Cooperative is not verified", "COOPERATIVE_NOT_VERIFIED");
   }
   await applyTransition(actor, membership, APPROVE, { approvedAt: now });
   await emailFarmer(membership, "approved");

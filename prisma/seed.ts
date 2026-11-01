@@ -1,6 +1,6 @@
 // Demo data for local and staging:
 //   npm run db:seed                                   (local Docker database)
-//   DATABASE_URL=<url> npm run db:seed -- --allow-remote   (staging; never production)
+//   APP_ENV=staging DATABASE_URL=<url> npm run db:seed -- --allow-remote   (staging; never production)
 // Creates one admin (two-factor off, so /two-factor enrolment shows), one VERIFIED
 // cooperative with an ACTIVE officer, and one PENDING farmer with a profile. Re-running
 // it adds nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
@@ -42,19 +42,33 @@ export function checkSeedTarget(input: {
     const url = new URL(input.databaseUrl);
     host = url.hostname;
     database = decodeURIComponent(url.pathname.replace(/^\//, "")) || "unknown";
+    // libpq lets ?host= override the hostname, so the host checked below would not be
+    // the host connected to. Such a URL is refused outright.
+    if ([...url.searchParams.keys()].some((key) => key.toLowerCase() === "host")) {
+      return {
+        ok: false,
+        host,
+        database,
+        reason: "DATABASE_URL has a host query parameter; put the host in the URL itself",
+      };
+    }
   } catch {
     return { ok: false, host, database, reason: "DATABASE_URL is not a valid URL" };
   }
   if (input.appEnv === "production") {
     return { ok: false, host, database, reason: "APP_ENV is production; the seed never runs there" };
   }
-  if (!LOCAL_HOSTS.has(host) && !input.allowRemote) {
-    return {
-      ok: false,
-      host,
-      database,
-      reason: "the host is not localhost; pass --allow-remote to seed staging",
-    };
+  if (!LOCAL_HOSTS.has(host)) {
+    // A remote database is seeded only on purpose: the flag AND APP_ENV=staging in the shell.
+    if (!input.allowRemote || input.appEnv !== "staging") {
+      return {
+        ok: false,
+        host,
+        database,
+        reason:
+          "the host is not localhost; to seed staging, export APP_ENV=staging and pass --allow-remote",
+      };
+    }
   }
   return { ok: true, host, database };
 }

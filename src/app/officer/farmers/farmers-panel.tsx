@@ -16,6 +16,7 @@ const KNOWN_ERRORS = [
   "ILLEGAL_TRANSITION",
   "UNFINISHED_ORDERS",
   "MEMBERSHIP_NOT_FOUND",
+  "COOPERATIVE_NOT_VERIFIED",
   "UNAUTHENTICATED",
   "FORBIDDEN",
 ] as const;
@@ -102,7 +103,9 @@ function FarmerRow({ farmer, kind }: { farmer: OfficerFarmerRow; kind: "pending"
           className="flex flex-col gap-3"
           aria-label={mode === "reject" ? t("reject") : t("remove")}
         >
-          {mode === "remove" ? <p className="text-base">{t("removeWarning")}</p> : null}
+          <p className="text-base">
+            {mode === "reject" ? t("rejectWarning") : t("removeWarning")}
+          </p>
           <label htmlFor={`reason-${id}`} className="text-sm font-medium">
             {mode === "reject" ? t("rejectReasonLabel") : t("removeReasonLabel")}
           </label>

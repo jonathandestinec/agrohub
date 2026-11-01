@@ -26,6 +26,7 @@ export type Action =
   | "dispute:resolve"
   | "cooperative:read"
   | "cooperative:upload"
+  | "cooperative:edit"
   | "document:view"
   | "bank:change"
   | "invite:manage";
@@ -94,6 +95,7 @@ export function can(
         (actor.role === "OFFICER" && isOwnCooperative(actor, resource))
       );
     case "cooperative:upload":
+    case "cooperative:edit":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     case "bank:change":
       // Farmers change their own account through the self-scoped banking function.

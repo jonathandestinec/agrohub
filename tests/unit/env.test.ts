@@ -17,6 +17,26 @@ describe("parseEnv", () => {
     expect(parseEnv(validRaw).APP_ENV).toBe("local");
   });
 
+  it("keeps the local default outside production (dev and test)", () => {
+    expect(parseEnv({ ...validRaw, NODE_ENV: "development" }).APP_ENV).toBe("local");
+    expect(parseEnv({ ...validRaw, NODE_ENV: "test" }).APP_ENV).toBe("local");
+  });
+
+  it("requires APP_ENV when NODE_ENV is production, naming the variable", () => {
+    expect(() => parseEnv({ ...validRaw, NODE_ENV: "production" })).toThrow(/APP_ENV/);
+    expect(() => parseEnv({ ...validRaw, NODE_ENV: "production", APP_ENV: "" })).toThrow(
+      /APP_ENV/,
+    );
+  });
+
+  it("accepts an explicit APP_ENV in production", () => {
+    for (const appEnv of ["local", "staging", "production"] as const) {
+      expect(parseEnv({ ...validRaw, NODE_ENV: "production", APP_ENV: appEnv }).APP_ENV).toBe(
+        appEnv,
+      );
+    }
+  });
+
   it("rejects an unknown APP_ENV", () => {
     expect(() => parseEnv({ ...validRaw, APP_ENV: "prod" })).toThrow(/APP_ENV/);
   });

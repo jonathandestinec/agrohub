@@ -7,6 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env } from "@/lib/env";
+import { withVerifiedCallback } from "@/lib/verified-callback";
 
 function escapeHtml(value: string): string {
   return value
@@ -17,22 +18,15 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-// Better Auth 1.7 has no config-level emailVerification.callbackURL (it comes from each
-// request body), so the server pins it here: every verification link lands on /verified.
-export const VERIFIED_CALLBACK_PATH = "/verified";
-
-function withVerifiedCallback(url: string): string {
-  const link = new URL(url);
-  link.searchParams.set("callbackURL", VERIFIED_CALLBACK_PATH);
-  return link.toString();
-}
-
 // WARNING: never run the Better Auth CLI with the repo root as cwd (it loads .env); use `npm run auth:generate`.
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
   database: prismaAdapter(prisma, { provider: "postgresql", transaction: true }),
   telemetry: { enabled: false },
+  // update-user would let a user rename themselves (the bank name check compares against
+  // User.name) or change the admin-only phone record. Name and phone are set at sign-up only.
+  disabledPaths: ["/update-user"],
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,

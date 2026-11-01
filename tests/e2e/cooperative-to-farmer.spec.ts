@@ -83,8 +83,13 @@ async function completeSignUp(
   await expect(page.getByRole("heading", { name: "Email verified" })).toBeVisible();
 }
 
-async function signIn(page: Page, email: string, next?: string) {
-  await page.goto(next ? `/sign-in?next=${encodeURIComponent(next)}` : "/sign-in");
+async function signIn(page: Page, email: string) {
+  await page.goto("/sign-in");
+  await fillSignIn(page, email);
+}
+
+// Fills the sign-in form already on the page.
+async function fillSignIn(page: Page, email: string) {
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
@@ -139,7 +144,8 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await signIn(page, officer.email);
     await expect(page).toHaveURL(HOME);
 
-    await page.goto("/officer/onboarding");
+    // No membership yet: the header offers to register a cooperative.
+    await nav(page, "Register your cooperative").click();
     await expect(page.getByRole("heading", { name: "Set up your cooperative" })).toBeVisible();
     await page.getByLabel("Cooperative name").fill(cooperativeName);
     await page.getByLabel("Registration number").fill(`RC-${tag}`);
@@ -152,6 +158,13 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
       "Upload all three documents to send your cooperative for review.",
     );
 
+    // While PENDING, the officer can correct the details.
+    await page.getByText("Correct your cooperative's details").click();
+    await page.getByLabel("Local government area").fill("Sabon Gari");
+    await page.getByRole("button", { name: "Save details" }).click();
+    await expect(page.getByText("Details saved.")).toBeVisible();
+    await expect(page.getByText(`RC-${tag} · Sabon Gari, Kaduna`)).toBeVisible();
+
     for (const [label, file] of [
       ["Registration certificate", "certificate.pdf"],
       ["Bylaws", "bylaws.pdf"],
@@ -163,6 +176,10 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
         mimeType: "application/pdf",
         buffer: PDF,
       });
+      if (label === "Registration certificate") {
+        // A certificate upload carries its expiry date (it is how renewals work).
+        await form.getByLabel("Certificate expiry date").fill("2030-01-01");
+      }
       await form.getByRole("button", { name: "Upload" }).click();
       await expect(form.getByText("Uploaded", { exact: true })).toBeVisible();
     }
@@ -230,8 +247,14 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await expect(page.getByRole("heading", { name: `Join ${cooperativeName}` })).toBeVisible();
     await page.getByRole("link", { name: "Create an account" }).click();
     await completeSignUp(page, request, farmer);
+    // Only on-page links from here: the verified page must lead back to the invite.
     const joinPath = new URL(inviteUrl).pathname;
-    await signIn(page, farmer.email, joinPath);
+    // The verified page's own link, not the header's plain "Sign in".
+    await page.getByRole("main").getByRole("link", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(
+      (url) => url.pathname === "/sign-in" && url.searchParams.get("next") === joinPath,
+    );
+    await fillSignIn(page, farmer.email);
     await expect(page).toHaveURL(new RegExp(`${joinPath}$`));
 
     await page.getByLabel("Farm size (hectares)").fill("2.5");
@@ -241,6 +264,8 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await page.getByRole("button", { name: "Join cooperative" }).click();
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
     await expect(page.getByText("Waiting for your officer's approval")).toBeVisible();
+    // Pending approval, so no ACTIVE membership: the header links to the farm page.
+    await expect(nav(page, "Your farm")).toBeVisible();
 
     const accountNumber = uniqueAccountNumber();
     const accountName = `MUSA ${tag} ABUBAKAR`;

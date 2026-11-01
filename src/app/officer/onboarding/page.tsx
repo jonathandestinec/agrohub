@@ -23,6 +23,7 @@ import { listMemberships } from "@/modules/identity/service";
 import { BankForm } from "./bank-form";
 import { CreateCooperativeForm } from "./create-cooperative-form";
 import { DocumentUploads } from "./document-uploads";
+import { EditCooperativeForm } from "./edit-cooperative-form";
 
 export default function OnboardingPage() {
   return (
@@ -85,6 +86,17 @@ async function OnboardingStep() {
       >
         {statusText}
       </p>
+      {view.status === "PENDING" ? (
+        <EditCooperativeForm
+          details={{
+            name: view.name,
+            registrationNumber: view.registrationNumber,
+            state: view.state,
+            lga: view.lga,
+          }}
+          states={[...STATES]}
+        />
+      ) : null}
       <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
         {t("documentsHeading")}
       </h2>

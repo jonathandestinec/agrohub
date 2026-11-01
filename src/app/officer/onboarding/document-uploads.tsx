@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
-import { FormError, SubmitButton } from "@/components/auth-ui";
+import { Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { uploadDocumentAction } from "../actions";
 import { errorKey } from "./error-key";
 
@@ -52,6 +52,17 @@ function UploadRow({ kind, done }: { kind: Kind; done: boolean }) {
         required
         className="min-h-11 w-full rounded-md border border-border bg-bg px-3 py-2 text-base text-fg"
       />
+      {kind === "REGISTRATION_CERTIFICATE" ? (
+        // Each upload is a renewal: the new certificate brings its own expiry date.
+        <Field
+          id={`certificateExpiresAt-${kind}`}
+          name="certificateExpiresAt"
+          type="date"
+          label={t("fields.certificateExpiresAt")}
+          hint={t("certificateExpiryHint")}
+          required
+        />
+      ) : null}
       <FormError message={error} />
       <SubmitButton
         pending={pending}

@@ -5,6 +5,7 @@ import { fakeStorage } from "@/lib/storage";
 import {
   createCooperative,
   getDocumentUrl,
+  updateCooperativeDetails,
   uploadDocument,
 } from "@/modules/cooperatives/service";
 import {
@@ -185,6 +186,7 @@ describe("uploadDocument", () => {
         kind,
         body: PDF,
         contentType: "application/pdf",
+        certificateExpiresAt: new Date("2099-01-01T00:00:00Z"),
       });
     const submittedAt = async () =>
       (
@@ -212,6 +214,88 @@ describe("uploadDocument", () => {
         contentType: "application/pdf",
       }),
     ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+});
+
+describe("updateCooperativeDetails", () => {
+  const details = {
+    name: "Zaria Maize Growers Union",
+    registrationNumber: "RC-1001-A",
+    state: "Kano",
+    lga: "Nassarawa",
+  };
+
+  it("lets the officer correct a PENDING cooperative and audits cooperative.edit", async () => {
+    const { cooperative, actor } = await officerWithCooperative("u1", "RC-1");
+    const updated = await updateCooperativeDetails(actor, cooperative.id, details);
+    expect(updated).toMatchObject(details);
+    const row = await prisma.cooperative.findUniqueOrThrow({ where: { id: cooperative.id } });
+    expect(row).toMatchObject({ ...details, status: "PENDING" });
+    const audit = await prisma.auditLog.findMany({
+      where: { action: "cooperative.edit", entityId: cooperative.id },
+    });
+    expect(audit).toHaveLength(1);
+    expect(audit[0].actorId).toBe("u1");
+    expect(audit[0].meta).toEqual({ cooperativeId: cooperative.id });
+  });
+
+  it("keeps its own registration number without a conflict", async () => {
+    const { cooperative, actor } = await officerWithCooperative("u1", "RC-1");
+    await expect(
+      updateCooperativeDetails(actor, cooperative.id, { ...details, registrationNumber: "RC-1" }),
+    ).resolves.toMatchObject({ registrationNumber: "RC-1" });
+  });
+
+  it("refuses a VERIFIED or SUSPENDED cooperative with ILLEGAL_TRANSITION", async () => {
+    const { cooperative, actor } = await officerWithCooperative("u1", "RC-1");
+    for (const status of ["VERIFIED", "SUSPENDED"] as const) {
+      await prisma.cooperative.update({ where: { id: cooperative.id }, data: { status } });
+      const error = await updateCooperativeDetails(actor, cooperative.id, details).catch(
+        (e: unknown) => e,
+      );
+      expect(error).toBeInstanceOf(ConflictError);
+      expect(error).toMatchObject({ code: "ILLEGAL_TRANSITION" });
+    }
+    const row = await prisma.cooperative.findUniqueOrThrow({ where: { id: cooperative.id } });
+    expect(row.name).toBe(input.name);
+  });
+
+  it("maps a registration number used by another cooperative to REGISTRATION_NUMBER_TAKEN", async () => {
+    await officerWithCooperative("u1", "RC-A");
+    const b = await officerWithCooperative("u2", "RC-B");
+    await expect(
+      updateCooperativeDetails(b.actor, b.cooperative.id, { ...details, registrationNumber: "RC-A" }),
+    ).rejects.toMatchObject({ name: "ConflictError", code: "REGISTRATION_NUMBER_TAKEN" });
+  });
+
+  it("validates like create", async () => {
+    const { cooperative, actor } = await officerWithCooperative("u1", "RC-1");
+    for (const bad of [
+      { ...details, state: "Atlantis" },
+      { ...details, name: "x" },
+      { ...details, lga: "" },
+      { ...details, registrationNumber: " " },
+    ]) {
+      await expect(updateCooperativeDetails(actor, cooperative.id, bad)).rejects.toBeInstanceOf(
+        ValidationError,
+      );
+    }
+  });
+
+  it("forbids an officer of another cooperative and an admin", async () => {
+    const a = await officerWithCooperative("u1", "RC-A");
+    const b = await officerWithCooperative("u2", "RC-B");
+    await expect(
+      updateCooperativeDetails(b.actor, a.cooperative.id, details),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(
+      updateCooperativeDetails(admin, a.cooperative.id, details),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    expect(
+      await prisma.auditLog.count({
+        where: { action: "cooperative.edit", entityId: a.cooperative.id },
+      }),
+    ).toBe(0);
   });
 });
 

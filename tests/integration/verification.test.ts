@@ -299,6 +299,21 @@ describe("suspend and reinstate", () => {
     );
   });
 
+  it("refuses to reinstate when the certificate has expired, leaving it SUSPENDED", async () => {
+    const coop = await submittedCooperative({
+      status: "SUSPENDED",
+      certificateExpiresAt: new Date("2031-06-01T00:00:00Z"),
+    });
+    await addMember(coop.id, "o1");
+    const error = await reinstateCooperative(admin, coop.id, NOW).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(error).toMatchObject({ code: "CERTIFICATE_EXPIRED" });
+    const row = await prisma.cooperative.findUniqueOrThrow({ where: { id: coop.id } });
+    expect(row.status).toBe("SUSPENDED");
+    expect(await auditRows(coop.id)).toHaveLength(0);
+    expect(fakeOutbox.sent).toHaveLength(0);
+  });
+
   it("refuses to reinstate a VERIFIED cooperative", async () => {
     const coop = await submittedCooperative({ status: "VERIFIED" });
     await expect(reinstateCooperative(admin, coop.id)).rejects.toMatchObject({

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { navLinksFor } from "@/components/nav-links";
+import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
 
 describe("navLinksFor", () => {
   it("gives officers onboarding, invites and farmers", () => {
@@ -22,5 +22,38 @@ describe("navLinksFor", () => {
 
   it.each(["BUYER", "BOARD_ADMIN", null] as const)("gives %s no links yet", (role) => {
     expect(navLinksFor(role)).toEqual([]);
+  });
+});
+
+describe("navLinksWithoutActiveMembership", () => {
+  const register = [{ href: "/officer/onboarding", labelKey: "registerCooperative" }];
+  const yourFarm = [{ href: "/farmer", labelKey: "yourFarm" }];
+
+  it("offers to register a cooperative to a user with no officer or farmer membership", () => {
+    expect(navLinksWithoutActiveMembership([])).toEqual(register);
+    expect(navLinksWithoutActiveMembership([{ role: "BUYER", status: "PENDING" }])).toEqual(
+      register,
+    );
+  });
+
+  it("links a PENDING farmer to their farm page", () => {
+    expect(navLinksWithoutActiveMembership([{ role: "FARMER", status: "PENDING" }])).toEqual(
+      yourFarm,
+    );
+  });
+
+  it("gives no link to a user whose farmer membership ended or who has an officer membership", () => {
+    expect(navLinksWithoutActiveMembership([{ role: "FARMER", status: "LEFT" }])).toEqual([]);
+    expect(navLinksWithoutActiveMembership([{ role: "FARMER", status: "REMOVED" }])).toEqual([]);
+    expect(navLinksWithoutActiveMembership([{ role: "OFFICER", status: "REMOVED" }])).toEqual([]);
+  });
+
+  it("prefers the farm page when a farmer is also pending elsewhere", () => {
+    expect(
+      navLinksWithoutActiveMembership([
+        { role: "FARMER", status: "LEFT" },
+        { role: "FARMER", status: "PENDING" },
+      ]),
+    ).toEqual(yourFarm);
   });
 });

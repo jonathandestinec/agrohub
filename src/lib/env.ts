@@ -58,6 +58,13 @@ function withVercelAuthUrl(raw: Record<string, string | undefined>) {
 }
 
 export function parseEnv(raw: Record<string, string | undefined>): Env {
+  // The local default selects the fake email, storage and Paystack adapters, so a production
+  // build that omits APP_ENV must fail closed, not quietly run on fakes. Dev and test keep it.
+  if (raw.NODE_ENV === "production" && !raw.APP_ENV) {
+    throw new Error(
+      "Invalid environment variables: APP_ENV: must be set (local, staging or production) when NODE_ENV is production",
+    );
+  }
   const result = schema.safeParse(withVercelAuthUrl(raw));
   if (!result.success) {
     const problems = result.error.issues

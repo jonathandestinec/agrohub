@@ -13,6 +13,9 @@ const KNOWN = [
   "UNKNOWN_BANK",
   "INVALID_ACCOUNT_NUMBER",
   "INVALID_BANK_CODE",
+  "CERTIFICATE_EXPIRY_INVALID",
+  "ILLEGAL_TRANSITION",
+  "COOPERATIVE_NOT_FOUND",
 ] as const;
 
 // Maps a server action error code to a key under officer.onboarding.errors.

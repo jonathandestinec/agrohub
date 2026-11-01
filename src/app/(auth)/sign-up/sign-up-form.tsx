@@ -18,7 +18,7 @@ const ERROR_KEYS: Record<string, string> = {
 };
 
 // Sign-up ends at "check your email" (verification is required), so next is carried to
-// the sign-in link; signing in then returns to it.
+// the sign-in link here and through the emailed link to /verified; signing in returns to it.
 export function SignUpForm({ next }: { next: string }) {
   const returnTo = safeNext(next);
   const t = useTranslations("auth.signUp");
@@ -40,8 +40,9 @@ export function SignUpForm({ next }: { next: string }) {
       phone: String(form.get("phone") ?? "").trim(),
       // The server stamps consentAcceptedAt; it refuses sign-up without this flag.
       consent: form.get("consent") === "on",
-      // The server pins verification links to /verified anyway (src/lib/auth.ts).
-      callbackURL: "/verified",
+      // The server pins verification links to /verified, keeping only a checked next
+      // (src/lib/verified-callback.ts), so the verified page can carry it on to sign-in.
+      callbackURL: withNext("/verified", returnTo),
     };
     const { error: failure } = await authClient.signUp.email(body);
     setPending(false);

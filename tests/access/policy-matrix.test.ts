@@ -75,6 +75,12 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["cooperative:upload", "ADMIN", false],
   ["cooperative:upload", "BOARD_ADMIN", false],
 
+  ["cooperative:edit", "FARMER", false],
+  ["cooperative:edit", "OFFICER", true],
+  ["cooperative:edit", "BUYER", false],
+  ["cooperative:edit", "ADMIN", false],
+  ["cooperative:edit", "BOARD_ADMIN", false],
+
   ["document:view", "FARMER", false],
   ["document:view", "OFFICER", true],
   ["document:view", "BUYER", false],
@@ -116,7 +122,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(70);
+    expect(matrix).toHaveLength(75);
   });
 });
 
@@ -142,6 +148,11 @@ describe("farmer removal and leaving", () => {
 });
 
 describe("cooperative scoping", () => {
+  it("denies an officer of another cooperative cooperative:edit", () => {
+    expect(can(actor("OFFICER", OTHER_COOP), "cooperative:edit", own)).toBe(false);
+    expect(can(actor("OFFICER", COOP), "cooperative:edit")).toBe(false);
+  });
+
   it("denies an officer of another cooperative farmer:approve", () => {
     expect(can(actor("OFFICER", OTHER_COOP), "farmer:approve", own)).toBe(
       false,

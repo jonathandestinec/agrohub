@@ -15,17 +15,26 @@ export const ALLOWED_CONTENT_TYPES = [
 
 export const MAX_DOCUMENT_BYTES = 10_485_760;
 
-export const createCooperativeInput = z.object({
+// The officer-editable details; create adds the certificate expiry.
+export const cooperativeDetailsInput = z.object({
   name: z.string().trim().min(2).max(120),
   registrationNumber: z.string().trim().min(2).max(60),
   state: z.enum(STATES),
   lga: z.string().trim().min(2).max(80),
+});
+
+export const createCooperativeInput = cooperativeDetailsInput.extend({
   certificateExpiresAt: z.date(),
 });
 
 // state is a plain string at the boundary; the schema narrows it to a known state.
 export type CreateCooperativeInput = Omit<
   z.infer<typeof createCooperativeInput>,
+  "state"
+> & { state: string };
+
+export type CooperativeDetailsInput = Omit<
+  z.infer<typeof cooperativeDetailsInput>,
   "state"
 > & { state: string };
 

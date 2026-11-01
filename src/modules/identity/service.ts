@@ -98,6 +98,18 @@ export async function listMemberships(userId: string): Promise<Membership[]> {
   });
 }
 
+// Self-scoped lookup with no Actor (the user may have no ACTIVE membership yet): the role
+// and status of each of the given user's own memberships, for the header links only.
+export async function listMembershipStates(
+  userId: string,
+): Promise<Array<{ role: Role; status: MembershipStatus }>> {
+  return prisma.membership.findMany({
+    where: { userId },
+    select: { role: true, status: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 // Self-scoped lookup that precedes an Actor (it is how the active role is chosen).
 // Ownership check: a missing membership and another user's membership look the
 // same to the caller, so ids cannot be probed.

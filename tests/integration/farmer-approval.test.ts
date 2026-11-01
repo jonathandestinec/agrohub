@@ -160,6 +160,17 @@ describe("approveFarmer", () => {
     expect(await auditFor("farmer.approve", membershipId)).toHaveLength(0);
   });
 
+  it("refuses when the cooperative is SUSPENDED with COOPERATIVE_NOT_VERIFIED", async () => {
+    const { membershipId } = await farmerIn("u-f1", coopA);
+    await prisma.cooperative.update({ where: { id: coopA }, data: { status: "SUSPENDED" } });
+    const error = await approveFarmer(officerA, membershipId, T).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ConflictError);
+    expect(error).toMatchObject({ code: "COOPERATIVE_NOT_VERIFIED" });
+    expect((await statusOf(membershipId)).status).toBe("PENDING");
+    expect(fakeOutbox.sent).toHaveLength(0);
+    expect(await auditFor("farmer.approve", membershipId)).toHaveLength(0);
+  });
+
   it("refuses an officer of another cooperative with ForbiddenError", async () => {
     const { membershipId } = await farmerIn("u-f1", coopA);
     await expect(approveFarmer(officerB, membershipId, T)).rejects.toBeInstanceOf(ForbiddenError);

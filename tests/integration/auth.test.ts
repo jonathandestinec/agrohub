@@ -117,4 +117,64 @@ describe("email and password sign-up", () => {
     expect(link.searchParams.get("callbackURL")).toBe("/verified");
     expect(link.searchParams.get("token")).toBeTruthy();
   });
+
+  it("keeps a safe next on the /verified callback", async () => {
+    await signUp({
+      name: "Ife Ade",
+      email: "ife@example.com",
+      password,
+      phone: "+2348033344466",
+      consent: true,
+      callbackURL: "/verified?next=%2Fjoin%2Ftok-1",
+    });
+
+    const href = fakeOutbox.sent[0].html.match(/href="([^"]+)"/)?.[1];
+    const link = new URL((href ?? "").replace(/&amp;/g, "&"));
+    expect(link.searchParams.get("callbackURL")).toBe("/verified?next=%2Fjoin%2Ftok-1");
+  });
+});
+
+describe("POST /api/auth/update-user", () => {
+  async function signedInCookie(email: string): Promise<string> {
+    await signUp({ name: "Bola Ade", email, password, phone: "+2348011122233", consent: true });
+    await prisma.user.update({ where: { email }, data: { emailVerified: true } });
+    const { headers } = await auth.api.signInEmail({
+      body: { email, password },
+      returnHeaders: true,
+    });
+    const cookies = headers.getSetCookie().map((cookie) => cookie.split(";")[0]);
+    expect(cookies.length).toBeGreaterThan(0);
+    return cookies.join("; ");
+  }
+
+  it("is refused for a signed-in user, and the name and phone stay unchanged", async () => {
+    const email = "bola@example.com";
+    const cookie = await signedInCookie(email);
+
+    // Sanity check: the cookie is a working session.
+    const session = await auth.handler(
+      new Request("http://localhost:3000/api/auth/get-session", { headers: { cookie } }),
+    );
+    expect(session.status).toBe(200);
+    expect(((await session.json()) as { user?: { email?: string } } | null)?.user?.email).toBe(
+      email,
+    );
+
+    const response = await auth.handler(
+      new Request("http://localhost:3000/api/auth/update-user", {
+        method: "POST",
+        headers: {
+          cookie,
+          origin: "http://localhost:3000",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ name: "Someone Else", phone: "+2349099999999" }),
+      }),
+    );
+    expect(response.status).toBe(404);
+
+    const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+    expect(user.name).toBe("Bola Ade");
+    expect(user.phone).toBe("+2348011122233");
+  });
 });

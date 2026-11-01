@@ -5,11 +5,11 @@ import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
-import { navLinksFor } from "@/components/nav-links";
+import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
 import { pickActiveMembership } from "@/modules/identity/active-role";
-import { listMemberships } from "@/modules/identity/service";
+import { listMembershipStates, listMemberships } from "@/modules/identity/service";
 import { toSwitcherMembership } from "@/modules/identity/views";
 import "./globals.css";
 
@@ -37,7 +37,8 @@ async function SwitcherSlot() {
   );
 }
 
-// Links for the active role only. Pages still check access themselves.
+// Links for the active role only; with no ACTIVE membership, the way in (register a
+// cooperative, or the farm page while approval is pending). Pages still check access themselves.
 async function NavSlot() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
@@ -47,7 +48,9 @@ async function NavSlot() {
     memberships,
     cookieStore.get("activeMembershipId")?.value,
   );
-  const links = navLinksFor(active?.role ?? null);
+  const links = active
+    ? navLinksFor(active.role)
+    : navLinksWithoutActiveMembership(await listMembershipStates(session.user.id));
   if (links.length === 0) return null;
   const t = await getTranslations("nav");
   return (

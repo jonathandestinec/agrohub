@@ -28,7 +28,9 @@
     "invites": "",
     "farmers": "",
     "reviewCooperatives": "",
-    "farm": ""
+    "farm": "",
+    "registerCooperative": "",
+    "yourFarm": ""
   },
   "auth": {
     "fields": {
@@ -149,6 +151,9 @@
         "UNKNOWN_BANK": "",
         "INVALID_ACCOUNT_NUMBER": "",
         "INVALID_BANK_CODE": "",
+        "CERTIFICATE_EXPIRY_INVALID": "",
+        "ILLEGAL_TRANSITION": "",
+        "COOPERATIVE_NOT_FOUND": "",
         "INTERNAL": ""
       },
       "bank": {
@@ -168,6 +173,14 @@
         "needsTwoFactor": "",
         "enableTwoFactor": "",
         "unavailable": ""
+      },
+      "certificateExpiryHint": "",
+      "edit": {
+        "heading": "",
+        "intro": "",
+        "save": "",
+        "saving": "",
+        "saved": ""
       }
     },
     "invites": {
@@ -229,8 +242,10 @@
         "MEMBERSHIP_NOT_FOUND": "",
         "UNAUTHENTICATED": "",
         "FORBIDDEN": "",
+        "COOPERATIVE_NOT_VERIFIED": "",
         "INTERNAL": ""
-      }
+      },
+      "rejectWarning": ""
     }
   },
   "admin": {

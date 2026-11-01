@@ -9,6 +9,7 @@ import {
 } from "@/lib/errors";
 import {
   createCooperative,
+  updateCooperativeDetails,
   uploadDocument,
 } from "@/modules/cooperatives/service";
 import {
@@ -23,6 +24,14 @@ import { currentUser, requireActor } from "@/modules/identity/session";
 function text(form: FormData, name: string): string {
   const value = form.get(name);
   return typeof value === "string" ? value : "";
+}
+
+// A YYYY-MM-DD date input as UTC midnight; undefined when missing or not a date.
+function dateField(form: FormData, name: string): Date | undefined {
+  const raw = text(form, name);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
+  const date = new Date(`${raw}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 export async function createCooperativeAction(
@@ -68,6 +77,30 @@ export async function uploadDocumentAction(
       kind,
       body: Buffer.from(await file.arrayBuffer()),
       contentType: file.type,
+      // Required for the certificate; the service refuses a missing or past date.
+      certificateExpiresAt:
+        kind === "REGISTRATION_CERTIFICATE"
+          ? dateField(form, "certificateExpiresAt")
+          : undefined,
+    });
+    revalidatePath("/officer/onboarding");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function updateCooperativeDetailsAction(
+  form: FormData,
+): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    await updateCooperativeDetails(actor, actor.cooperativeId, {
+      name: text(form, "name"),
+      registrationNumber: text(form, "registrationNumber"),
+      state: text(form, "state"),
+      lga: text(form, "lga"),
     });
     revalidatePath("/officer/onboarding");
     return { ok: true, data: undefined };

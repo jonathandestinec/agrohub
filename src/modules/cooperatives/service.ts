@@ -25,8 +25,10 @@ import {
   ALLOWED_CONTENT_TYPES,
   DOCUMENT_KINDS,
   MAX_DOCUMENT_BYTES,
+  cooperativeDetailsInput,
   createCooperativeInput,
   documentKind,
+  type CooperativeDetailsInput,
   type CreateCooperativeInput,
 } from "./schema";
 import {
@@ -140,7 +142,13 @@ function matchesSignature(body: Buffer, contentType: string): boolean {
 export async function uploadDocument(
   actor: Actor,
   cooperativeId: string,
-  file: { kind: DocumentKind; body: Buffer; contentType: string },
+  file: {
+    kind: DocumentKind;
+    body: Buffer;
+    contentType: string;
+    certificateExpiresAt?: Date;
+  },
+  now: Date = new Date(),
 ): Promise<CooperativeDocument> {
   if (!can(actor, "cooperative:upload", { cooperativeId })) {
     throw new ForbiddenError();
@@ -160,18 +168,43 @@ export async function uploadDocument(
       "FILE_TYPE_MISMATCH",
     );
   }
+  // A registration certificate is a renewal (spec 6.1: re-submitted each year), so it
+  // must carry its new expiry date. Accepted in any status, and never changes the status:
+  // a lapsed cooperative is re-queued by submittedAt below, and a VERIFIED one stays so.
+  const renewal = file.kind === "REGISTRATION_CERTIFICATE";
+  const expiresAt = file.certificateExpiresAt;
+  if (
+    renewal &&
+    (!(expiresAt instanceof Date) ||
+      Number.isNaN(expiresAt.getTime()) ||
+      expiresAt.getTime() <= now.getTime())
+  ) {
+    throw new ValidationError(
+      "The certificate expiry date must be in the future",
+      "CERTIFICATE_EXPIRY_INVALID",
+    );
+  }
   // Opaque random id (no new dependency for cuid generation).
   const storageKey = `cooperatives/${cooperativeId}/${file.kind}/${randomBytes(12).toString("hex")}`;
   await putPrivate(storageKey, file.body, file.contentType);
-  const document = await prisma.cooperativeDocument.create({
-    data: {
-      cooperativeId,
-      kind: file.kind,
-      storageKey,
-      contentType: file.contentType,
-      sizeBytes: file.body.length,
-      uploadedBy: actor.userId,
-    },
+  const document = await prisma.$transaction(async (tx) => {
+    const created = await tx.cooperativeDocument.create({
+      data: {
+        cooperativeId,
+        kind: file.kind,
+        storageKey,
+        contentType: file.contentType,
+        sizeBytes: file.body.length,
+        uploadedBy: actor.userId,
+      },
+    });
+    if (renewal && expiresAt) {
+      await tx.cooperative.update({
+        where: { id: cooperativeId },
+        data: { certificateExpiresAt: expiresAt },
+      });
+    }
+    return created;
   });
   const kinds = await prisma.cooperativeDocument.findMany({
     where: { cooperativeId },
@@ -192,7 +225,76 @@ export async function uploadDocument(
     entityId: document.id,
     meta: { kind: file.kind, sizeBytes: file.body.length },
   });
+  if (renewal) {
+    await recordAudit({
+      actorId: actor.userId,
+      action: "cooperative.certificate_renewed",
+      entity: "cooperative",
+      entityId: cooperativeId,
+      meta: { cooperativeId, documentId: document.id },
+    });
+  }
   return document;
+}
+
+// Officer correction path while the cooperative is still PENDING (before verification).
+export async function updateCooperativeDetails(
+  actor: Actor,
+  cooperativeId: string,
+  input: CooperativeDetailsInput,
+): Promise<Cooperative> {
+  if (!can(actor, "cooperative:edit", { cooperativeId })) {
+    throw new ForbiddenError();
+  }
+  const parsed = cooperativeDetailsInput.safeParse(input);
+  if (!parsed.success) {
+    throw new ValidationError(
+      parsed.error.issues.map((issue) => issue.message).join("; "),
+    );
+  }
+  const taken = await prisma.cooperative.findFirst({
+    where: {
+      registrationNumber: parsed.data.registrationNumber,
+      id: { not: cooperativeId },
+    },
+    select: { id: true },
+  });
+  if (taken) throw registrationNumberTaken();
+  let count: number;
+  try {
+    // Conditional on PENDING, so a concurrent verification cannot be edited past.
+    ({ count } = await prisma.cooperative.updateMany({
+      where: { id: cooperativeId, status: "PENDING" },
+      data: parsed.data,
+    }));
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw registrationNumberTaken();
+    }
+    throw error;
+  }
+  if (count === 0) {
+    await loadForReview(cooperativeId); // NotFoundError when it does not exist
+    throw illegalTransition();
+  }
+  await recordAudit({
+    actorId: actor.userId,
+    action: "cooperative.edit",
+    entity: "cooperative",
+    entityId: cooperativeId,
+    meta: { cooperativeId },
+  });
+  return loadForReview(cooperativeId);
+}
+
+function registrationNumberTaken(): ConflictError {
+  return new ConflictError(
+    "Registration number already in use",
+    "REGISTRATION_NUMBER_TAKEN",
+  );
 }
 
 // Returns only a short-lived signed link; the file itself is never streamed through the app.
@@ -470,10 +572,13 @@ export async function reinstateCooperative(
   id: string,
   now: Date = new Date(),
 ): Promise<Cooperative> {
-  void now;
   requireAdminAction(actor, "cooperative:suspend", id);
   const cooperative = await loadForReview(id);
   if (cooperative.status !== "SUSPENDED") throw illegalTransition();
+  // The same check as verify: a lapsed certificate cannot come back as VERIFIED.
+  if (cooperative.certificateExpiresAt.getTime() <= now.getTime()) {
+    throw new ValidationError("Certificate has expired", "CERTIFICATE_EXPIRED");
+  }
   return transition(
     actor,
     cooperative,
