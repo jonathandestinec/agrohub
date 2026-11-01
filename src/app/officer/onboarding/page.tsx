@@ -7,7 +7,7 @@ import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
 import { getOwnCooperative } from "@/modules/cooperatives/service";
 import {
   toDocumentSummary,
-  toOfficerCooperative,
+  toOwnCooperative,
 } from "@/modules/cooperatives/views";
 import { STATES } from "@/modules/geo/states";
 import { currentUser } from "@/modules/identity/session";
@@ -42,7 +42,7 @@ async function OnboardingStep() {
   const actor = await requireActorForPage();
   if (actor.role !== "OFFICER") redirect("/");
   const { cooperative, documents } = await getOwnCooperative(actor);
-  const view = toOfficerCooperative(cooperative);
+  const view = toOwnCooperative(cooperative);
   const locale = await getLocale();
   const formatDate = (iso: string) =>
     new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
@@ -54,6 +54,9 @@ async function OnboardingStep() {
   else if (view.status === "SUSPENDED") statusText = t("status.suspended");
   else if (view.submittedAt) {
     statusText = t("status.waiting", { date: formatDate(view.submittedAt) });
+  } else if (view.reviewNote) {
+    // Rejected: submittedAt was cleared, so re-uploading a document sends it back for review.
+    statusText = t("status.changesRequested", { note: view.reviewNote });
   } else statusText = t("status.incomplete");
 
   const uploaded = DOCUMENT_KINDS.filter((kind) =>

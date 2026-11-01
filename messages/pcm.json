@@ -122,7 +122,8 @@
         "incomplete": "",
         "waiting": "",
         "verified": "",
-        "suspended": ""
+        "suspended": "",
+        "changesRequested": ""
       },
       "errors": {
         "ALREADY_OFFICER": "",
@@ -132,6 +133,57 @@
         "FILE_TYPE_MISMATCH": "",
         "FILE_TOO_LARGE": "",
         "NO_FILE": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "INTERNAL": ""
+      }
+    }
+  },
+  "admin": {
+    "cooperatives": {
+      "title": "",
+      "empty": "",
+      "waiting": "",
+      "submitted": "",
+      "back": "",
+      "open": "",
+      "detail": {
+        "registrationNumber": "",
+        "location": "",
+        "status": "",
+        "certificateExpiresAt": "",
+        "submittedAt": "",
+        "notSubmitted": "",
+        "verifiedAt": "",
+        "reviewNote": "",
+        "documentsHeading": "",
+        "noDocument": "",
+        "viewDocument": "",
+        "actionsHeading": "",
+        "reason": ""
+      },
+      "state": {
+        "PENDING": "",
+        "VERIFIED": "",
+        "SUSPENDED": ""
+      },
+      "actions": {
+        "verify": "",
+        "reject": "",
+        "suspend": "",
+        "reinstate": "",
+        "working": "",
+        "done": ""
+      },
+      "errors": {
+        "ILLEGAL_TRANSITION": "",
+        "CERTIFICATE_EXPIRED": "",
+        "NOT_SUBMITTED": "",
+        "DOCUMENTS_MISSING": "",
+        "REASON_REQUIRED": "",
+        "REASON_TOO_LONG": "",
+        "VALIDATION_ERROR": "",
+        "COOPERATIVE_NOT_FOUND": "",
         "UNAUTHENTICATED": "",
         "FORBIDDEN": "",
         "INTERNAL": ""

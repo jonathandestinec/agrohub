@@ -122,7 +122,8 @@
         "incomplete": "Upload all three documents to send your cooperative for review.",
         "waiting": "Waiting for review since {date}",
         "verified": "Your cooperative is verified.",
-        "suspended": "Your cooperative is suspended. Contact support."
+        "suspended": "Your cooperative is suspended. Contact support.",
+        "changesRequested": "Changes requested: {note}"
       },
       "errors": {
         "ALREADY_OFFICER": "You already manage a cooperative.",
@@ -132,6 +133,57 @@
         "FILE_TYPE_MISMATCH": "That file does not look like a PDF, JPG or PNG.",
         "FILE_TOO_LARGE": "That file is larger than 10 MB.",
         "NO_FILE": "Choose a file first.",
+        "UNAUTHENTICATED": "Please sign in again.",
+        "FORBIDDEN": "You cannot do that.",
+        "INTERNAL": "Something went wrong. Please try again."
+      }
+    }
+  },
+  "admin": {
+    "cooperatives": {
+      "title": "Cooperatives awaiting review",
+      "empty": "No cooperatives are waiting for review.",
+      "waiting": "Waiting {days, plural, one {# day} other {# days}}",
+      "submitted": "Submitted {date}",
+      "back": "Back to the queue",
+      "open": "Review",
+      "detail": {
+        "registrationNumber": "Registration number",
+        "location": "Location",
+        "status": "Status",
+        "certificateExpiresAt": "Certificate expires",
+        "submittedAt": "Submitted",
+        "notSubmitted": "Not submitted",
+        "verifiedAt": "Verified",
+        "reviewNote": "Last review note",
+        "documentsHeading": "Documents",
+        "noDocument": "Not uploaded",
+        "viewDocument": "Open document",
+        "actionsHeading": "Decision",
+        "reason": "Reason (shown to the officers, no personal details)"
+      },
+      "state": {
+        "PENDING": "Pending review",
+        "VERIFIED": "Verified",
+        "SUSPENDED": "Suspended"
+      },
+      "actions": {
+        "verify": "Verify",
+        "reject": "Request changes",
+        "suspend": "Suspend",
+        "reinstate": "Reinstate",
+        "working": "Working…",
+        "done": "Done."
+      },
+      "errors": {
+        "ILLEGAL_TRANSITION": "That change is not possible from the current status.",
+        "CERTIFICATE_EXPIRED": "The registration certificate has expired.",
+        "NOT_SUBMITTED": "This cooperative has not been submitted for review.",
+        "DOCUMENTS_MISSING": "One or more documents are missing.",
+        "REASON_REQUIRED": "Write a reason first.",
+        "REASON_TOO_LONG": "The reason must be 500 characters or fewer.",
+        "VALIDATION_ERROR": "Please check the details and try again.",
+        "COOPERATIVE_NOT_FOUND": "Cooperative not found.",
         "UNAUTHENTICATED": "Please sign in again.",
         "FORBIDDEN": "You cannot do that.",
         "INTERNAL": "Something went wrong. Please try again."

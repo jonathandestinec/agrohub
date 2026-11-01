@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type {
   Cooperative,
   CooperativeDocument,
+  CooperativeStatus,
   DocumentKind,
 } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
@@ -12,9 +13,14 @@ import {
   NotFoundError,
   ValidationError,
 } from "@/lib/errors";
+import { sendEmail } from "@/lib/email";
 import { putPrivate, signedUrl } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
+import {
+  cooperativeStatusEmail,
+  type StatusEmailKind,
+} from "@/modules/notifications/emails";
 import {
   ALLOWED_CONTENT_TYPES,
   DOCUMENT_KINDS,
@@ -23,6 +29,11 @@ import {
   documentKind,
   type CreateCooperativeInput,
 } from "./schema";
+import {
+  latestPerKind,
+  toAdminCooperative,
+  type AdminCooperative,
+} from "./views";
 
 export type { Cooperative, CooperativeDocument };
 
@@ -216,4 +227,234 @@ export async function getOwnCooperative(
   if (!cooperative) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
   const { documents, ...row } = cooperative;
   return { cooperative: row, documents };
+}
+
+// ---- Admin verification ----
+
+const DAY_MS = 86_400_000;
+const MAX_REASON_LENGTH = 500;
+
+type Transition = {
+  action: "verify" | "reject" | "suspend" | "reinstate";
+  email: StatusEmailKind;
+  from: CooperativeStatus;
+  to: CooperativeStatus;
+};
+
+function illegalTransition(): ConflictError {
+  return new ConflictError("Illegal status change", "ILLEGAL_TRANSITION");
+}
+
+function cleanReason(reason: string): string {
+  const trimmed = reason.trim();
+  if (trimmed.length === 0) {
+    throw new ValidationError("A reason is required", "REASON_REQUIRED");
+  }
+  if (trimmed.length > MAX_REASON_LENGTH) {
+    throw new ValidationError("Reason is too long", "REASON_TOO_LONG");
+  }
+  return trimmed;
+}
+
+function requireAdminAction(
+  actor: Actor,
+  action: "cooperative:verify" | "cooperative:suspend",
+  cooperativeId: string,
+): void {
+  if (!can(actor, action, { cooperativeId })) throw new ForbiddenError();
+}
+
+async function loadForReview(id: string): Promise<Cooperative> {
+  const cooperative = await prisma.cooperative.findUnique({ where: { id } });
+  if (!cooperative) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
+  return cooperative;
+}
+
+// Conditional update on the expected status: of two concurrent callers exactly one
+// gets count 1, so the audit row and the emails happen once. The audit write cannot
+// join this update in a transaction (recordAudit uses the shared client), so it follows it.
+async function transition(
+  actor: Actor,
+  cooperative: Cooperative,
+  step: Transition,
+  data: Prisma.CooperativeUpdateManyMutationInput,
+  extraWhere: Prisma.CooperativeWhereInput,
+  reason: string | undefined,
+): Promise<Cooperative> {
+  const { count } = await prisma.cooperative.updateMany({
+    where: { id: cooperative.id, status: step.from, ...extraWhere },
+    data,
+  });
+  if (count === 0) throw illegalTransition();
+  await recordAudit({
+    actorId: actor.userId,
+    action: `cooperative.${step.action}`,
+    entity: "cooperative",
+    entityId: cooperative.id,
+    meta: {
+      from: step.from,
+      to: step.to,
+      ...(reason === undefined ? {} : { reason }),
+    },
+  });
+  await notifyOfficers(cooperative, step.email, reason);
+  return loadForReview(cooperative.id);
+}
+
+async function notifyOfficers(
+  cooperative: Cooperative,
+  kind: StatusEmailKind,
+  reason: string | undefined,
+): Promise<void> {
+  const officers = await prisma.membership.findMany({
+    where: {
+      cooperativeId: cooperative.id,
+      role: "OFFICER",
+      status: "ACTIVE",
+    },
+    select: { user: { select: { email: true } } },
+  });
+  const { subject, html } = cooperativeStatusEmail(kind, {
+    cooperativeName: cooperative.name,
+    reason,
+  });
+  // A failed email must not undo a status change that is already recorded.
+  await Promise.allSettled(
+    officers.map((officer) =>
+      sendEmail({ to: officer.user.email, subject, html }),
+    ),
+  );
+}
+
+export async function listVerificationQueue(
+  actor: Actor,
+  now: Date = new Date(),
+): Promise<Array<AdminCooperative & { waitingDays: number }>> {
+  if (!can(actor, "cooperative:queue")) throw new ForbiddenError();
+  const rows = await prisma.cooperative.findMany({
+    where: { status: "PENDING", submittedAt: { not: null } },
+    orderBy: { submittedAt: "asc" },
+    include: { documents: { orderBy: { createdAt: "asc" } } },
+  });
+  return rows.map(({ documents, ...row }) => ({
+    ...toAdminCooperative(row, latestPerKind(documents), now),
+    waitingDays:
+      row.submittedAt === null
+        ? 0
+        : Math.max(
+            0,
+            Math.floor((now.getTime() - row.submittedAt.getTime()) / DAY_MS),
+          ),
+  }));
+}
+
+export async function getCooperativeForReview(
+  actor: Actor,
+  id: string,
+  now: Date = new Date(),
+): Promise<AdminCooperative> {
+  if (!can(actor, "cooperative:read", { cooperativeId: id })) {
+    throw new ForbiddenError();
+  }
+  const row = await prisma.cooperative.findUnique({
+    where: { id },
+    include: { documents: { orderBy: { createdAt: "asc" } } },
+  });
+  if (!row) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
+  const { documents, ...cooperative } = row;
+  return toAdminCooperative(cooperative, latestPerKind(documents), now);
+}
+
+export async function verifyCooperative(
+  actor: Actor,
+  id: string,
+  now: Date = new Date(),
+): Promise<Cooperative> {
+  requireAdminAction(actor, "cooperative:verify", id);
+  const cooperative = await loadForReview(id);
+  if (cooperative.status !== "PENDING") throw illegalTransition();
+  if (cooperative.submittedAt === null) {
+    throw new ValidationError("Not submitted for review", "NOT_SUBMITTED");
+  }
+  const documents = await prisma.cooperativeDocument.findMany({
+    where: { cooperativeId: id },
+    select: { kind: true },
+    distinct: ["kind"],
+  });
+  if (!DOCUMENT_KINDS.every((k) => documents.some((d) => d.kind === k))) {
+    throw new ValidationError("Documents are missing", "DOCUMENTS_MISSING");
+  }
+  if (cooperative.certificateExpiresAt.getTime() <= now.getTime()) {
+    throw new ValidationError("Certificate has expired", "CERTIFICATE_EXPIRED");
+  }
+  return transition(
+    actor,
+    cooperative,
+    { action: "verify", email: "verified", from: "PENDING", to: "VERIFIED" },
+    { status: "VERIFIED", verifiedAt: now, reviewNote: null },
+    { submittedAt: { not: null } },
+    undefined,
+  );
+}
+
+// `now` is accepted for a uniform signature across the transition functions.
+export async function rejectCooperative(
+  actor: Actor,
+  id: string,
+  reason: string,
+  now: Date = new Date(),
+): Promise<Cooperative> {
+  void now;
+  requireAdminAction(actor, "cooperative:verify", id);
+  const note = cleanReason(reason);
+  const cooperative = await loadForReview(id);
+  if (cooperative.status !== "PENDING") throw illegalTransition();
+  return transition(
+    actor,
+    cooperative,
+    { action: "reject", email: "rejected", from: "PENDING", to: "PENDING" },
+    { reviewNote: note, submittedAt: null },
+    { submittedAt: { not: null } },
+    note,
+  );
+}
+
+export async function suspendCooperative(
+  actor: Actor,
+  id: string,
+  reason: string,
+  now: Date = new Date(),
+): Promise<Cooperative> {
+  void now;
+  requireAdminAction(actor, "cooperative:suspend", id);
+  const note = cleanReason(reason);
+  const cooperative = await loadForReview(id);
+  if (cooperative.status !== "VERIFIED") throw illegalTransition();
+  return transition(
+    actor,
+    cooperative,
+    { action: "suspend", email: "suspended", from: "VERIFIED", to: "SUSPENDED" },
+    { status: "SUSPENDED" },
+    {},
+    note,
+  );
+}
+
+export async function reinstateCooperative(
+  actor: Actor,
+  id: string,
+  now: Date = new Date(),
+): Promise<Cooperative> {
+  void now;
+  requireAdminAction(actor, "cooperative:suspend", id);
+  const cooperative = await loadForReview(id);
+  if (cooperative.status !== "SUSPENDED") throw illegalTransition();
+  return transition(
+    actor,
+    cooperative,
+    { action: "reinstate", email: "reinstated", from: "SUSPENDED", to: "VERIFIED" },
+    { status: "VERIFIED" },
+    {},
+    undefined,
+  );
 }

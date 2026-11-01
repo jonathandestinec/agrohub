@@ -24,6 +24,18 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["cooperative:verify", "ADMIN", true],
   ["cooperative:verify", "BOARD_ADMIN", false],
 
+  ["cooperative:suspend", "FARMER", false],
+  ["cooperative:suspend", "OFFICER", false],
+  ["cooperative:suspend", "BUYER", false],
+  ["cooperative:suspend", "ADMIN", true],
+  ["cooperative:suspend", "BOARD_ADMIN", false],
+
+  ["cooperative:queue", "FARMER", false],
+  ["cooperative:queue", "OFFICER", false],
+  ["cooperative:queue", "BUYER", false],
+  ["cooperative:queue", "ADMIN", true],
+  ["cooperative:queue", "BOARD_ADMIN", false],
+
   ["dispute:resolve", "FARMER", false],
   ["dispute:resolve", "OFFICER", false],
   ["dispute:resolve", "BUYER", false],
@@ -75,7 +87,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(40);
+    expect(matrix).toHaveLength(50);
   });
 });
 

@@ -16,6 +16,8 @@ export type Actor = {
 
 export type Action =
   | "cooperative:verify"
+  | "cooperative:suspend"
+  | "cooperative:queue"
   | "price:write"
   | "farmer:approve"
   | "lot:approve"
@@ -48,6 +50,8 @@ export function can(
 ): boolean {
   switch (action) {
     case "cooperative:verify":
+    case "cooperative:suspend":
+    case "cooperative:queue":
     case "dispute:resolve":
       return actor.role === "ADMIN";
     case "price:write":

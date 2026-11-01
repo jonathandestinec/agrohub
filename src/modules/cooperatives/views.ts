@@ -73,3 +73,24 @@ export function toAdminCooperative(
     documents: docs.map(toDocumentSummary),
   };
 }
+
+// What an officer sees of their own cooperative: the review note explains a rejection.
+export type OwnCooperative = OfficerCooperative & { reviewNote: string | null };
+
+export function toOwnCooperative(c: Cooperative): OwnCooperative {
+  return { ...toOfficerCooperative(c), reviewNote: c.reviewNote };
+}
+
+// Uploads are kept as history; reviewers and checks only care about the newest per kind.
+export function latestPerKind(
+  docs: CooperativeDocument[],
+): CooperativeDocument[] {
+  const latest = new Map<DocumentKind, CooperativeDocument>();
+  for (const doc of docs) {
+    const current = latest.get(doc.kind);
+    if (!current || doc.createdAt.getTime() >= current.createdAt.getTime()) {
+      latest.set(doc.kind, doc);
+    }
+  }
+  return [...latest.values()];
+}
