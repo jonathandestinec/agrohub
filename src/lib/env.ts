@@ -14,8 +14,16 @@ const schema = z.object({
 
 export type Env = z.infer<typeof schema>;
 
+// Vercel previews get a new URL per deployment, so a fixed BETTER_AUTH_URL cannot
+// match them. When it is unset, use the URL Vercel provides (branch URL first).
+function withVercelAuthUrl(raw: Record<string, string | undefined>) {
+  if (raw.BETTER_AUTH_URL) return raw;
+  const vercelHost = raw.VERCEL_BRANCH_URL || raw.VERCEL_URL;
+  return vercelHost ? { ...raw, BETTER_AUTH_URL: `https://${vercelHost}` } : raw;
+}
+
 export function parseEnv(raw: Record<string, string | undefined>): Env {
-  const result = schema.safeParse(raw);
+  const result = schema.safeParse(withVercelAuthUrl(raw));
   if (!result.success) {
     const problems = result.error.issues
       .map((issue) => `${issue.path.join(".")}: ${issue.message}`)

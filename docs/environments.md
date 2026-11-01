@@ -11,7 +11,7 @@ Three environments. Secrets live only in environment variables, validated at sta
 | Email | Fake outbox (`RESEND_API_KEY` empty) | Resend | Resend |
 | Data | Seed/dev data | Seeded demo data | Real data, backups with a tested restore |
 
-Required variables in every environment: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CRON_SECRET`, `APP_ENV`. `RESEND_API_KEY` is required wherever real email is sent. Staging must never hold a live Paystack key.
+Required variables in every environment: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CRON_SECRET`, `APP_ENV`. `RESEND_API_KEY` is required wherever real email is sent. Staging must never hold a live Paystack key. On Vercel, `BETTER_AUTH_URL` may be left unset: `src/lib/env.ts` then uses `https://$VERCEL_BRANCH_URL` (or `$VERCEL_URL`), since each preview has its own URL. Set it explicitly for production's custom domain. Staging's `DATABASE_URL` is the pooled URL of the Neon `staging` branch in project `agrohub`. Run `prisma migrate deploy` against its direct (non-pooled) URL.
 
 ## Health check
 
