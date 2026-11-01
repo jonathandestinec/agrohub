@@ -152,7 +152,7 @@ describe("joinViaLink", () => {
     const first = await joinViaLink({ userId: user.id }, await shareableInvite(coopA), PROFILE, T);
     await prisma.membership.update({
       where: { id: first.membershipId },
-      data: { status: "REMOVED", approvedAt: T },
+      data: { status: "LEFT", approvedAt: T },
     });
     const profileBefore = await prisma.farmerProfile.findUniqueOrThrow({ where: { userId: user.id } });
     const again = await joinViaLink(

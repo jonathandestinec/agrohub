@@ -190,6 +190,38 @@
         "COOPERATIVE_NOT_FOUND": "We could not find your cooperative.",
         "INTERNAL": "Something went wrong. Please try again."
       }
+    },
+    "farmers": {
+      "title": "Your farmers",
+      "intro": "Approve farmers who joined through your invite link, and manage the farmers already in your cooperative.",
+      "pendingHeading": "Waiting for approval",
+      "pendingEmpty": "No farmers are waiting for approval.",
+      "activeHeading": "Members",
+      "activeEmpty": "No approved farmers yet.",
+      "details": "{size} hectares · {crops} · {lga}, {state}",
+      "bankAdded": "Bank account added",
+      "bankMissing": "No bank account yet",
+      "approve": "Approve",
+      "approving": "Approving…",
+      "reject": "Reject",
+      "rejectReasonLabel": "Reason (the farmer is told this)",
+      "rejectConfirm": "Send rejection",
+      "rejecting": "Rejecting…",
+      "remove": "Remove",
+      "removeWarning": "This farmer will stop being a member and cannot join this cooperative again. Their records are kept for accounting.",
+      "removeReasonLabel": "Reason (the farmer is told this)",
+      "removeConfirm": "Yes, remove this farmer",
+      "removing": "Removing…",
+      "cancel": "Cancel",
+      "errors": {
+        "VALIDATION_ERROR": "Write a reason of up to 500 characters.",
+        "ILLEGAL_TRANSITION": "This farmer has already been dealt with. Refresh the page.",
+        "UNFINISHED_ORDERS": "This farmer still has orders in progress. Try again when they are finished.",
+        "MEMBERSHIP_NOT_FOUND": "We could not find this farmer.",
+        "UNAUTHENTICATED": "Please sign in again.",
+        "FORBIDDEN": "You cannot do that.",
+        "INTERNAL": "Something went wrong. Please try again."
+      }
     }
   },
   "admin": {
@@ -328,7 +360,18 @@
       "UNKNOWN_BANK": "Choose a bank from the list.",
       "INVALID_ACCOUNT_NUMBER": "Enter the 10-digit account number.",
       "INVALID_BANK_CODE": "Choose a bank from the list.",
-      "INTERNAL": "Something went wrong. Please try again."
+      "INTERNAL": "Something went wrong. Please try again.",
+      "REMOVED_FROM_COOPERATIVE": "You cannot join this cooperative again. You can join a different one.",
+      "UNFINISHED_ORDERS": "You cannot leave while orders for your produce are still in progress.",
+      "ILLEGAL_TRANSITION": "Your membership has changed. Refresh the page."
+    },
+    "leave": {
+      "heading": "Leave this cooperative",
+      "button": "Leave cooperative",
+      "warning": "If you leave, you stop being a member of this cooperative. Your records are kept for accounting. You cannot leave while orders for your produce are still in progress.",
+      "confirm": "Yes, leave the cooperative",
+      "cancel": "Stay in the cooperative",
+      "leaving": "Leaving…"
     }
   }
 }

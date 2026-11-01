@@ -5,8 +5,8 @@ import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { UnauthenticatedError } from "@/lib/errors";
 import { setOwnFarmerBankAccount } from "@/modules/banking/service";
 import { splitCrops } from "@/modules/farmers/schema";
-import { joinViaLink } from "@/modules/farmers/service";
-import { currentUser } from "@/modules/identity/session";
+import { joinViaLink, leaveCooperative } from "@/modules/farmers/service";
+import { currentUser, requireActor } from "@/modules/identity/session";
 
 function text(form: FormData, name: string): string {
   const value = form.get(name);
@@ -57,6 +57,18 @@ export async function setFarmerBankAccountAction(
     });
     revalidatePath("/farmer");
     return { ok: true, data: result };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+// Self-scoped: the service acts only on the signed-in farmer's own ACTIVE membership.
+export async function leaveCooperativeAction(): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await leaveCooperative(actor);
+    revalidatePath("/farmer");
+    return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);
   }

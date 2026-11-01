@@ -4,6 +4,7 @@ import {
   bankChangeConfirmEmail,
   cooperativeStatusEmail,
   farmerInviteEmail,
+  farmerStatusEmail,
 } from "@/modules/notifications/emails";
 
 const kinds = ["verified", "rejected", "suspended", "reinstated"] as const;
@@ -106,5 +107,29 @@ describe("farmerInviteEmail", () => {
   it("never uses the word escrow", () => {
     const { subject, html } = farmerInviteEmail({ cooperativeName: "Zaria Growers", link: "http://x/join/t" });
     expect(`${subject} ${html}`.toLowerCase()).not.toContain("escrow");
+  });
+});
+
+describe("farmerStatusEmail", () => {
+  it("escapes the cooperative name and the reason", () => {
+    const { html } = farmerStatusEmail("removed", {
+      cooperativeName: "A & B <Farmers>",
+      reason: "<script>x</script>",
+    });
+    expect(html).toContain("A &amp; B &lt;Farmers&gt;");
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).not.toContain("<script>");
+  });
+
+  it("shows the reason for rejection and removal but has none on approval", () => {
+    expect(farmerStatusEmail("rejected", { cooperativeName: "Z", reason: "Too far" }).html).toContain("Too far");
+    expect(farmerStatusEmail("approved", { cooperativeName: "Z" }).html).not.toContain("Reason");
+  });
+
+  it("never uses the word escrow", () => {
+    for (const kind of ["approved", "rejected", "removed"] as const) {
+      const { subject, html } = farmerStatusEmail(kind, { cooperativeName: "Zaria Growers", reason: "r" });
+      expect(`${subject} ${html}`.toLowerCase()).not.toContain("escrow");
+    }
   });
 });

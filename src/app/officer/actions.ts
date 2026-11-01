@@ -17,6 +17,7 @@ import {
 } from "@/modules/cooperatives/invites";
 import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
 import { setCooperativeBankAccount } from "@/modules/banking/service";
+import { approveFarmer, rejectFarmer, removeFarmer } from "@/modules/farmers/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
 
 function text(form: FormData, name: string): string {
@@ -114,6 +115,57 @@ export async function inviteFarmerByEmailAction(
     const actor = await requireActor();
     if (actor.cooperativeId === null) throw new ForbiddenError();
     await inviteFarmerByEmail(actor, actor.cooperativeId, text(form, "email"));
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+// Server actions take only the membership id (and a reason): the cooperative is read from
+// the membership row by the service, never from the client.
+function membershipIdOf(input: { membershipId: string }): string {
+  return typeof input?.membershipId === "string" ? input.membershipId : "";
+}
+
+function reasonOf(input: { reason?: string }): string {
+  return typeof input?.reason === "string" ? input.reason : "";
+}
+
+export async function approveFarmerAction(input: {
+  membershipId: string;
+}): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await approveFarmer(actor, membershipIdOf(input));
+    revalidatePath("/officer/farmers");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function rejectFarmerAction(input: {
+  membershipId: string;
+  reason: string;
+}): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await rejectFarmer(actor, membershipIdOf(input), reasonOf(input));
+    revalidatePath("/officer/farmers");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function removeFarmerAction(input: {
+  membershipId: string;
+  reason: string;
+}): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await removeFarmer(actor, membershipIdOf(input), reasonOf(input));
+    revalidatePath("/officer/farmers");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);

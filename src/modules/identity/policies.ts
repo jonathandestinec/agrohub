@@ -20,6 +20,8 @@ export type Action =
   | "cooperative:queue"
   | "price:write"
   | "farmer:approve"
+  | "farmer:remove"
+  | "farmer:leave"
   | "lot:approve"
   | "dispute:resolve"
   | "cooperative:read"
@@ -60,6 +62,15 @@ export function can(
       return actor.role === "BOARD_ADMIN";
     case "farmer:approve":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "farmer:remove":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "farmer:leave":
+      // A farmer leaves only their own membership.
+      return (
+        actor.role === "FARMER" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
     case "lot:approve":
       if (actor.role === "OFFICER") {
         return (

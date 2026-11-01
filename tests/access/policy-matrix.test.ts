@@ -92,16 +92,52 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["invite:manage", "BUYER", false],
   ["invite:manage", "ADMIN", false],
   ["invite:manage", "BOARD_ADMIN", false],
+
+  ["farmer:remove", "FARMER", false],
+  ["farmer:remove", "OFFICER", true],
+  ["farmer:remove", "BUYER", false],
+  ["farmer:remove", "ADMIN", false],
+  ["farmer:remove", "BOARD_ADMIN", false],
+
+  // farmer:leave is checked against a resource the actor owns (see below).
+  ["farmer:leave", "FARMER", true],
+  ["farmer:leave", "OFFICER", false],
+  ["farmer:leave", "BUYER", false],
+  ["farmer:leave", "ADMIN", false],
+  ["farmer:leave", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
   it.each(matrix)("%s as %s -> %s", (action, role, expected) => {
     const cooperativeId = role === "OFFICER" || role === "FARMER" ? COOP : null;
-    expect(can(actor(role, cooperativeId), action, own)).toBe(expected);
+    const resource =
+      action === "farmer:leave" ? { ...own, ownerUserId: "user-1" } : own;
+    expect(can(actor(role, cooperativeId), action, resource)).toBe(expected);
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(60);
+    expect(matrix).toHaveLength(70);
+  });
+});
+
+describe("farmer removal and leaving", () => {
+  it("denies an officer of another cooperative farmer:remove", () => {
+    expect(can(actor("OFFICER", OTHER_COOP), "farmer:remove", own)).toBe(false);
+  });
+
+  it("denies farmer:remove with no resource or a null cooperativeId", () => {
+    expect(can(actor("OFFICER", COOP), "farmer:remove")).toBe(false);
+    expect(can(actor("OFFICER", null), "farmer:remove", {})).toBe(false);
+  });
+
+  it("lets a farmer leave only as the owner of the membership", () => {
+    const farmer = actor("FARMER", COOP);
+    expect(can(farmer, "farmer:leave", { ownerUserId: "user-1" })).toBe(true);
+    expect(can(farmer, "farmer:leave", { ownerUserId: "farmer-9" })).toBe(false);
+    expect(can(farmer, "farmer:leave")).toBe(false);
+    expect(
+      can(actor("OFFICER", COOP), "farmer:leave", { ownerUserId: "user-1" }),
+    ).toBe(false);
   });
 });
 

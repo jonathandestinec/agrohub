@@ -190,6 +190,38 @@
         "COOPERATIVE_NOT_FOUND": "",
         "INTERNAL": ""
       }
+    },
+    "farmers": {
+      "title": "",
+      "intro": "",
+      "pendingHeading": "",
+      "pendingEmpty": "",
+      "activeHeading": "",
+      "activeEmpty": "",
+      "details": "",
+      "bankAdded": "",
+      "bankMissing": "",
+      "approve": "",
+      "approving": "",
+      "reject": "",
+      "rejectReasonLabel": "",
+      "rejectConfirm": "",
+      "rejecting": "",
+      "remove": "",
+      "removeWarning": "",
+      "removeReasonLabel": "",
+      "removeConfirm": "",
+      "removing": "",
+      "cancel": "",
+      "errors": {
+        "VALIDATION_ERROR": "",
+        "ILLEGAL_TRANSITION": "",
+        "UNFINISHED_ORDERS": "",
+        "MEMBERSHIP_NOT_FOUND": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "INTERNAL": ""
+      }
     }
   },
   "admin": {
@@ -328,7 +360,18 @@
       "UNKNOWN_BANK": "",
       "INVALID_ACCOUNT_NUMBER": "",
       "INVALID_BANK_CODE": "",
-      "INTERNAL": ""
+      "INTERNAL": "",
+      "REMOVED_FROM_COOPERATIVE": "",
+      "UNFINISHED_ORDERS": "",
+      "ILLEGAL_TRANSITION": ""
+    },
+    "leave": {
+      "heading": "",
+      "button": "",
+      "warning": "",
+      "confirm": "",
+      "cancel": "",
+      "leaving": ""
     }
   }
 }

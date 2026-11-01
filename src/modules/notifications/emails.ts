@@ -93,3 +93,34 @@ export function bankChangeAdminAlertEmail(input: {
     html: `<p>A confirmed bank account change for <strong>${escapeHtml(input.ownerName)}</strong> takes effect at ${formatUtc(input.effectiveAt)}.</p><p>New account name: ${escapeHtml(input.accountName)}<br>Bank: ${escapeHtml(input.bankName)}</p><p>If this looks wrong, act before it takes effect.</p>`,
   };
 }
+
+// ---- Farmer membership decisions. Reasons are written by an officer and escaped. ----
+
+export type FarmerStatusEmailKind = "approved" | "rejected" | "removed";
+
+export function farmerStatusEmail(
+  kind: FarmerStatusEmailKind,
+  input: { cooperativeName: string; reason?: string },
+): { subject: string; html: string } {
+  const name = escapeHtml(input.cooperativeName);
+  const reasonLine = input.reason
+    ? `<p><strong>Reason:</strong> ${escapeHtml(input.reason)}</p>`
+    : "";
+  switch (kind) {
+    case "approved":
+      return {
+        subject: "You have been approved on AgroHub",
+        html: `<p>Good news. The officer of <strong>${name}</strong> has approved you as a member on AgroHub.</p><p>Sign in to see your farmer page.</p>`,
+      };
+    case "rejected":
+      return {
+        subject: "Your request to join a cooperative was not approved",
+        html: `<p>The officer of <strong>${name}</strong> did not approve your request to join.</p>${reasonLine}<p>If you think this is a mistake, please speak to your officer.</p>`,
+      };
+    case "removed":
+      return {
+        subject: "You have been removed from a cooperative on AgroHub",
+        html: `<p>The officer of <strong>${name}</strong> has removed you from the cooperative on AgroHub.</p>${reasonLine}<p>Your records are kept for accounting. If you think this is a mistake, please speak to your officer.</p>`,
+      };
+  }
+}

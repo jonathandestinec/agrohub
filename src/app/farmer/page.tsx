@@ -6,6 +6,7 @@ import { withNext } from "@/lib/safe-next";
 import { getOwnFarmerOverview } from "@/modules/farmers/service";
 import { currentUser } from "@/modules/identity/session";
 import { FarmerBankSection } from "./bank-section";
+import { LeaveSection } from "./leave-section";
 
 // A PENDING farmer has no Actor yet, so this page works from the signed-in user and the
 // self-scoped farmer overview.
@@ -62,6 +63,7 @@ async function FarmerHome() {
         </dl>
       </section>
       <FarmerBankSection bank={overview.bank} canChange={holding} />
+      {membership.status === "ACTIVE" ? <LeaveSection /> : null}
     </AuthCard>
   );
 }
