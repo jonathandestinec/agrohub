@@ -1,11 +1,13 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DocumentKind } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
-import { fakeOutbox } from "@/lib/email";
+import { fakeOutbox, sendEmail } from "@/lib/email";
+import { fakeStorage } from "@/lib/storage";
 import { ConflictError, ForbiddenError, ValidationError } from "@/lib/errors";
 import {
   listVerificationQueue,
   reinstateCooperative,
+  uploadDocument,
   rejectCooperative,
   suspendCooperative,
   verifyCooperative,
@@ -17,7 +19,13 @@ import {
   createTestUser,
 } from "./helpers";
 
-const NOW = new Date("2031-06-10T12:00:00Z");
+// Wraps the real sendEmail so a single test can make it reject.
+vi.mock("@/lib/email", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/email")>();
+  return { ...actual, sendEmail: vi.fn(actual.sendEmail) };
+});
+
+const NOW =new Date("2031-06-10T12:00:00Z");
 const KINDS: DocumentKind[] = [
   "REGISTRATION_CERTIFICATE",
   "BYLAWS",
@@ -307,5 +315,54 @@ describe("suspend and reinstate", () => {
     await expect(reinstateCooperative(officer, coop.id)).rejects.toBeInstanceOf(
       ForbiddenError,
     );
+  });
+});
+
+describe("email failures", () => {
+  it("keeps the transition, logs the failure and never logs the recipient", async () => {
+    const coop = await submittedCooperative();
+    await addMember(coop.id, "o1");
+    vi.mocked(sendEmail).mockRejectedValueOnce(
+      new Error("smtp down"),
+    );
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const result = await verifyCooperative(admin, coop.id, NOW);
+      expect(result.status).toBe("VERIFIED");
+      expect(spy).toHaveBeenCalledTimes(1);
+      const args = spy.mock.calls[0];
+      expect(JSON.stringify(args)).toContain(coop.id);
+      expect(JSON.stringify(args)).not.toContain("o1@example.com");
+      expect(await auditRows(coop.id)).toHaveLength(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+describe("re-submission after rejection", () => {
+  it("returns to the queue when an officer re-uploads a document", async () => {
+    const coop = await submittedCooperative();
+    await addMember(coop.id, "o1");
+    await rejectCooperative(admin, coop.id, "Bylaws unreadable", NOW);
+    expect(await listVerificationQueue(admin, NOW)).toHaveLength(0);
+
+    fakeStorage.clear();
+    const officer: Actor = {
+      userId: "o1",
+      role: "OFFICER",
+      cooperativeId: coop.id,
+      twoFactorEnabled: false,
+    };
+    await uploadDocument(officer, coop.id, {
+      kind: "BYLAWS",
+      body: Buffer.from("%PDF-1.7 new bylaws"),
+      contentType: "application/pdf",
+    });
+
+    const after = await prisma.cooperative.findUnique({ where: { id: coop.id } });
+    expect(after?.submittedAt).not.toBeNull();
+    const queue = await listVerificationQueue(admin, new Date());
+    expect(queue.map((c) => c.id)).toEqual([coop.id]);
   });
 });

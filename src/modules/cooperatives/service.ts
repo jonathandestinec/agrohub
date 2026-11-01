@@ -301,29 +301,54 @@ async function transition(
   return loadForReview(cooperative.id);
 }
 
+function logEmailFailure(
+  cooperativeId: string,
+  kind: StatusEmailKind,
+  err: unknown,
+): void {
+  // Never log the recipient, the html or the reason.
+  console.error("cooperative status email failed", {
+    cooperativeId,
+    kind,
+    error:
+      err instanceof Error
+        ? { name: err.name, message: err.message }
+        : "non-Error thrown",
+  });
+}
+
+// Runs after the status change has committed, so nothing here may throw to the caller.
 async function notifyOfficers(
   cooperative: Cooperative,
   kind: StatusEmailKind,
   reason: string | undefined,
 ): Promise<void> {
-  const officers = await prisma.membership.findMany({
-    where: {
-      cooperativeId: cooperative.id,
-      role: "OFFICER",
-      status: "ACTIVE",
-    },
-    select: { user: { select: { email: true } } },
-  });
-  const { subject, html } = cooperativeStatusEmail(kind, {
-    cooperativeName: cooperative.name,
-    reason,
-  });
-  // A failed email must not undo a status change that is already recorded.
-  await Promise.allSettled(
-    officers.map((officer) =>
-      sendEmail({ to: officer.user.email, subject, html }),
-    ),
-  );
+  try {
+    const officers = await prisma.membership.findMany({
+      where: {
+        cooperativeId: cooperative.id,
+        role: "OFFICER",
+        status: "ACTIVE",
+      },
+      select: { user: { select: { email: true } } },
+    });
+    const { subject, html } = cooperativeStatusEmail(kind, {
+      cooperativeName: cooperative.name,
+      reason,
+    });
+    const results = await Promise.allSettled(
+      officers.map((officer) =>
+        sendEmail({ to: officer.user.email, subject, html }),
+      ),
+    );
+    for (const result of results) {
+      if (result.status === "rejected") {
+        logEmailFailure(cooperative.id, kind, result.reason);
+      }
+    }
+  } catch (err) {
+    logEmailFailure(cooperative.id, kind, err);
+  }
 }
 
 export async function listVerificationQueue(
