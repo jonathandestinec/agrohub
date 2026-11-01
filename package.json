@@ -9,9 +9,15 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "next typegen && tsc --noEmit",
-    "db:up": "docker compose up -d"
+    "db:up": "docker compose up -d",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "better-auth": "^1.7.14",
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -24,9 +30,11 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "auth": "^1.7.14",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "fast-check": "^4.10.2",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.5"

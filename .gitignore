@@ -39,3 +39,6 @@ next-env.d.ts
 
 # local agent workspace
 .superpowers/
+
+# generated Prisma client (rebuilt by `npm install` / `npm run db:generate`)
+/src/generated/

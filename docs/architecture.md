@@ -138,3 +138,7 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - @playwright/test: end-to-end tests; browsers are installed separately when first needed.
 - fast-check (dev): property-based tests, e.g. money splits always sum exactly to the total.
 - resend: sends transactional email (verification and later notifications) in staging and production; local and tests use the in-memory fake outbox.
+- prisma (dev) and @prisma/client: schema, migrations and the typed database client; Prisma 7 reads `prisma.config.ts` and never loads `.env`.
+- @prisma/adapter-pg: the node-postgres driver adapter Prisma 7 needs to connect to Postgres (local Docker and Neon).
+- better-auth: email and password login, email verification and sessions (two-factor arrives in Task 6), stored through its Prisma adapter.
+- auth (dev): the Better Auth CLI; `auth generate` writes Better Auth's models into `prisma/schema.prisma`.
