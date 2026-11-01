@@ -114,3 +114,19 @@ model TwoFactor {
   @@index([userId])
   @@map("twoFactor")
 }
+
+// Append-only: a migration trigger rejects UPDATE, DELETE and TRUNCATE.
+// actorId is deliberately not a foreign key so user deletion never collides
+// with the immutability trigger.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@map("audit_log")
+}
