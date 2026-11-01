@@ -14,12 +14,20 @@ vi.mock("resend", () => ({
   },
 }));
 
-import { fakeOutbox, selectTransport, sendEmail, sendEmailWith } from "@/lib/email";
+type EmailModule = typeof import("@/lib/email");
 
 const msg = { to: "a@b.com", subject: "Hi", html: "<p>x</p>" };
 
 describe("email adapter", () => {
-  beforeEach(() => {
+  let fakeOutbox: EmailModule["fakeOutbox"];
+  let selectTransport: EmailModule["selectTransport"];
+  let sendEmail: EmailModule["sendEmail"];
+  let sendEmailWith: EmailModule["sendEmailWith"];
+
+  beforeEach(async () => {
+    // Fresh module per test so the lazily cached Resend client never leaks between tests.
+    vi.resetModules();
+    ({ fakeOutbox, selectTransport, sendEmail, sendEmailWith } = await import("@/lib/email"));
     fakeOutbox.clear();
     resendMocks.constructor.mockClear();
     resendMocks.send.mockReset();
