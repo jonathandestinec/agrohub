@@ -11,6 +11,7 @@ export type Actor = {
   userId: string;
   role: Role;
   cooperativeId: string | null;
+  twoFactorEnabled: boolean;
 };
 
 export type Action =

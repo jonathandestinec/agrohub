@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { setActiveRole } from "@/app/actions/active-role";
 import type { Role } from "@/modules/identity/policies";
@@ -22,6 +22,7 @@ export function RoleSwitcher({
   const roles = useTranslations("roles");
   const [pending, startTransition] = useTransition();
   const selectId = useId();
+  const [failed, setFailed] = useState(false);
 
   return (
     <div className="flex items-center gap-2">
@@ -35,7 +36,8 @@ export function RoleSwitcher({
         onChange={(event) => {
           const id = event.target.value;
           startTransition(async () => {
-            await setActiveRole(id);
+            const result = await setActiveRole(id);
+            setFailed(!result.ok);
           });
         }}
         className="min-h-11 rounded-md border border-border bg-surface px-3 text-base text-fg"
@@ -46,6 +48,11 @@ export function RoleSwitcher({
           </option>
         ))}
       </select>
+      {failed ? (
+        <span role="alert" className="text-sm text-fg">
+          {t("error")}
+        </span>
+      ) : null}
     </div>
   );
 }

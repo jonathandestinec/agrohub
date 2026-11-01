@@ -8,7 +8,8 @@
     "intro": "Farmer cooperatives selling together, with payment held until delivery is confirmed."
   },
   "roleSwitcher": {
-    "label": "Acting as"
+    "label": "Acting as",
+    "error": "Could not switch role. Please try again."
   },
   "roles": {
     "FARMER": "Farmer",

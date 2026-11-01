@@ -8,7 +8,8 @@
     "intro": ""
   },
   "roleSwitcher": {
-    "label": ""
+    "label": "",
+    "error": ""
   },
   "roles": {
     "FARMER": "",

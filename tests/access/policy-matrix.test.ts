@@ -10,7 +10,7 @@ const COOP = "coop-1";
 const OTHER_COOP = "coop-2";
 
 function actor(role: Role, cooperativeId: string | null = null): Actor {
-  return { userId: "user-1", role, cooperativeId };
+  return { userId: "user-1", role, cooperativeId, twoFactorEnabled: false };
 }
 
 // Every action by every role, with a resource that satisfies the scope rules

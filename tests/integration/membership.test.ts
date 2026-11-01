@@ -31,6 +31,51 @@ afterAll(async () => {
 });
 
 describe("addMembership", () => {
+  it("lets a farmer whose FARMER membership is LEFT join another cooperative", async () => {
+    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: "c1" });
+    await prisma.membership.updateMany({
+      where: { userId: "u1", role: "FARMER" },
+      data: { status: "LEFT" },
+    });
+    const next = await addMembership({
+      userId: "u1",
+      role: "FARMER",
+      cooperativeId: "c2",
+    });
+    expect(next).toMatchObject({ cooperativeId: "c2", status: "ACTIVE" });
+  });
+
+  it("rejects a second PENDING FARMER membership", async () => {
+    await addMembership({
+      userId: "u1",
+      role: "FARMER",
+      cooperativeId: "c1",
+      status: "PENDING",
+    });
+    await expect(
+      addMembership({
+        userId: "u1",
+        role: "FARMER",
+        cooperativeId: "c2",
+        status: "PENDING",
+      }),
+    ).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it("writes exactly one membership.grant audit row", async () => {
+    const m = await addMembership({ userId: "u1", role: "BUYER" });
+    const rows = await prisma.auditLog.findMany({
+      where: { entityId: m.id },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      action: "membership.grant",
+      entity: "membership",
+      actorId: null,
+      meta: { role: "BUYER", status: "ACTIVE" },
+    });
+  });
+
   it("creates a membership", async () => {
     const m = await addMembership({
       userId: "u1",

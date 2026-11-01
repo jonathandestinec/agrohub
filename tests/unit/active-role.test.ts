@@ -8,6 +8,8 @@ function m(id: string, role: Membership["role"]): Membership {
     userId: "u1",
     role,
     cooperativeId: role === "FARMER" || role === "OFFICER" ? "c1" : null,
+    status: "ACTIVE",
+    approvedAt: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),
   } as Membership;
 }

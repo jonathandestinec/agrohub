@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
-import type { Membership } from "@/generated/prisma/client";
+import type { Membership, MembershipStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
+import { recordAudit } from "@/modules/audit/audit";
 import { ConflictError, ForbiddenError, ValidationError } from "@/lib/errors";
 import type { Role } from "./policies";
 
@@ -15,11 +16,19 @@ const ROLES = [
   "BOARD_ADMIN",
 ] as const satisfies readonly Role[];
 
+const STATUSES = [
+  "PENDING",
+  "ACTIVE",
+  "REMOVED",
+  "LEFT",
+] as const satisfies readonly MembershipStatus[];
+
 const membershipInput = z
   .object({
     userId: z.string().min(1),
     role: z.enum(ROLES),
     cooperativeId: z.string().min(1).optional(),
+    status: z.enum(STATUSES).default("ACTIVE"),
   })
   .superRefine((value, ctx) => {
     const needsCooperative =
@@ -46,6 +55,7 @@ export async function addMembership(input: {
   userId: string;
   role: Role;
   cooperativeId?: string;
+  status?: MembershipStatus;
 }): Promise<Membership> {
   const parsed = membershipInput.safeParse(input);
   if (!parsed.success) {
@@ -53,11 +63,19 @@ export async function addMembership(input: {
       parsed.error.issues.map((issue) => issue.message).join("; "),
     );
   }
-  const { userId, role, cooperativeId } = parsed.data;
+  const { userId, role, cooperativeId, status } = parsed.data;
   try {
-    return await prisma.membership.create({
-      data: { userId, role, cooperativeId: cooperativeId ?? null },
+    const membership = await prisma.membership.create({
+      data: { userId, role, cooperativeId: cooperativeId ?? null, status },
     });
+    await recordAudit({
+      actorId: null,
+      action: "membership.grant",
+      entity: "membership",
+      entityId: membership.id,
+      meta: { role, status },
+    });
+    return membership;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -71,14 +89,16 @@ export async function addMembership(input: {
   }
 }
 
-// Reads the caller's own memberships.
+// Self-scoped lookup that precedes an Actor: it reads only the given user's own
+// ACTIVE memberships, so there is no Actor to check yet.
 export async function listMemberships(userId: string): Promise<Membership[]> {
   return prisma.membership.findMany({
-    where: { userId },
+    where: { userId, status: "ACTIVE" },
     orderBy: { createdAt: "asc" },
   });
 }
 
+// Self-scoped lookup that precedes an Actor (it is how the active role is chosen).
 // Ownership check: a missing membership and another user's membership look the
 // same to the caller, so ids cannot be probed.
 export async function getOwnedMembership(

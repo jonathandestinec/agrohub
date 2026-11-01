@@ -22,6 +22,8 @@ model User {
   accounts          Account[]
   memberships       Membership[]
 
+  phoneConfirmed Boolean @default(false)
+
   twoFactorEnabled Boolean?    @default(false)
   twofactors       TwoFactor[]
 
@@ -85,14 +87,23 @@ enum Role {
   BOARD_ADMIN
 }
 
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  REMOVED
+  LEFT
+}
+
 model Membership {
-  id            String   @id @default(cuid())
+  id            String           @id @default(cuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   role          Role
   // Plain string until the Cooperative model exists. Null for BUYER, ADMIN, BOARD_ADMIN.
   cooperativeId String?
-  createdAt     DateTime @default(now())
+  status        MembershipStatus @default(ACTIVE)
+  approvedAt    DateTime?
+  createdAt     DateTime         @default(now())
 
   // Declared so Prisma does not drop it; the migration creates it as NULLS NOT DISTINCT.
   @@unique([userId, role, cooperativeId], map: "membership_user_role_cooperative_key")

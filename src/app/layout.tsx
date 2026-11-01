@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { pickActiveMembership } from "@/modules/identity/active-role";
 import { listMemberships } from "@/modules/identity/service";
+import { toSwitcherMembership } from "@/modules/identity/views";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,11 +29,7 @@ async function SwitcherSlot() {
   return (
     <RoleSwitcher
       activeId={active.id}
-      memberships={memberships.map((m) => ({
-        id: m.id,
-        role: m.role,
-        cooperativeId: m.cooperativeId,
-      }))}
+      memberships={memberships.map(toSwitcherMembership)}
     />
   );
 }
