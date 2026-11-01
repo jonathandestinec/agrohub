@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
+import { twoFactor } from "better-auth/plugins/two-factor";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
@@ -15,6 +16,7 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// WARNING: never run the Better Auth CLI with the repo root as cwd (it loads .env); use `npm run auth:generate`.
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
@@ -35,6 +37,7 @@ export const auth = betterAuth({
       });
     },
   },
+  plugins: [twoFactor({ issuer: "AgroHub" })],
   user: {
     additionalFields: {
       // Private contact detail: kept out of every Better Auth response and session payload.

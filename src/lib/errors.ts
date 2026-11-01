@@ -19,3 +19,13 @@ export class ConflictError extends Error {
     this.code = code;
   }
 }
+
+export class ForbiddenError extends Error {
+  readonly code: string;
+
+  constructor(code = "FORBIDDEN", message = code) {
+    super(message);
+    this.name = "ForbiddenError";
+    this.code = code;
+  }
+}

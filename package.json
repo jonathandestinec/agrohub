@@ -12,6 +12,7 @@
     "db:up": "docker compose up -d",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
+    "auth:generate": "node scripts/auth-generate.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
