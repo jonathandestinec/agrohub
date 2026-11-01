@@ -130,3 +130,13 @@ model AuditLog {
   @@index([entity, entityId])
   @@map("audit_log")
 }
+
+// One row per (job, time slot) that has started. The unique key is what makes
+// scheduled jobs safe to run twice; see src/lib/jobs/run-once.ts.
+model JobRun {
+  id    String   @id @default(cuid())
+  key   String   @unique
+  ranAt DateTime @default(now())
+
+  @@map("job_run")
+}
