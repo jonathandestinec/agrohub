@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -9,18 +8,19 @@ datasource db {
 }
 
 model User {
-  id                String    @id
+  id                String       @id
   name              String
   email             String
-  emailVerified     Boolean   @default(false)
+  emailVerified     Boolean      @default(false)
   image             String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
   phone             String
   consentAcceptedAt DateTime
-  locale            String    @default("en")
+  locale            String       @default("en")
   sessions          Session[]
   accounts          Account[]
+  memberships       Membership[]
 
   @@unique([email])
   @@map("user")
@@ -72,4 +72,27 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+enum Role {
+  FARMER
+  OFFICER
+  BUYER
+  ADMIN
+  BOARD_ADMIN
+}
+
+model Membership {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          Role
+  // Plain string until the Cooperative model exists. Null for BUYER, ADMIN, BOARD_ADMIN.
+  cooperativeId String?
+  createdAt     DateTime @default(now())
+
+  // Declared so Prisma does not drop it; the migration creates it as NULLS NOT DISTINCT.
+  @@unique([userId, role, cooperativeId], map: "membership_user_role_cooperative_key")
+  @@index([userId])
+  @@map("membership")
 }

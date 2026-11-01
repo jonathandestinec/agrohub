@@ -19,6 +19,11 @@ export default defineConfig({
       },
       {
         extends: true,
+        // Pure policy checks; no database.
+        test: { name: "access", include: ["tests/access/**/*.test.ts"] },
+      },
+      {
+        extends: true,
         test: {
           name: "integration",
           include: ["tests/integration/**/*.test.ts"],
