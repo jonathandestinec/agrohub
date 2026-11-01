@@ -136,3 +136,4 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - zod: runtime validation of environment variables and, later, service input schemas.
 - vitest: unit and integration test runner (resolves the `@/` alias natively).
 - @playwright/test: end-to-end tests; browsers are installed separately when first needed.
+- fast-check (dev): property-based tests, e.g. money splits always sum exactly to the total.
