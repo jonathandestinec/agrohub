@@ -11,7 +11,9 @@ import {
   confirmBankChange,
   effectiveRecipientCode,
   getCooperativeBankAccount,
+  getOwnFarmerBankAccount,
   setCooperativeBankAccount,
+  setOwnFarmerBankAccount,
 } from "@/modules/banking/service";
 import type { Actor } from "@/modules/identity/policies";
 import { cleanDatabase, createTestCooperative, createTestUser } from "./helpers";
@@ -307,11 +309,6 @@ describe("applyDueBankChanges", () => {
     expect(getJob("bank-change-apply")).toBeTypeOf("function");
   });
 
-  it("throws for FARMER owners until Task 8", async () => {
-    await expect(effectiveRecipientCode({ type: "FARMER", id: "f-1" }, T)).rejects.toThrow(
-      "NOT_IMPLEMENTED_UNTIL_TASK_8",
-    );
-  });
 });
 
 describe("getCooperativeBankAccount", () => {
@@ -346,5 +343,198 @@ describe("getCooperativeBankAccount", () => {
     await expect(
       getCooperativeBankAccount({ ...officer, cooperativeId: "other" }, "other-coop", T),
     ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+});
+
+describe("farmer bank account", () => {
+  const FARMER_NAME = "Ada Okafor";
+  const FARMER_OLD = "1111111111";
+  const FARMER_NEW = "2222222222";
+  let farmerUserId: string;
+  let profileId: string;
+  const farmerOwner = () => ({ type: "FARMER" as const, id: profileId });
+
+  beforeEach(async () => {
+    fakePaystack.accounts.set(`058:${FARMER_OLD}`, "OKAFOR ADA");
+    fakePaystack.accounts.set(`044:${FARMER_NEW}`, "ADA CHIOMA OKAFOR");
+    const user = await createTestUser({ id: "u-farmer", name: FARMER_NAME, email: "ada@example.com" });
+    farmerUserId = user.id;
+    await prisma.membership.create({
+      data: { userId: user.id, role: "FARMER", cooperativeId, status: "PENDING" },
+    });
+    const profile = await prisma.farmerProfile.create({
+      data: {
+        userId: user.id,
+        cooperativeId,
+        farmSizeHectares: "2.5",
+        crops: ["Maize"],
+        state: "Ogun",
+        lga: "Abeokuta North",
+      },
+    });
+    profileId = profile.id;
+  });
+
+  async function farmerFirstThenSecond() {
+    await setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T);
+    const oldCode = fakePaystack.recipients[fakePaystack.recipients.length - 1];
+    fakeOutbox.clear();
+    const second = await setOwnFarmerBankAccount(
+      { userId: farmerUserId },
+      { accountNumber: FARMER_NEW, bankCode: "044" },
+      T,
+    );
+    const request = await prisma.bankChangeRequest.findFirstOrThrow({
+      where: { ownerType: "FARMER", ownerId: profileId, cancelledAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+    const newCode = fakePaystack.recipients[fakePaystack.recipients.length - 1];
+    return { oldCode, newCode, second, request };
+  }
+
+  it("sets the first account immediately on the profile", async () => {
+    const result = await setOwnFarmerBankAccount(
+      { userId: farmerUserId },
+      { accountNumber: FARMER_OLD, bankCode: "058" },
+      T,
+    );
+    expect(result).toEqual({ accountName: "OKAFOR ADA", pending: false });
+    const profile = await prisma.farmerProfile.findUniqueOrThrow({ where: { id: profileId } });
+    expect(profile.recipientCode).toBe(fakePaystack.recipients[0]);
+    expect(profile.accountName).toBe("OKAFOR ADA");
+    expect(await prisma.bankChangeRequest.count()).toBe(0);
+    const audit = await prisma.auditLog.findMany({ where: { action: "bank.set", entityId: profileId } });
+    expect(audit).toHaveLength(1);
+    expect(audit[0]).toMatchObject({ actorId: farmerUserId, entity: "farmer_profile" });
+    expect(await effectiveRecipientCode(farmerOwner(), T)).toBe(fakePaystack.recipients[0]);
+  });
+
+  it("works for an ACTIVE farmer too", async () => {
+    await prisma.membership.updateMany({ where: { userId: farmerUserId }, data: { status: "ACTIVE" } });
+    await expect(
+      setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T),
+    ).resolves.toMatchObject({ pending: false });
+  });
+
+  it("makes a second account pending and emails the farmer a link", async () => {
+    const { second, request } = await farmerFirstThenSecond();
+    expect(second).toEqual({ accountName: "ADA CHIOMA OKAFOR", pending: true });
+    expect(request.requestedBy).toBe(farmerUserId);
+    expect(fakeOutbox.sent).toHaveLength(1);
+    expect(fakeOutbox.sent[0].to).toBe("ada@example.com");
+    expect(fakeOutbox.sent[0].html).toContain(`/bank/confirm?token=${request.confirmToken}`);
+    expect(fakeOutbox.sent[0].html).not.toContain(FARMER_NEW);
+  });
+
+  it("bank_change_takes_effect_after_48_hours", async () => {
+    const { oldCode, newCode, request } = await farmerFirstThenSecond();
+    const { effectiveAt } = await confirmBankChange(request.confirmToken, T);
+    expect(effectiveAt.toISOString()).toBe(new Date(T.getTime() + 48 * HOUR).toISOString());
+    const justBefore = new Date(T.getTime() + 47 * HOUR + 59 * 60_000);
+    expect(await effectiveRecipientCode(farmerOwner(), justBefore)).toBe(oldCode);
+    expect(await effectiveRecipientCode(farmerOwner(), new Date(T.getTime() + 48 * HOUR))).toBe(newCode);
+  });
+
+  it("alerts ACTIVE admins with the farmer's name when a change is confirmed", async () => {
+    await addAdmin("u-admin-1");
+    const { request } = await farmerFirstThenSecond();
+    await confirmBankChange(request.confirmToken, T);
+    const toAdmins = fakeOutbox.sent.filter((m) => m.to === "u-admin-1@example.com");
+    expect(toAdmins).toHaveLength(1);
+    expect(toAdmins[0].html).toContain(FARMER_NAME);
+    expect(toAdmins[0].html).toContain("ADA CHIOMA OKAFOR");
+    expect(toAdmins[0].html).not.toContain(FARMER_NEW);
+  });
+
+  it("copies the due request onto the farmer profile once", async () => {
+    const { newCode, request } = await farmerFirstThenSecond();
+    await confirmBankChange(request.confirmToken, T);
+    expect(await applyDueBankChanges(new Date(T.getTime() + 47 * HOUR))).toEqual({ applied: 0 });
+    const due = new Date(T.getTime() + 48 * HOUR);
+    expect(await applyDueBankChanges(due)).toEqual({ applied: 1 });
+    expect(await applyDueBankChanges(due)).toEqual({ applied: 0 });
+    const profile = await prisma.farmerProfile.findUniqueOrThrow({ where: { id: profileId } });
+    expect(profile.recipientCode).toBe(newCode);
+    expect(profile.accountName).toBe("ADA CHIOMA OKAFOR");
+    expect(await effectiveRecipientCode(farmerOwner(), due)).toBe(newCode);
+    const audit = await prisma.auditLog.findMany({ where: { action: "bank.change.applied", entityId: request.id } });
+    expect(audit).toHaveLength(1);
+  });
+
+  it("applies cooperative and farmer changes in the same run", async () => {
+    const coop = await firstThenSecond();
+    await confirmBankChange(coop.request.confirmToken, T);
+    const farmer = await farmerFirstThenSecond();
+    await confirmBankChange(farmer.request.confirmToken, T);
+    expect(await applyDueBankChanges(new Date(T.getTime() + 48 * HOUR))).toEqual({ applied: 2 });
+  });
+
+  it("uses the user's name as the registered name", async () => {
+    fakePaystack.accounts.set(`058:${FARMER_OLD}`, "BOLA ADEYEMI");
+    await expect(
+      setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T),
+    ).rejects.toMatchObject({ code: "ACCOUNT_NAME_MISMATCH" });
+    expect(fakePaystack.recipients).toHaveLength(0);
+  });
+
+  it("forbids a user with no farmer profile", async () => {
+    const other = await createTestUser({ id: "u-nobody" });
+    await expect(
+      setOwnFarmerBankAccount({ userId: other.id }, { accountNumber: FARMER_OLD, bankCode: "058" }, T),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("forbids a farmer whose membership has ended", async () => {
+    for (const status of ["LEFT", "REMOVED"] as const) {
+      await prisma.membership.updateMany({ where: { userId: farmerUserId }, data: { status } });
+      await expect(
+        setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+    }
+    expect(fakePaystack.recipients).toHaveLength(0);
+  });
+
+  it("never stores, audits or logs the farmer's account number", async () => {
+    const spies = (["log", "info", "warn", "error", "debug"] as const).map((m) =>
+      vi.spyOn(console, m).mockImplementation(() => {}),
+    );
+    try {
+      const { request } = await farmerFirstThenSecond();
+      await confirmBankChange(request.confirmToken, T);
+      await applyDueBankChanges(new Date(T.getTime() + 48 * HOUR));
+      const texts = [
+        JSON.stringify(await prisma.bankChangeRequest.findMany()),
+        JSON.stringify(await prisma.farmerProfile.findMany()),
+        JSON.stringify(await prisma.auditLog.findMany()),
+        JSON.stringify(spies.flatMap((s) => s.mock.calls)),
+      ];
+      for (const text of texts) {
+        expect(text).not.toContain(FARMER_OLD);
+        expect(text).not.toContain(FARMER_NEW);
+      }
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
+  });
+
+  it("shows the farmer their account name and the pending state, never the recipient code", async () => {
+    const { request } = await farmerFirstThenSecond();
+    const pending = await getOwnFarmerBankAccount({ userId: farmerUserId }, T);
+    expect(pending).toEqual({
+      bankName: null,
+      accountName: "OKAFOR ADA",
+      change: { state: "AWAITING_CONFIRMATION", effectiveAt: null },
+    });
+    expect(JSON.stringify(pending)).not.toContain("RCP_");
+    await confirmBankChange(request.confirmToken, T);
+    const later = await getOwnFarmerBankAccount(
+      { userId: farmerUserId },
+      new Date(T.getTime() + 48 * HOUR),
+    );
+    expect(later).toMatchObject({ accountName: "ADA CHIOMA OKAFOR", change: null });
+  });
+
+  it("returns null for a user with no farmer profile", async () => {
+    await expect(getOwnFarmerBankAccount({ userId: "u-nobody" }, T)).resolves.toBeNull();
   });
 });

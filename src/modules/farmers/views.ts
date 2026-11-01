@@ -1,0 +1,61 @@
+import type { FarmerProfile, User } from "@/generated/prisma/client";
+
+type FarmerUser = Pick<User, "id" | "name" | "email" | "phone" | "phoneConfirmed">;
+
+// What the farmer sees of their own profile on /farmer and /join.
+export type OwnFarmer = {
+  farmSizeHectares: string;
+  crops: string[];
+  state: string;
+  lga: string;
+};
+
+// What an officer of the farmer's cooperative sees. No phone, email or bank data:
+// only whether a payout account has been added.
+export type OfficerFarmer = OwnFarmer & {
+  id: string;
+  userId: string;
+  name: string;
+  cooperativeId: string;
+  hasBankAccount: boolean;
+};
+
+// Admins also see contact details and whether the phone was confirmed (spec 6.2).
+export type AdminFarmer = OfficerFarmer & {
+  email: string;
+  phone: string;
+  phoneConfirmed: boolean;
+  accountName: string | null;
+};
+
+// Field by field on purpose: FarmerProfile rows hold the recipient code, which must never
+// be added to a view by accident.
+export function toOwnFarmer(profile: FarmerProfile): OwnFarmer {
+  return {
+    farmSizeHectares: profile.farmSizeHectares.toString(),
+    crops: [...profile.crops],
+    state: profile.state,
+    lga: profile.lga,
+  };
+}
+
+export function toOfficerFarmer(profile: FarmerProfile, user: FarmerUser): OfficerFarmer {
+  return {
+    id: profile.id,
+    userId: user.id,
+    name: user.name,
+    cooperativeId: profile.cooperativeId,
+    ...toOwnFarmer(profile),
+    hasBankAccount: profile.recipientCode !== null,
+  };
+}
+
+export function toAdminFarmer(profile: FarmerProfile, user: FarmerUser): AdminFarmer {
+  return {
+    ...toOfficerFarmer(profile, user),
+    email: user.email,
+    phone: user.phone,
+    phoneConfirmed: user.phoneConfirmed,
+    accountName: profile.accountName,
+  };
+}

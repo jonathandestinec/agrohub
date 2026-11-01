@@ -21,6 +21,7 @@ model User {
   sessions          Session[]
   accounts          Account[]
   memberships       Membership[]
+  farmerProfile     FarmerProfile?
 
   phoneConfirmed Boolean @default(false)
 
@@ -136,6 +137,7 @@ model Cooperative {
   memberships          Membership[]
   documents            CooperativeDocument[]
   inviteLinks          InviteLink[]
+  farmerProfiles       FarmerProfile[]
 
   @@map("cooperative")
 }
@@ -246,4 +248,27 @@ model InviteLink {
 
   @@index([cooperativeId])
   @@map("invite_link")
+}
+
+// One per user: a farmer who leaves and joins again keeps this row, and it moves to the
+// new cooperative. Bank data is only the Paystack recipient code and the resolved account
+// name; the account number is never stored. Private fields leave the server only through
+// src/modules/farmers/views.ts.
+model FarmerProfile {
+  id               String      @id @default(cuid())
+  userId           String      @unique
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cooperativeId    String
+  cooperative      Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  farmSizeHectares Decimal     @db.Decimal(8, 2)
+  crops            String[]
+  state            String
+  lga              String
+  recipientCode    String?
+  accountName      String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([cooperativeId])
+  @@map("farmer_profile")
 }

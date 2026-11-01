@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { authClient } from "@/lib/auth-client";
+import { safeNext, withNext } from "@/lib/safe-next";
 
 // Better Auth's client type has no `consent`; the server's user-create hook reads it from the body.
 type SignUpBody = Parameters<typeof authClient.signUp.email>[0] & { consent: boolean };
@@ -16,7 +17,10 @@ const ERROR_KEYS: Record<string, string> = {
   CONSENT_REQUIRED: "consentRequired",
 };
 
-export function SignUpForm() {
+// Sign-up ends at "check your email" (verification is required), so next is carried to
+// the sign-in link; signing in then returns to it.
+export function SignUpForm({ next }: { next: string }) {
+  const returnTo = safeNext(next);
   const t = useTranslations("auth.signUp");
   const fields = useTranslations("auth.fields");
   const [pending, setPending] = useState(false);
@@ -53,6 +57,9 @@ export function SignUpForm() {
       <section aria-live="polite" className="flex flex-col gap-2">
         <h2 className="text-xl font-semibold">{t("checkEmailTitle")}</h2>
         <p className="text-muted">{t("checkEmailBody", { email: sentTo })}</p>
+        <Link href={withNext("/sign-in", returnTo)} className="text-primary underline">
+          {t("signInLink")}
+        </Link>
       </section>
     );
   }
@@ -109,7 +116,7 @@ export function SignUpForm() {
       <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
       <p className="text-sm text-muted">
         {t("haveAccount")}{" "}
-        <Link href="/sign-in" className="text-primary underline">
+        <Link href={withNext("/sign-in", returnTo)} className="text-primary underline">
           {t("signInLink")}
         </Link>
       </p>

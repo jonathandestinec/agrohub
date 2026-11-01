@@ -253,5 +253,82 @@
       "invalid": "",
       "error": ""
     }
+  },
+  "farmer": {
+    "join": {
+      "title": "",
+      "signedOutIntro": "",
+      "signUp": "",
+      "signIn": "",
+      "profileIntro": "",
+      "invalidTitle": "",
+      "invalid": "",
+      "notVerifiedTitle": "",
+      "notVerified": "",
+      "emailMismatch": "",
+      "otherTitle": "",
+      "otherCooperative": "",
+      "waiting": "",
+      "approved": "",
+      "goToFarmer": ""
+    },
+    "profile": {
+      "farmSize": "",
+      "farmSizeHint": "",
+      "crops": "",
+      "cropsHint": "",
+      "state": "",
+      "statePlaceholder": "",
+      "lga": "",
+      "submit": "",
+      "submitting": ""
+    },
+    "bank": {
+      "heading": "",
+      "intro": "",
+      "current": "",
+      "none": "",
+      "bank": "",
+      "bankPlaceholder": "",
+      "accountNumber": "",
+      "accountNumberHint": "",
+      "save": "",
+      "saving": "",
+      "saved": "",
+      "pending": "",
+      "confirmed": "",
+      "unavailable": ""
+    },
+    "home": {
+      "title": "",
+      "notJoined": "",
+      "status": {
+        "PENDING": "",
+        "ACTIVE": "",
+        "LEFT": "",
+        "REMOVED": ""
+      },
+      "profileHeading": "",
+      "farmSize": "",
+      "hectares": "",
+      "crops": "",
+      "location": "",
+      "place": ""
+    },
+    "errors": {
+      "VALIDATION_ERROR": "",
+      "ALREADY_IN_COOPERATIVE": "",
+      "INVITE_INVALID": "",
+      "INVITE_EMAIL_MISMATCH": "",
+      "COOPERATIVE_NOT_VERIFIED": "",
+      "UNAUTHENTICATED": "",
+      "FORBIDDEN": "",
+      "ACCOUNT_NAME_MISMATCH": "",
+      "BANK_ACCOUNT_NOT_FOUND": "",
+      "UNKNOWN_BANK": "",
+      "INVALID_ACCOUNT_NUMBER": "",
+      "INVALID_BANK_CODE": "",
+      "INTERNAL": ""
+    }
   }
 }

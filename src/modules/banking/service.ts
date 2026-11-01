@@ -28,11 +28,6 @@ const HOUR_MS = 3_600_000;
 const CHANGE_DELAY_MS = 48 * HOUR_MS;
 const CONFIRM_TTL_MS = 24 * HOUR_MS;
 
-function notImplementedForFarmer(): never {
-  // Task 8 adds FarmerProfile and completes the FARMER branches.
-  throw new Error("NOT_IMPLEMENTED_UNTIL_TASK_8");
-}
-
 function invalidChange(): NotFoundError {
   return new NotFoundError("BANK_CHANGE_INVALID");
 }
@@ -44,8 +39,22 @@ type StoredAccount = {
   bankName: string | null;
 };
 
+// A FARMER owner id is the FarmerProfile id. Farmer profiles keep no bank name (only the
+// recipient code and the resolved account name), so bankName is always null for them.
 async function loadOwner(owner: BankOwner): Promise<StoredAccount> {
-  if (owner.type === "FARMER") notImplementedForFarmer();
+  if (owner.type === "FARMER") {
+    const profile = await prisma.farmerProfile.findUnique({
+      where: { id: owner.id },
+      select: { recipientCode: true, accountName: true, user: { select: { name: true } } },
+    });
+    if (!profile) throw new NotFoundError("FARMER_PROFILE_NOT_FOUND");
+    return {
+      name: profile.user.name,
+      recipientCode: profile.recipientCode,
+      accountName: profile.accountName,
+      bankName: null,
+    };
+  }
   const cooperative = await prisma.cooperative.findUnique({
     where: { id: owner.id },
     select: { name: true, recipientCode: true, accountName: true, bankName: true },
@@ -87,7 +96,7 @@ export async function setCooperativeBankAccount(
 
 /**
  * Module-private: callers must have authorised the change for this owner first.
- * Exported only so Task 8's self-scoped farmer function in this module family can reuse it.
+ * Exported for the self-scoped farmer path; nothing outside this module should call it.
  * The account number is used only in the Paystack calls below and is never stored.
  */
 export async function applyBankAccount(
@@ -113,10 +122,16 @@ export async function applyBankAccount(
   if (current.recipientCode === null) {
     // First account: nothing to protect yet, so it applies at once. The condition makes
     // a concurrent first set fall through to the change-request path.
-    const { count } = await prisma.cooperative.updateMany({
-      where: { id: owner.id, recipientCode: null },
-      data: { recipientCode, accountName, bankName: bank.name },
-    });
+    const { count } =
+      owner.type === "COOPERATIVE"
+        ? await prisma.cooperative.updateMany({
+            where: { id: owner.id, recipientCode: null },
+            data: { recipientCode, accountName, bankName: bank.name },
+          })
+        : await prisma.farmerProfile.updateMany({
+            where: { id: owner.id, recipientCode: null },
+            data: { recipientCode, accountName },
+          });
     if (count === 1) {
       await recordAudit({
         actorId: requestedBy,
@@ -166,7 +181,7 @@ export async function applyBankAccount(
 }
 
 // Runs after the request is stored, so a failed email is logged, never thrown: the
-// officer can submit again, which cancels this request.
+// requester can submit again, which cancels this request.
 async function sendConfirmation(request: BankChangeRequest, ownerName: string): Promise<void> {
   try {
     const user = await prisma.user.findUnique({
@@ -263,7 +278,6 @@ export async function effectiveRecipientCode(
   owner: BankOwner,
   at: Date,
 ): Promise<string | null> {
-  if (owner.type === "FARMER") notImplementedForFarmer();
   const request = await newestEffective(owner, at);
   if (request) return request.newRecipientCode;
   return (await loadOwner(owner)).recipientCode;
@@ -288,27 +302,32 @@ export async function applyDueBankChanges(now: Date = new Date()): Promise<{ app
     byOwner.set(key, [...(byOwner.get(key) ?? []), request]);
   }
   let applied = 0;
-  let farmerPending = false;
   for (const requests of byOwner.values()) {
     const newest = requests[requests.length - 1];
-    if (newest.ownerType === "FARMER") {
-      farmerPending = true;
-      continue;
-    }
     const claimed = await prisma.$transaction(async (tx) => {
       const { count } = await tx.bankChangeRequest.updateMany({
         where: { id: { in: requests.map((r) => r.id) }, appliedAt: null },
         data: { appliedAt: now },
       });
       if (count === 0) return false;
-      await tx.cooperative.update({
-        where: { id: newest.ownerId },
-        data: {
-          recipientCode: newest.newRecipientCode,
-          accountName: newest.newAccountName,
-          bankName: newest.newBankName,
-        },
-      });
+      if (newest.ownerType === "COOPERATIVE") {
+        await tx.cooperative.update({
+          where: { id: newest.ownerId },
+          data: {
+            recipientCode: newest.newRecipientCode,
+            accountName: newest.newAccountName,
+            bankName: newest.newBankName,
+          },
+        });
+      } else {
+        await tx.farmerProfile.update({
+          where: { id: newest.ownerId },
+          data: {
+            recipientCode: newest.newRecipientCode,
+            accountName: newest.newAccountName,
+          },
+        });
+      }
       return true;
     });
     if (!claimed) continue;
@@ -321,7 +340,6 @@ export async function applyDueBankChanges(now: Date = new Date()): Promise<{ app
       meta: { ownerType: newest.ownerType, ownerId: newest.ownerId },
     });
   }
-  if (farmerPending) notImplementedForFarmer();
   return { applied };
 }
 
@@ -331,11 +349,17 @@ export async function getCooperativeBankAccount(
   now: Date = new Date(),
 ): Promise<BankAccountView> {
   if (!can(actor, "cooperative:read", { cooperativeId })) throw new ForbiddenError();
-  const owner: BankOwner = { type: "COOPERATIVE", id: cooperativeId };
+  return bankAccountView({ type: "COOPERATIVE", id: cooperativeId }, now);
+}
+
+async function bankAccountView(owner: BankOwner, now: Date): Promise<BankAccountView> {
   const stored = await loadOwner(owner);
   const effective = await newestEffective(owner, now);
   const current = effective
-    ? { bankName: effective.newBankName, accountName: effective.newAccountName }
+    ? {
+        bankName: owner.type === "COOPERATIVE" ? effective.newBankName : null,
+        accountName: effective.newAccountName,
+      }
     : { bankName: stored.bankName, accountName: stored.accountName };
   const pending = await prisma.bankChangeRequest.findFirst({
     where: {
@@ -352,4 +376,57 @@ export async function getCooperativeBankAccount(
     select: { confirmedAt: true, effectiveAt: true },
   });
   return toBankAccountView(current, pending);
+}
+
+// The farmer's own profile, if they hold a PENDING or ACTIVE FARMER membership. A farmer
+// who has left keeps the profile row but may not change its payout account.
+async function ownFarmerProfile(userId: string): Promise<{ id: string; name: string } | null> {
+  const profile = await prisma.farmerProfile.findUnique({
+    where: { userId },
+    select: { id: true, cooperativeId: true, user: { select: { name: true } } },
+  });
+  if (!profile) return null;
+  const membership = await prisma.membership.findFirst({
+    where: {
+      userId,
+      role: "FARMER",
+      cooperativeId: profile.cooperativeId,
+      status: { in: ["PENDING", "ACTIVE"] },
+    },
+    select: { id: true },
+  });
+  return membership ? { id: profile.id, name: profile.user.name } : null;
+}
+
+// Self-onboarding: a PENDING farmer has no Actor yet, so there is no Actor; scoped to the
+// caller's own userId and their own FarmerProfile. The registered name is User.name.
+// The first account applies at once; later changes take the 48-hour confirmed path.
+export async function setOwnFarmerBankAccount(
+  user: { userId: string },
+  input: BankInput,
+  now: Date = new Date(),
+): Promise<{ accountName: string; pending: boolean }> {
+  const profile = await ownFarmerProfile(user.userId);
+  if (!profile) throw new ForbiddenError();
+  return applyBankAccount(
+    { type: "FARMER", id: profile.id },
+    profile.name,
+    user.userId,
+    input,
+    now,
+  );
+}
+
+// Self-scoped read for /farmer and /join: the caller's own payout account, or null when
+// they have no farmer profile. Shows the account name and change state, never the code.
+export async function getOwnFarmerBankAccount(
+  user: { userId: string },
+  now: Date = new Date(),
+): Promise<BankAccountView | null> {
+  const profile = await prisma.farmerProfile.findUnique({
+    where: { userId: user.userId },
+    select: { id: true },
+  });
+  if (!profile) return null;
+  return bankAccountView({ type: "FARMER", id: profile.id }, now);
 }

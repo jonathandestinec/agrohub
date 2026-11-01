@@ -34,9 +34,10 @@ export async function createTestUser(
   });
 }
 
-// Children before parents: documents and memberships, then cooperatives, then users.
+// Children before parents: profiles, documents and memberships, then cooperatives, then users.
 export async function cleanDatabase(): Promise<void> {
   await prisma.bankChangeRequest.deleteMany();
+  await prisma.farmerProfile.deleteMany();
   await prisma.inviteLink.deleteMany();
   await prisma.cooperativeDocument.deleteMany();
   await prisma.membership.deleteMany();

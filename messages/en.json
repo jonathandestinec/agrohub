@@ -253,5 +253,82 @@
       "invalid": "This link is invalid, already used or expired. Enter the bank details again to get a new link.",
       "error": "Something went wrong. Please try again."
     }
+  },
+  "farmer": {
+    "join": {
+      "title": "Join {cooperative}",
+      "signedOutIntro": "Create an AgroHub account or sign in to join this cooperative. You will come back to this page.",
+      "signUp": "Create an account",
+      "signIn": "Sign in",
+      "profileIntro": "Tell us about your farm. Your officer will see this before approving you.",
+      "invalidTitle": "Invite not valid",
+      "invalid": "This invite link is no longer valid. Ask your officer for a new one.",
+      "notVerifiedTitle": "Not open yet",
+      "notVerified": "This cooperative isn't accepting farmers yet. Please try again later.",
+      "emailMismatch": "This invite was sent to a different email address. Sign in with the address the invite was sent to.",
+      "otherTitle": "You already belong to a cooperative",
+      "otherCooperative": "You are already a member of {cooperative}. A farmer can belong to one cooperative at a time.",
+      "waiting": "Waiting for your officer's approval",
+      "approved": "Your officer has approved you.",
+      "goToFarmer": "Go to your farmer page"
+    },
+    "profile": {
+      "farmSize": "Farm size (hectares)",
+      "farmSizeHint": "For example 2.5",
+      "crops": "Crops you grow",
+      "cropsHint": "Separate crops with commas, for example: Maize, Cassava, Yam",
+      "state": "State",
+      "statePlaceholder": "Choose a state",
+      "lga": "Local government area",
+      "submit": "Join cooperative",
+      "submitting": "Joining…"
+    },
+    "bank": {
+      "heading": "Bank account for payouts",
+      "intro": "Your share of each sale is paid to this account. The name on the account must match the name on your AgroHub account.",
+      "current": "Payouts go to {accountName}.",
+      "none": "No bank account yet. Add one so you can be paid.",
+      "bank": "Bank",
+      "bankPlaceholder": "Choose a bank",
+      "accountNumber": "Account number",
+      "accountNumberHint": "The 10-digit account number",
+      "save": "Save bank account",
+      "saving": "Checking the account…",
+      "saved": "Saved. The name on the account is {accountName}.",
+      "pending": "Check your email to confirm. The new account takes effect 48 hours after you confirm.",
+      "confirmed": "Your new bank account takes effect on {date}.",
+      "unavailable": "Bank details are unavailable right now. Please try again later."
+    },
+    "home": {
+      "title": "Your farm",
+      "notJoined": "You have not joined a cooperative yet. Open the invite link your officer sent you.",
+      "status": {
+        "PENDING": "Waiting for your officer's approval",
+        "ACTIVE": "You are an approved member.",
+        "LEFT": "You have left this cooperative.",
+        "REMOVED": "You are no longer a member of this cooperative."
+      },
+      "profileHeading": "Your profile",
+      "farmSize": "Farm size",
+      "hectares": "{size} hectares",
+      "crops": "Crops",
+      "location": "Location",
+      "place": "{lga}, {state}"
+    },
+    "errors": {
+      "VALIDATION_ERROR": "Please check the details and try again.",
+      "ALREADY_IN_COOPERATIVE": "You already belong to a cooperative.",
+      "INVITE_INVALID": "This invite link is no longer valid. Ask your officer for a new one.",
+      "INVITE_EMAIL_MISMATCH": "This invite was sent to a different email address.",
+      "COOPERATIVE_NOT_VERIFIED": "This cooperative isn't accepting farmers yet.",
+      "UNAUTHENTICATED": "Please sign in again.",
+      "FORBIDDEN": "You cannot do that.",
+      "ACCOUNT_NAME_MISMATCH": "The name on this account does not match the name on your AgroHub account.",
+      "BANK_ACCOUNT_NOT_FOUND": "We could not find that account. Check the bank and the account number.",
+      "UNKNOWN_BANK": "Choose a bank from the list.",
+      "INVALID_ACCOUNT_NUMBER": "Enter the 10-digit account number.",
+      "INVALID_BANK_CODE": "Choose a bank from the list.",
+      "INTERNAL": "Something went wrong. Please try again."
+    }
   }
 }

@@ -83,7 +83,7 @@ export async function setBankAccountAction(
     const actor = await requireActor();
     if (actor.cooperativeId === null) throw new ForbiddenError();
     const result = await setCooperativeBankAccount(actor, actor.cooperativeId, {
-      accountNumber: text(form, "accountNumber").replace(/s/g, ""),
+      accountNumber: text(form, "accountNumber").replace(/\s/g, ""),
       bankCode: text(form, "bankCode"),
     });
     revalidatePath("/officer/onboarding");
