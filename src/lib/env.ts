@@ -1,11 +1,24 @@
 import { z } from "zod";
 
+const emptyToUndefined = z
+  .string()
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
 const schema = z.object({
   DATABASE_URL: z.string().min(1),
   BETTER_AUTH_SECRET: z.string().min(1),
   BETTER_AUTH_URL: z.string().min(1),
   CRON_SECRET: z.string().min(1),
   APP_ENV: z.enum(["local", "staging", "production"]).default("local"),
+  STORAGE_ENDPOINT: emptyToUndefined,
+  STORAGE_BUCKET: emptyToUndefined,
+  STORAGE_ACCESS_KEY_ID: emptyToUndefined,
+  STORAGE_SECRET_ACCESS_KEY: emptyToUndefined,
+  STORAGE_REGION: z
+    .string()
+    .optional()
+    .transform((value) => (value ? value : "auto")),
   RESEND_API_KEY: z
     .string()
     .optional()

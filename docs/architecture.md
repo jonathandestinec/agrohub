@@ -138,6 +138,8 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - @playwright/test: end-to-end tests; browsers are installed separately when first needed.
 - fast-check (dev): property-based tests, e.g. money splits always sum exactly to the total.
 - resend: sends transactional email (verification and later notifications) in staging and production; local and tests use the in-memory fake outbox.
+- @aws-sdk/client-s3: S3-compatible client (Cloudflare R2 or AWS S3) that uploads private documents and photos in staging and production; local and tests use the in-memory fake storage.
+- @aws-sdk/s3-request-presigner: creates the short-lived signed GET links through which private objects are opened.
 - prisma (dev) and @prisma/client: schema, migrations and the typed database client; Prisma 7 reads `prisma.config.ts` and never loads `.env`.
 - @prisma/adapter-pg: the node-postgres driver adapter Prisma 7 needs to connect to Postgres (local Docker and Neon).
 - better-auth: email and password login, email verification and sessions (its two-factor plugin provides TOTP; admin and board-admin enforcement is via `requireSecondFactor` in `getActor`, and pages use `requireActorForPage` to send them to `/two-factor`), stored through its Prisma adapter. Its `nextCookies` plugin (kept last) lets `auth.api` calls in server actions set cookies; the browser pages use its React client (`src/lib/auth-client.ts`).
