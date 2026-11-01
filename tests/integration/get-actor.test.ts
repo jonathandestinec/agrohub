@@ -16,9 +16,11 @@ import { ForbiddenError } from "@/lib/errors";
 import { getActor, requireActor } from "@/modules/identity/session";
 import { UnauthenticatedError } from "@/lib/errors";
 import { addMembership } from "@/modules/identity/service";
+import { createTestCooperative } from "./helpers";
 
 async function clean() {
   await prisma.membership.deleteMany();
+  await prisma.cooperative.deleteMany();
   await prisma.user.deleteMany();
 }
 
@@ -41,6 +43,8 @@ function signedInAs(id: string, twoFactorEnabled = false) {
   });
 }
 
+let c1: string;
+
 beforeEach(async () => {
   getSession.mockReset();
   cookieGet.mockReset();
@@ -48,6 +52,7 @@ beforeEach(async () => {
   await clean();
   await makeUser("u1");
   await makeUser("u2");
+  c1 = (await createTestCooperative()).id;
 });
 
 afterAll(async () => {
@@ -85,7 +90,7 @@ describe("getActor", () => {
     const theirs = await addMembership({
       userId: "u2",
       role: "FARMER",
-      cooperativeId: "c1",
+      cooperativeId: c1,
     });
     cookieGet.mockReturnValue({ value: theirs.id });
     signedInAs("u1");
@@ -97,13 +102,13 @@ describe("getActor", () => {
     const farmer = await addMembership({
       userId: "u1",
       role: "FARMER",
-      cooperativeId: "c1",
+      cooperativeId: c1,
     });
     cookieGet.mockReturnValue({ value: farmer.id });
     signedInAs("u1");
     expect(await getActor()).toMatchObject({
       role: "FARMER",
-      cooperativeId: "c1",
+      cooperativeId: c1,
       twoFactorEnabled: false,
     });
   });
@@ -112,7 +117,7 @@ describe("getActor", () => {
     await addMembership({
       userId: "u1",
       role: "FARMER",
-      cooperativeId: "c1",
+      cooperativeId: c1,
       status: "PENDING",
     });
     signedInAs("u1");

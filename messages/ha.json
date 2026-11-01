@@ -90,5 +90,52 @@
   "privacy": {
     "title": "",
     "comingSoon": ""
+  },
+  "officer": {
+    "onboarding": {
+      "title": "",
+      "intro": "",
+      "detailsHeading": "",
+      "fields": {
+        "name": "",
+        "registrationNumber": "",
+        "state": "",
+        "statePlaceholder": "",
+        "lga": "",
+        "certificateExpiresAt": ""
+      },
+      "create": "",
+      "creating": "",
+      "documentsHeading": "",
+      "documentsIntro": "",
+      "kinds": {
+        "REGISTRATION_CERTIFICATE": "",
+        "BYLAWS": "",
+        "OFFICER_LIST": ""
+      },
+      "file": "",
+      "upload": "",
+      "uploading": "",
+      "uploaded": "",
+      "replace": "",
+      "status": {
+        "incomplete": "",
+        "waiting": "",
+        "verified": "",
+        "suspended": ""
+      },
+      "errors": {
+        "ALREADY_OFFICER": "",
+        "REGISTRATION_NUMBER_TAKEN": "",
+        "VALIDATION_ERROR": "",
+        "FILE_TYPE_NOT_ALLOWED": "",
+        "FILE_TYPE_MISMATCH": "",
+        "FILE_TOO_LARGE": "",
+        "NO_FILE": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "INTERNAL": ""
+      }
+    }
   }
 }

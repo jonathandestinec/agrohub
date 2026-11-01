@@ -2,9 +2,11 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { ConflictError, ValidationError } from "@/lib/errors";
 import { addMembership } from "@/modules/identity/service";
+import { createTestCooperative } from "./helpers";
 
 async function clean() {
   await prisma.membership.deleteMany();
+  await prisma.cooperative.deleteMany();
   await prisma.user.deleteMany();
 }
 
@@ -20,9 +22,14 @@ async function makeUser(id: string) {
   });
 }
 
+let c1: string;
+let c2: string;
+
 beforeEach(async () => {
   await clean();
   await makeUser("u1");
+  c1 = (await createTestCooperative()).id;
+  c2 = (await createTestCooperative()).id;
 });
 
 afterAll(async () => {
@@ -32,7 +39,7 @@ afterAll(async () => {
 
 describe("addMembership", () => {
   it("lets a farmer whose FARMER membership is LEFT join another cooperative", async () => {
-    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: "c1" });
+    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: c1 });
     await prisma.membership.updateMany({
       where: { userId: "u1", role: "FARMER" },
       data: { status: "LEFT" },
@@ -40,23 +47,23 @@ describe("addMembership", () => {
     const next = await addMembership({
       userId: "u1",
       role: "FARMER",
-      cooperativeId: "c2",
+      cooperativeId: c2,
     });
-    expect(next).toMatchObject({ cooperativeId: "c2", status: "ACTIVE" });
+    expect(next).toMatchObject({ cooperativeId: c2, status: "ACTIVE" });
   });
 
   it("rejects a second PENDING FARMER membership", async () => {
     await addMembership({
       userId: "u1",
       role: "FARMER",
-      cooperativeId: "c1",
+      cooperativeId: c1,
       status: "PENDING",
     });
     await expect(
       addMembership({
         userId: "u1",
         role: "FARMER",
-        cooperativeId: "c2",
+        cooperativeId: c2,
         status: "PENDING",
       }),
     ).rejects.toBeInstanceOf(ConflictError);
@@ -80,26 +87,26 @@ describe("addMembership", () => {
     const m = await addMembership({
       userId: "u1",
       role: "FARMER",
-      cooperativeId: "c1",
+      cooperativeId: c1,
     });
     expect(m).toMatchObject({
       userId: "u1",
       role: "FARMER",
-      cooperativeId: "c1",
+      cooperativeId: c1,
     });
   });
 
   it("rejects a second FARMER membership, even in another cooperative", async () => {
-    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: "c1" });
+    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: c1 });
     await expect(
-      addMembership({ userId: "u1", role: "FARMER", cooperativeId: "c2" }),
+      addMembership({ userId: "u1", role: "FARMER", cooperativeId: c2 }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
   it("rejects a duplicate (userId, role, cooperativeId)", async () => {
-    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: "c1" });
+    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: c1 });
     await expect(
-      addMembership({ userId: "u1", role: "FARMER", cooperativeId: "c1" }),
+      addMembership({ userId: "u1", role: "FARMER", cooperativeId: c1 }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
@@ -111,14 +118,14 @@ describe("addMembership", () => {
   });
 
   it("rejects a second OFFICER membership in another cooperative", async () => {
-    await addMembership({ userId: "u1", role: "OFFICER", cooperativeId: "c1" });
+    await addMembership({ userId: "u1", role: "OFFICER", cooperativeId: c1 });
     await expect(
-      addMembership({ userId: "u1", role: "OFFICER", cooperativeId: "c2" }),
+      addMembership({ userId: "u1", role: "OFFICER", cooperativeId: c2 }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
 
   it("lets one user hold FARMER and BUYER", async () => {
-    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: "c1" });
+    await addMembership({ userId: "u1", role: "FARMER", cooperativeId: c1 });
     const buyer = await addMembership({ userId: "u1", role: "BUYER" });
     expect(buyer.role).toBe("BUYER");
     expect(await prisma.membership.count({ where: { userId: "u1" } })).toBe(2);
@@ -137,7 +144,7 @@ describe("addMembership", () => {
     "forbids a cooperativeId for %s",
     async (role) => {
       await expect(
-        addMembership({ userId: "u1", role, cooperativeId: "c1" }),
+        addMembership({ userId: "u1", role, cooperativeId: c1 }),
       ).rejects.toBeInstanceOf(ValidationError);
     },
   );

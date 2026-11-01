@@ -19,7 +19,10 @@ export type Action =
   | "price:write"
   | "farmer:approve"
   | "lot:approve"
-  | "dispute:resolve";
+  | "dispute:resolve"
+  | "cooperative:read"
+  | "cooperative:upload"
+  | "document:view";
 
 export type Resource = {
   cooperativeId?: string;
@@ -67,6 +70,14 @@ export function can(
         );
       }
       return false;
+    case "cooperative:read":
+    case "document:view":
+      return (
+        actor.role === "ADMIN" ||
+        (actor.role === "OFFICER" && isOwnCooperative(actor, resource))
+      );
+    case "cooperative:upload":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     default:
       return false;
   }

@@ -48,6 +48,24 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["lot:approve", "BUYER", false],
   ["lot:approve", "ADMIN", false],
   ["lot:approve", "BOARD_ADMIN", false],
+
+  ["cooperative:read", "FARMER", false],
+  ["cooperative:read", "OFFICER", true],
+  ["cooperative:read", "BUYER", false],
+  ["cooperative:read", "ADMIN", true],
+  ["cooperative:read", "BOARD_ADMIN", false],
+
+  ["cooperative:upload", "FARMER", false],
+  ["cooperative:upload", "OFFICER", true],
+  ["cooperative:upload", "BUYER", false],
+  ["cooperative:upload", "ADMIN", false],
+  ["cooperative:upload", "BOARD_ADMIN", false],
+
+  ["document:view", "FARMER", false],
+  ["document:view", "OFFICER", true],
+  ["document:view", "BUYER", false],
+  ["document:view", "ADMIN", true],
+  ["document:view", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -57,7 +75,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(25);
+    expect(matrix).toHaveLength(40);
   });
 });
 
@@ -89,6 +107,32 @@ describe("cooperative scoping", () => {
     expect(can(officer, "lot:approve", { ownerUserId: "farmer-9" })).toBe(
       false,
     );
+  });
+});
+
+describe("cooperative documents", () => {
+  const actions = ["cooperative:read", "cooperative:upload", "document:view"] as const;
+
+  it("denies an officer of another cooperative", () => {
+    const other = actor("OFFICER", OTHER_COOP);
+    for (const action of actions) {
+      expect(can(other, action, { cooperativeId: COOP })).toBe(false);
+    }
+  });
+
+  it("denies an officer with no resource or a null cooperativeId", () => {
+    for (const action of actions) {
+      expect(can(actor("OFFICER", COOP), action)).toBe(false);
+      expect(can(actor("OFFICER", null), action, {})).toBe(false);
+    }
+  });
+
+  it("lets an admin read and view any cooperative but never upload", () => {
+    const admin = actor("ADMIN");
+    const other = { cooperativeId: OTHER_COOP };
+    expect(can(admin, "cooperative:read", other)).toBe(true);
+    expect(can(admin, "document:view", other)).toBe(true);
+    expect(can(admin, "cooperative:upload", other)).toBe(false);
   });
 });
 

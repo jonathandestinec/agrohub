@@ -99,8 +99,9 @@ model Membership {
   userId        String
   user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   role          Role
-  // Plain string until the Cooperative model exists. Null for BUYER, ADMIN, BOARD_ADMIN.
+  // Null for BUYER, ADMIN, BOARD_ADMIN.
   cooperativeId String?
+  cooperative   Cooperative?     @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
   status        MembershipStatus @default(ACTIVE)
   approvedAt    DateTime?
   createdAt     DateTime         @default(now())
@@ -109,6 +110,53 @@ model Membership {
   @@unique([userId, role, cooperativeId], map: "membership_user_role_cooperative_key")
   @@index([userId])
   @@map("membership")
+}
+
+enum CooperativeStatus {
+  PENDING
+  VERIFIED
+  SUSPENDED
+}
+
+model Cooperative {
+  id                   String                @id @default(cuid())
+  name                 String
+  registrationNumber   String                @unique
+  state                String
+  lga                  String
+  status               CooperativeStatus     @default(PENDING)
+  certificateExpiresAt DateTime
+  submittedAt          DateTime?
+  verifiedAt           DateTime?
+  reviewNote           String?
+  recipientCode        String?
+  accountName          String?
+  createdAt            DateTime              @default(now())
+  memberships          Membership[]
+  documents            CooperativeDocument[]
+
+  @@map("cooperative")
+}
+
+enum DocumentKind {
+  REGISTRATION_CERTIFICATE
+  BYLAWS
+  OFFICER_LIST
+}
+
+model CooperativeDocument {
+  id            String       @id @default(cuid())
+  cooperativeId String
+  cooperative   Cooperative  @relation(fields: [cooperativeId], references: [id])
+  kind          DocumentKind
+  storageKey    String
+  contentType   String
+  sizeBytes     Int
+  uploadedBy    String
+  createdAt     DateTime     @default(now())
+
+  @@index([cooperativeId])
+  @@map("cooperative_document")
 }
 
 model TwoFactor {
