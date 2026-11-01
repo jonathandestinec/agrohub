@@ -22,6 +22,14 @@
     "signIn": "",
     "signOut": ""
   },
+  "nav": {
+    "label": "",
+    "cooperative": "",
+    "invites": "",
+    "farmers": "",
+    "reviewCooperatives": "",
+    "farm": ""
+  },
   "auth": {
     "fields": {
       "name": "",

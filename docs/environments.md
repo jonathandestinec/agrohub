@@ -20,7 +20,65 @@ Required variables in every environment: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push and pull request: Postgres 17 service container, `prisma migrate deploy` on `agrohub_test`, lint, typecheck, tests. It needs no repository secrets. Money logic must pass before any deploy.
+`.github/workflows/ci.yml` runs on every push and pull request. It needs no repository secrets. Money logic must pass before any deploy.
+
+- `check`: Postgres 17 service container, `prisma migrate deploy` on `agrohub_test`, lint, typecheck, tests.
+- `e2e`: the same Postgres service and migrations, then `npx playwright install --with-deps chromium` and `npx playwright test`, which starts `next dev` on :3100 with the env from `playwright.config.ts` (the job sets the same values inline). On failure it uploads the Playwright report and `test-results/` as the `playwright-report` artifact.
+
+## Staging and production setup
+
+Use placeholders like these in docs and tickets; real values live only in Vercel and the provider dashboards.
+
+### Private storage (Cloudflare R2)
+
+1. In Cloudflare, create two R2 buckets: `<storage-staging-bucket>` and `<storage-production-bucket>`. Never share one bucket between environments.
+2. Leave both private: no public bucket URL (r2.dev) and no custom public domain. Objects are opened only through the short-lived signed links the app makes.
+3. Create one R2 API token per bucket, with Object Read & Write on that bucket only. Note its access key id and secret; the secret is shown once.
+4. The endpoint is `https://<cloudflare-account-id>.r2.cloudflarestorage.com`.
+
+### Variables per environment
+
+| Variable | Local | Staging (Vercel Preview) | Production (Vercel Production) |
+| --- | --- | --- | --- |
+| `STORAGE_ENDPOINT` | empty (fake store) | `https://<cloudflare-account-id>.r2.cloudflarestorage.com` | same endpoint |
+| `STORAGE_BUCKET` | empty | `<storage-staging-bucket>` | `<storage-production-bucket>` |
+| `STORAGE_ACCESS_KEY_ID` | empty | `<staging-r2-access-key-id>` | `<production-r2-access-key-id>` |
+| `STORAGE_SECRET_ACCESS_KEY` | empty | `<staging-r2-secret-access-key>` | `<production-r2-secret-access-key>` |
+| `STORAGE_REGION` | unset (`auto`) | unset (`auto`) | unset (`auto`) |
+| `PAYSTACK_SECRET_KEY` | empty (fake Paystack) | `sk_test_<...>` (a test key only) | `sk_live_<...>` |
+
+- Mark the secrets as Sensitive in Vercel and scope each to its one environment.
+- The Paystack variable's exact name is `PAYSTACK_SECRET_KEY`. The Vercel project already has `PAYSTACK_TEST_*` variables from earlier setup: the app never reads them, so they can be removed once `PAYSTACK_SECRET_KEY` is set.
+- After changing variables, redeploy: Vercel applies them only to new deployments.
+
+### Migrations
+
+Run migrations from a developer machine before deploying code that needs them, against the direct (non-pooled) Neon URL, set inline so nothing else picks the database:
+
+```sh
+DATABASE_URL=<staging-direct-database-url> npx prisma migrate deploy
+DATABASE_URL=<production-direct-database-url> npx prisma migrate deploy
+```
+
+Start each command with a space under `HISTCONTROL=ignorespace` to keep the URL out of shell history. Never `prisma db push` or `prisma migrate dev` against staging or production.
+
+### First admin on staging
+
+Sign up on the staging preview with the admin's own email and verify it, then run the `admin:grant` procedure below with the staging direct URL. On first opening an admin page they are sent to `/two-factor` to enrol.
+
+## Seed data
+
+```sh
+npm run db:seed                                                # local Docker database
+DATABASE_URL=<staging-direct-database-url> npm run db:seed -- --allow-remote   # staging
+```
+
+- It creates an admin `seed-admin@example.com` (two-factor off, so `/two-factor` enrolment is shown), a VERIFIED cooperative `Seed Demo Farmers Cooperative` with an ACTIVE officer `seed-officer@example.com`, and a PENDING farmer `seed-farmer@example.com` with a profile. Users are created through Better Auth, so they sign in normally.
+- The new users' password is printed once, when they are created. Re-running adds nothing and changes no password; to get a new one, delete the seed users first.
+- Without `DATABASE_URL` it uses the local Docker database, like `prisma.config.ts`. tsx does not read `.env`.
+- It refuses to run when `APP_ENV` is `production`, and when the database host is not `localhost`, `127.0.0.1` or `::1` unless `--allow-remote` is passed. It prints only the target host and database name, never credentials.
+- It writes rows only: it runs its app modules with `APP_ENV=local`, so no email, Paystack or storage call leaves the machine. The seeded cooperative has no documents or bank account.
+- Never seed production. On staging, the admin's password is printed in your terminal: treat the seed admin as a demo account and enrol its two-factor straight away.
 
 ## Granting an admin role
 
@@ -45,6 +103,7 @@ DATABASE_URL=<database-url> npm run admin:grant -- <email> <ADMIN|BOARD_ADMIN>
 
 - With `PAYSTACK_SECRET_KEY` empty and `APP_ENV=local`, Paystack calls use an in-memory fake (`fakePaystack` in `src/lib/paystack.ts`) with five banks and no accounts; an account check fails with `BANK_ACCOUNT_NOT_FOUND` until a test adds one. Bank change confirmation links appear in the fake outbox.
 - `GET /api/dev/outbox` returns the fake outbox (emails "sent" locally) as JSON. It answers only when `APP_ENV=local` and returns 404 everywhere else. The e2e tests read verification links from it.
+- `POST /api/dev/paystack/accounts` with JSON `{ "bankCode", "accountNumber", "accountName" }` adds an account to the running server's fake Paystack (201; 400 for a bad body). Same guards as the outbox: 404 unless `APP_ENV=local` and `NODE_ENV` is not `production`. The e2e journey uses it so bank account checks resolve.
 - `npx playwright test` starts its own `next dev` on port 3100 against `agrohub_test`, so a dev server on :3000 is never touched. Integration tests clean that same database, so never run the two at the same time.
 
 ## Operational notes

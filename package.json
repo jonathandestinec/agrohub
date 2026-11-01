@@ -14,7 +14,8 @@
     "db:generate": "prisma generate",
     "auth:generate": "node scripts/auth-generate.mjs",
     "postinstall": "prisma generate",
-    "admin:grant": "tsx scripts/grant-role.ts"
+    "admin:grant": "tsx scripts/grant-role.ts",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AuthCard, Field, FormError, SubmitButton } from "@/components/auth-ui";
@@ -21,7 +20,6 @@ function codeErrorKey(code: string | undefined): string {
 export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
   const t = useTranslations("auth.twoFactor");
   const fields = useTranslations("auth.fields");
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mustRestart, setMustRestart] = useState(false);
@@ -61,8 +59,9 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
       setMustRestart(mode === "verify" && (key === "expired" || key === "tooManyAttempts"));
       return;
     }
-    router.replace("/");
-    router.refresh();
+    // A full load, not router.replace: the client router cache still holds the
+    // pre-2FA redirects (an admin page that sent this user here would send them again).
+    window.location.replace("/");
   }
 
   async function copySecret() {

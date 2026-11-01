@@ -4,6 +4,10 @@ import { defineConfig } from "@playwright/test";
 // The e2e run uses agrohub_test, which integration tests also clean, so never run both at once.
 export default defineConfig({
   testDir: "tests/e2e",
+  // next dev compiles each page on its first visit, which can take several seconds on CI.
+  expect: { timeout: 15_000 },
+  // On CI, also write the HTML report that the e2e job uploads when a test fails.
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: { baseURL: "http://localhost:3100" },
   webServer: {
     command: "npx next dev -p 3100",

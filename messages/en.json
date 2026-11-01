@@ -22,6 +22,14 @@
     "signIn": "Sign in",
     "signOut": "Sign out"
   },
+  "nav": {
+    "label": "Main",
+    "cooperative": "My cooperative",
+    "invites": "Invite farmers",
+    "farmers": "Farmers",
+    "reviewCooperatives": "Review cooperatives",
+    "farm": "My farm"
+  },
   "auth": {
     "fields": {
       "name": "Full name",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { FarmerBankSection } from "@/app/farmer/bank-section";
@@ -30,6 +31,9 @@ export default function JoinPage({ params }: PageProps<"/join/[token]">) {
 }
 
 async function loadInvite(token: string): Promise<Invite | InviteProblem> {
+  // Request-time only: resolveInvite reads the clock, which cacheComponents refuses to do
+  // while prerendering (a signed-out visitor has no session I/O to make it dynamic first).
+  await connection();
   try {
     return await resolveInvite(token);
   } catch (error) {

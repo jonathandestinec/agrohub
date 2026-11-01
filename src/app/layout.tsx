@@ -5,6 +5,7 @@ import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
+import { navLinksFor } from "@/components/nav-links";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
 import { pickActiveMembership } from "@/modules/identity/active-role";
@@ -33,6 +34,37 @@ async function SwitcherSlot() {
       activeId={active.id}
       memberships={memberships.map(toSwitcherMembership)}
     />
+  );
+}
+
+// Links for the active role only. Pages still check access themselves.
+async function NavSlot() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return null;
+  const memberships = await listMemberships(session.user.id);
+  const cookieStore = await cookies();
+  const active = pickActiveMembership(
+    memberships,
+    cookieStore.get("activeMembershipId")?.value,
+  );
+  const links = navLinksFor(active?.role ?? null);
+  if (links.length === 0) return null;
+  const t = await getTranslations("nav");
+  return (
+    <nav aria-label={t("label")} className="border-b border-border bg-surface px-4">
+      <ul className="flex flex-wrap gap-x-4">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className="flex min-h-11 items-center text-base text-primary underline"
+            >
+              {t(link.labelKey)}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -67,6 +99,9 @@ async function Shell({ children }: { children: React.ReactNode }) {
               </Suspense>
             </div>
           </header>
+          <Suspense fallback={null}>
+            <NavSlot />
+          </Suspense>
           {children}
         </NextIntlClientProvider>
       </body>
