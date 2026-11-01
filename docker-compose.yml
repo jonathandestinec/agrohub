@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: agrohub
+      POSTGRES_PASSWORD: agrohub
+      POSTGRES_DB: agrohub
+    ports:
+      - "5432:5432"
+    volumes:
+      - agrohub_pgdata:/var/lib/postgresql/data
+
+volumes:
+  agrohub_pgdata:

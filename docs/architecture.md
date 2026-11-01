@@ -129,3 +129,10 @@ Scheduled jobs: offer expiry, reservation release, lot expiry, auto-release, del
 ## 11. Decisions left open
 
 Paystack's written answer on holding funds and manual settlement; the AgroHub fee percentage and maximum cooperative cut; the price-deviation threshold (starting default 20%, my call); brand identity; weather alerts (deferred).
+
+## 12. Dependencies
+
+- create-next-app tooling: next, react, react-dom, typescript, tailwindcss, eslint (+ eslint-config-next), @types/*; the app framework and lint/type tooling.
+- zod: runtime validation of environment variables and, later, service input schemas.
+- vitest: unit and integration test runner (resolves the `@/` alias natively).
+- @playwright/test: end-to-end tests; browsers are installed separately when first needed.
