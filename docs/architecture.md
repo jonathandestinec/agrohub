@@ -137,3 +137,4 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - vitest: unit and integration test runner (resolves the `@/` alias natively).
 - @playwright/test: end-to-end tests; browsers are installed separately when first needed.
 - fast-check (dev): property-based tests, e.g. money splits always sum exactly to the total.
+- resend: sends transactional email (verification and later notifications) in staging and production; local and tests use the in-memory fake outbox.
