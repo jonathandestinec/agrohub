@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import type { Membership } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
-import { ConflictError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, ValidationError } from "@/lib/errors";
 import type { Role } from "./policies";
 
 export type { Membership };
@@ -69,4 +69,27 @@ export async function addMembership(input: {
     }
     throw error;
   }
+}
+
+// Reads the caller's own memberships.
+export async function listMemberships(userId: string): Promise<Membership[]> {
+  return prisma.membership.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+// Ownership check: a missing membership and another user's membership look the
+// same to the caller, so ids cannot be probed.
+export async function getOwnedMembership(
+  userId: string,
+  membershipId: string,
+): Promise<Membership> {
+  const membership = await prisma.membership.findUnique({
+    where: { id: membershipId },
+  });
+  if (!membership || membership.userId !== userId) {
+    throw new ForbiddenError("NOT_YOUR_MEMBERSHIP");
+  }
+  return membership;
 }

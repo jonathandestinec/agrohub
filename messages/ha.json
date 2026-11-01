@@ -2,5 +2,19 @@
   "app": {
     "name": "",
     "tagline": ""
+  },
+  "home": {
+    "welcome": "",
+    "intro": ""
+  },
+  "roleSwitcher": {
+    "label": ""
+  },
+  "roles": {
+    "FARMER": "",
+    "OFFICER": "",
+    "BUYER": "",
+    "ADMIN": "",
+    "BOARD_ADMIN": ""
   }
 }

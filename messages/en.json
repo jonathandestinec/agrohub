@@ -2,5 +2,19 @@
   "app": {
     "name": "AgroHub",
     "tagline": "Sell together. Get paid with confidence."
+  },
+  "home": {
+    "welcome": "Welcome to AgroHub",
+    "intro": "Farmer cooperatives selling together, with payment held until delivery is confirmed."
+  },
+  "roleSwitcher": {
+    "label": "Acting as"
+  },
+  "roles": {
+    "FARMER": "Farmer",
+    "OFFICER": "Cooperative officer",
+    "BUYER": "Buyer",
+    "ADMIN": "Administrator",
+    "BOARD_ADMIN": "Board administrator"
   }
 }
