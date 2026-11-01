@@ -12,3 +12,4 @@ Read before any task: `docs/superpowers/specs/2026-10-31-agrohub-design.md`, `do
 - User-facing copy never calls the held-payment feature "escrow". Say "payment held until delivery is confirmed".
 - No new dependency without adding a line to `docs/architecture.md`.
 - When the plan or spec is silent, choose the simpler option, record the choice in the task's commit message, and flag it in the pull request description.
+- Never add Co-Authored-By trailers or “Generated with Claude Code” lines to commits or pull requests.

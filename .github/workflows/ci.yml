@@ -1,0 +1,47 @@
+name: CI
+
+# Lint, typecheck and tests (including all money logic) must pass before any deploy.
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: agrohub
+          POSTGRES_PASSWORD: agrohub
+          POSTGRES_DB: agrohub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agrohub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    # Non-secret values only; they match test.env in vitest.config.mts.
+    env:
+      DATABASE_URL: postgresql://agrohub:agrohub@localhost:5432/agrohub_test
+      BETTER_AUTH_SECRET: test-only-secret-not-for-real-use-0123456789
+      BETTER_AUTH_URL: http://localhost:3000
+      CRON_SECRET: test-only-cron-secret
+      APP_ENV: local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # npm can block Prisma's install scripts, so generate the client explicitly.
+      - run: npm run db:generate
+      # The service only creates the `agrohub` database; tests use `agrohub_test`.
+      - run: psql "postgresql://agrohub:agrohub@localhost:5432/agrohub" -c 'CREATE DATABASE agrohub_test'
+      # Never `db push`: migrations contain raw SQL (triggers, constraints).
+      - run: npx prisma migrate deploy
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test

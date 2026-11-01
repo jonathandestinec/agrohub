@@ -129,3 +129,18 @@ Scheduled jobs: offer expiry, reservation release, lot expiry, auto-release, del
 ## 11. Decisions left open
 
 Paystack's written answer on holding funds and manual settlement; the AgroHub fee percentage and maximum cooperative cut; the price-deviation threshold (starting default 20%, my call); brand identity; weather alerts (deferred).
+
+## 12. Dependencies
+
+- create-next-app tooling: next, react, react-dom, typescript, tailwindcss, eslint (+ eslint-config-next), @types/*; the app framework and lint/type tooling.
+- zod: runtime validation of environment variables and, later, service input schemas.
+- vitest: unit and integration test runner (resolves the `@/` alias natively).
+- @playwright/test: end-to-end tests; browsers are installed separately when first needed.
+- fast-check (dev): property-based tests, e.g. money splits always sum exactly to the total.
+- resend: sends transactional email (verification and later notifications) in staging and production; local and tests use the in-memory fake outbox.
+- prisma (dev) and @prisma/client: schema, migrations and the typed database client; Prisma 7 reads `prisma.config.ts` and never loads `.env`.
+- @prisma/adapter-pg: the node-postgres driver adapter Prisma 7 needs to connect to Postgres (local Docker and Neon).
+- better-auth: email and password login, email verification and sessions (its two-factor plugin provides TOTP; admin and board-admin enforcement is via `requireSecondFactor`, wired in Phase 1, and nothing is enforced yet), stored through its Prisma adapter.
+- @tailwindcss/turbopack (dev): the Tailwind CSS v4 integration for Next.js Turbopack builds.
+- auth (dev): the Better Auth CLI; `auth generate` writes Better Auth's models into `prisma/schema.prisma`. Run it only through `npm run auth:generate`, which uses an empty temp cwd so the CLI never loads `.env`.
+- next-intl: message loading and translations for the App Router; locale comes from a `locale` cookie (no locale-prefixed routing), and only locales listed in `enabledLocales` are ever served.

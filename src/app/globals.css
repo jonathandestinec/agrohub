@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+/* Token variables live in tokens.css; `@theme inline` makes Tailwind utilities
+   (bg-surface, text-muted, rounded-md, ...) resolve to them. */
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-fg: var(--color-fg);
+  --color-surface: var(--color-surface);
+  --color-border: var(--color-border);
+  --color-muted: var(--color-muted);
+  --color-primary: var(--color-primary);
+  --color-primary-fg: var(--color-primary-fg);
+  --color-focus: var(--color-focus);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

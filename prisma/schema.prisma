@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String       @id
+  name              String
+  email             String
+  emailVerified     Boolean      @default(false)
+  image             String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  phone             String
+  consentAcceptedAt DateTime
+  locale            String       @default("en")
+  sessions          Session[]
+  accounts          Account[]
+  memberships       Membership[]
+
+  twoFactorEnabled Boolean?    @default(false)
+  twofactors       TwoFactor[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+enum Role {
+  FARMER
+  OFFICER
+  BUYER
+  ADMIN
+  BOARD_ADMIN
+}
+
+model Membership {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          Role
+  // Plain string until the Cooperative model exists. Null for BUYER, ADMIN, BOARD_ADMIN.
+  cooperativeId String?
+  createdAt     DateTime @default(now())
+
+  // Declared so Prisma does not drop it; the migration creates it as NULLS NOT DISTINCT.
+  @@unique([userId, role, cooperativeId], map: "membership_user_role_cooperative_key")
+  @@index([userId])
+  @@map("membership")
+}
+
+model TwoFactor {
+  id                      String    @id
+  secret                  String
+  backupCodes             String
+  userId                  String
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified                Boolean?  @default(true)
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime?
+
+  @@index([secret])
+  @@index([userId])
+  @@map("twoFactor")
+}
+
+// Append-only: a migration trigger rejects UPDATE, DELETE and TRUNCATE.
+// actorId is deliberately not a foreign key so user deletion never collides
+// with the immutability trigger.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@map("audit_log")
+}
+
+// One row per (job, time slot) that has started. The unique key is what makes
+// scheduled jobs safe to run twice; see src/lib/jobs/run-once.ts.
+model JobRun {
+  id    String   @id @default(cuid())
+  key   String   @unique
+  ranAt DateTime @default(now())
+
+  @@map("job_run")
+}
