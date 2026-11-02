@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Mark } from "@/components/ui/icons";
-import { isCurrent } from "./nav-current";
+import { centreNavLinks, isCurrent } from "./nav-current";
 
 export type AppNavLink = { href: string; label: string };
 
@@ -104,6 +104,31 @@ export function AppNav({
     };
   }, [open]);
 
+  // Three or more links fill the centre of the bar; one or two join the account action.
+  const centred = centreNavLinks(links.length);
+  const linkNav = (placement: string) => (
+    <nav aria-label={label} inert={compact} className={`nav-links ${placement}`}>
+      <ul className="flex items-center gap-1">
+        {links.map((link, i) => {
+          const current = isCurrent(pathname, link.href);
+          return (
+            <li key={link.href} style={{ transitionDelay: `${compact ? i * 25 : 120 + i * 35}ms` }}>
+              <Link
+                href={link.href}
+                aria-current={current ? "page" : undefined}
+                className={`press flex min-h-11 items-center whitespace-nowrap rounded-full px-4 title-4 ${
+                  current ? "bg-ink text-paper" : "bg-step hover:bg-step-deep"
+                }`}
+              >
+                {link.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+
   const bar = (
     <div className="fixed inset-x-0 top-0 z-30 flex justify-center px-4 pt-4 md:px-7 md:pt-7">
       <div className="w-full max-w-[1304px]">
@@ -125,34 +150,10 @@ export function AppNav({
             AgroHub
           </Link>
 
-          {hasLinks ? (
-            <nav
-              aria-label={label}
-              inert={compact}
-              className="nav-links absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block"
-            >
-              <ul className="flex items-center gap-1">
-                {links.map((link, i) => {
-                  const current = isCurrent(pathname, link.href);
-                  return (
-                    <li key={link.href} style={{ transitionDelay: `${compact ? i * 25 : 120 + i * 35}ms` }}>
-                      <Link
-                        href={link.href}
-                        aria-current={current ? "page" : undefined}
-                        className={`press flex min-h-11 items-center whitespace-nowrap rounded-full px-4 title-4 ${
-                          current ? "bg-ink text-paper" : "bg-step hover:bg-step-deep"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-          ) : null}
+          {hasLinks && centred ? linkNav("absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block") : null}
 
           <div className="relative z-10 flex shrink-0 items-center gap-2">
+            {hasLinks && !centred ? linkNav(compact ? "hidden" : "hidden lg:block") : null}
             <div className={`${compact ? "hidden" : hasLinks ? "hidden lg:flex" : "flex"} items-center`}>{switcher}</div>
             <div className={`${hasLinks ? "hidden lg:flex" : "flex"} items-center`}>{account}</div>
             {hasLinks ? (
