@@ -27,6 +27,11 @@
   --radius-frame: var(--radius-frame);
 }
 
+/* The app draws its own elastic end-of-page (OverscrollReveal); no native bounce on top. */
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   background: var(--color-ground);
   color: var(--color-ink);
@@ -103,6 +108,80 @@ p {
   background: radial-gradient(circle at 0 0, transparent 23.5px, var(--color-paper) 24px);
 }
 
+/* Landing: children rise 24px and fade in, staggered, once (see Reveal). */
+.reveal > * {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 700ms var(--ease),
+    transform 700ms var(--ease);
+}
+.reveal[data-shown] > * {
+  opacity: 1;
+  transform: none;
+}
+.reveal[data-shown] > *:nth-child(2) { transition-delay: 70ms; }
+.reveal[data-shown] > *:nth-child(3) { transition-delay: 140ms; }
+.reveal[data-shown] > *:nth-child(4) { transition-delay: 210ms; }
+.reveal[data-shown] > *:nth-child(5) { transition-delay: 280ms; }
+.reveal[data-shown] > *:nth-child(n + 6) { transition-delay: 340ms; }
+
+/* Landing: each word of the promise moves from muted to full ink (see TaglineReveal). */
+.tagline-word {
+  color: color-mix(in srgb, var(--color-ink) 52%, transparent);
+  transition: color 500ms var(--ease);
+}
+.tagline-word[data-on] {
+  color: var(--color-ink);
+}
+
+/* Landing hero: entrance and the slow drift on the photograph. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes drift {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+.rise { animation: rise 800ms var(--ease) both; }
+.rise-1 { animation-delay: 80ms; }
+.rise-2 { animation-delay: 160ms; }
+.rise-3 { animation-delay: 240ms; }
+.rise-4 { animation-delay: 320ms; }
+.drift { animation: drift 2400ms var(--ease) both; }
+
+/* Landing calculator: the take-home figure leads; the lot reads as one sentence of pills. */
+.calc-total {
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.calc-pill {
+  min-height: 44px;
+  border-radius: 9999px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  padding: 0 16px;
+  font-weight: 600;
+  outline-offset: 2px;
+}
+.calc-pill:focus-visible,
+.calc-pill:has(input:focus-visible) {
+  outline: 2px solid var(--color-ink);
+}
+.calc-pill[aria-invalid="true"],
+.calc-pill:has(input[aria-invalid="true"]) {
+  outline: 2px solid var(--color-bad);
+}
+.calc-seg {
+  transition: flex-grow 500ms var(--ease);
+}
+@media (max-width: 767px) {
+  .calc-total { font-size: 2.25rem; line-height: 2.5rem; }
+}
+
 /* Phone menu: the panel fades in and its links arrive one after another, rising 24px. */
 @keyframes menu-fade {
   from { opacity: 0; }
@@ -141,6 +220,12 @@ p {
   .press:active,
   .press-lift:hover {
     transform: none;
+  }
+  .reveal > * {
+    transform: none;
+  }
+  .tagline-word {
+    color: var(--color-ink);
   }
   /* The phone menu still fades, without movement. */
   .menu-panel,

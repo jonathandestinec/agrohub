@@ -8,6 +8,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
 import { AppNav } from "@/components/app-nav";
+import { OverscrollReveal } from "@/components/overscroll";
 import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -113,6 +114,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
           >
             {t("skip")}
           </a>
+          <OverscrollReveal>
           <div className="mx-auto w-full max-w-[1360px] p-2 md:p-4">
             <div className="flex min-h-[calc(100vh-1rem)] flex-col rounded-frame bg-paper p-2 md:min-h-[calc(100vh-2rem)] md:p-3">
               <header className="flex min-h-[52px] items-center justify-between gap-3 px-1 py-1">
@@ -134,6 +136,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
               </Suspense>
             </div>
           </div>
+          </OverscrollReveal>
         </NextIntlClientProvider>
       </body>
     </html>

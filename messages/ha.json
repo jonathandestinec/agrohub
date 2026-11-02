@@ -423,5 +423,151 @@
   "photo": {
     "signUp": "",
     "join": ""
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "",
+      "titleLine1": "",
+      "titleLine2": "",
+      "lead": "",
+      "cta": "",
+      "signIn": "",
+      "checked": "",
+      "verifiedTitle": "",
+      "verifiedNote": "",
+      "takeHomeNote": "",
+      "photoAlt": ""
+    },
+    "how": {
+      "title": "",
+      "lead": "",
+      "listed": "",
+      "held": "",
+      "paid": "",
+      "steps": {
+        "list": {
+          "title": "",
+          "body": ""
+        },
+        "approve": {
+          "title": "",
+          "body": ""
+        },
+        "pay": {
+          "title": "",
+          "body": ""
+        },
+        "deliver": {
+          "title": "",
+          "body": ""
+        }
+      }
+    },
+    "promiseLabel": "",
+    "promise": "",
+    "calc": {
+      "title": "",
+      "lead": "",
+      "takeHome": "",
+      "checkNumbers": "",
+      "perUnit": "",
+      "enterNumbers": "",
+      "formLabel": "",
+      "selling": "",
+      "quantity": "",
+      "crop": "",
+      "cropOption": "",
+      "at": "",
+      "price": "",
+      "each": "",
+      "youKeep": "",
+      "split": "",
+      "fullBreakdown": "",
+      "buyerPays": "",
+      "cooperative": "",
+      "agrohub": "",
+      "minus": "",
+      "crops": {
+        "maize": {
+          "name": "",
+          "unit": ""
+        },
+        "rice": {
+          "name": "",
+          "unit": ""
+        },
+        "soybeans": {
+          "name": "",
+          "unit": ""
+        },
+        "sorghum": {
+          "name": "",
+          "unit": ""
+        },
+        "yam": {
+          "name": "",
+          "unit": ""
+        },
+        "tomatoes": {
+          "name": "",
+          "unit": ""
+        }
+      }
+    },
+    "roles": {
+      "title": "",
+      "lead": "",
+      "buyers": {
+        "who": "",
+        "what": "",
+        "tag": ""
+      },
+      "farmers": {
+        "who": "",
+        "what": "",
+        "tag": ""
+      },
+      "officers": {
+        "who": "",
+        "what": "",
+        "tag": ""
+      },
+      "admins": {
+        "who": "",
+        "what": "",
+        "tag": ""
+      }
+    },
+    "faq": {
+      "title": "",
+      "holds": {
+        "q": "",
+        "a": ""
+      },
+      "when": {
+        "q": "",
+        "a": ""
+      },
+      "contact": {
+        "q": "",
+        "a": ""
+      },
+      "lower": {
+        "q": "",
+        "a": ""
+      },
+      "verified": {
+        "q": "",
+        "a": ""
+      },
+      "cost": {
+        "q": "",
+        "a": ""
+      }
+    },
+    "cta": {
+      "title": "",
+      "button": ""
+    }
   }
 }
