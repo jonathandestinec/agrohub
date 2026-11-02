@@ -13,9 +13,13 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "auth:generate": "node scripts/auth-generate.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "admin:grant": "tsx scripts/grant-role.ts",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "better-auth": "^1.7.14",
@@ -38,6 +42,7 @@
     "fast-check": "^4.10.2",
     "prisma": "^7.10.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.5"
   }

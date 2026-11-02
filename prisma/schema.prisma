@@ -21,6 +21,9 @@ model User {
   sessions          Session[]
   accounts          Account[]
   memberships       Membership[]
+  farmerProfile     FarmerProfile?
+
+  phoneConfirmed Boolean @default(false)
 
   twoFactorEnabled Boolean?    @default(false)
   twofactors       TwoFactor[]
@@ -85,19 +88,79 @@ enum Role {
   BOARD_ADMIN
 }
 
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  REMOVED
+  LEFT
+}
+
 model Membership {
-  id            String   @id @default(cuid())
+  id            String           @id @default(cuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   role          Role
-  // Plain string until the Cooperative model exists. Null for BUYER, ADMIN, BOARD_ADMIN.
+  // Null for BUYER, ADMIN, BOARD_ADMIN.
   cooperativeId String?
-  createdAt     DateTime @default(now())
+  cooperative   Cooperative?     @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  status        MembershipStatus @default(ACTIVE)
+  approvedAt    DateTime?
+  createdAt     DateTime         @default(now())
 
   // Declared so Prisma does not drop it; the migration creates it as NULLS NOT DISTINCT.
   @@unique([userId, role, cooperativeId], map: "membership_user_role_cooperative_key")
   @@index([userId])
   @@map("membership")
+}
+
+enum CooperativeStatus {
+  PENDING
+  VERIFIED
+  SUSPENDED
+}
+
+model Cooperative {
+  id                   String                @id @default(cuid())
+  name                 String
+  registrationNumber   String                @unique
+  state                String
+  lga                  String
+  status               CooperativeStatus     @default(PENDING)
+  certificateExpiresAt DateTime
+  submittedAt          DateTime?
+  verifiedAt           DateTime?
+  reviewNote           String?
+  recipientCode        String?
+  accountName          String?
+  bankName             String?
+  createdAt            DateTime              @default(now())
+  memberships          Membership[]
+  documents            CooperativeDocument[]
+  inviteLinks          InviteLink[]
+  farmerProfiles       FarmerProfile[]
+
+  @@map("cooperative")
+}
+
+enum DocumentKind {
+  REGISTRATION_CERTIFICATE
+  BYLAWS
+  OFFICER_LIST
+}
+
+model CooperativeDocument {
+  id            String       @id @default(cuid())
+  cooperativeId String
+  cooperative   Cooperative  @relation(fields: [cooperativeId], references: [id])
+  kind          DocumentKind
+  storageKey    String
+  contentType   String
+  sizeBytes     Int
+  uploadedBy    String
+  createdAt     DateTime     @default(now())
+
+  @@index([cooperativeId])
+  @@map("cooperative_document")
 }
 
 model TwoFactor {
@@ -139,4 +202,73 @@ model JobRun {
   ranAt DateTime @default(now())
 
   @@map("job_run")
+}
+
+enum BankOwnerType {
+  COOPERATIVE
+  FARMER
+}
+
+// A requested payout account change. It takes effect 48 hours after email confirmation.
+// There is deliberately no account-number column: only Paystack holds it.
+// ownerId points at a cooperative or (from Task 8) a farmer profile, so it has no foreign key.
+model BankChangeRequest {
+  id               String        @id @default(cuid())
+  ownerType        BankOwnerType
+  ownerId          String
+  newRecipientCode String
+  newAccountName   String
+  newBankName      String
+  requestedBy      String
+  confirmToken     String        @unique
+  confirmedAt      DateTime?
+  effectiveAt      DateTime?
+  cancelledAt      DateTime?
+  appliedAt        DateTime?
+  createdAt        DateTime      @default(now())
+
+  @@index([ownerType, ownerId])
+  @@map("bank_change_request")
+}
+
+// An officer's shareable link (email null) or a single-use invite bound to one email.
+// The migration adds a partial unique index the schema cannot express:
+// invite_link_one_open_shareable_key ON (cooperativeId) WHERE email IS NULL AND revokedAt IS NULL.
+// Never log a token.
+model InviteLink {
+  id            String      @id @default(cuid())
+  cooperativeId String
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  token         String      @unique
+  email         String?
+  createdBy     String
+  revokedAt     DateTime?
+  usedAt        DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([cooperativeId])
+  @@map("invite_link")
+}
+
+// One per user: a farmer who leaves and joins again keeps this row, and it moves to the
+// new cooperative. Bank data is only the Paystack recipient code and the resolved account
+// name; the account number is never stored. Private fields leave the server only through
+// src/modules/farmers/views.ts.
+model FarmerProfile {
+  id               String      @id @default(cuid())
+  userId           String      @unique
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cooperativeId    String
+  cooperative      Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  farmSizeHectares Decimal     @db.Decimal(8, 2)
+  crops            String[]
+  state            String
+  lga              String
+  recipientCode    String?
+  accountName      String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([cooperativeId])
+  @@map("farmer_profile")
 }

@@ -29,3 +29,23 @@ export class ForbiddenError extends Error {
     this.code = code;
   }
 }
+
+export class UnauthenticatedError extends Error {
+  readonly code: string;
+
+  constructor(code = "UNAUTHENTICATED", message = code) {
+    super(message);
+    this.name = "UnauthenticatedError";
+    this.code = code;
+  }
+}
+
+export class NotFoundError extends Error {
+  readonly code: string;
+
+  constructor(code = "NOT_FOUND", message = code) {
+    super(message);
+    this.name = "NotFoundError";
+    this.code = code;
+  }
+}

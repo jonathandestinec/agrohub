@@ -1,3 +1,6 @@
 {
-  "crons": []
+  "crons": [
+    { "path": "/api/cron/bank-change-apply", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/certificate-expiry", "schedule": "0 6 * * *" }
+  ]
 }

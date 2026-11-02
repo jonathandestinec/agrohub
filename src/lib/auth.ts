@@ -1,11 +1,13 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError } from "better-auth/api";
+import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env } from "@/lib/env";
+import { withVerifiedCallback } from "@/lib/verified-callback";
 
 function escapeHtml(value: string): string {
   return value
@@ -22,6 +24,9 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   database: prismaAdapter(prisma, { provider: "postgresql", transaction: true }),
   telemetry: { enabled: false },
+  // update-user would let a user rename themselves (the bank name check compares against
+  // User.name) or change the admin-only phone record. Name and phone are set at sign-up only.
+  disabledPaths: ["/update-user"],
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -29,7 +34,7 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
-      const href = escapeHtml(url);
+      const href = escapeHtml(withVerifiedCallback(url));
       await sendEmail({
         to: user.email,
         subject: "Verify your AgroHub email address",
@@ -37,7 +42,8 @@ export const auth = betterAuth({
       });
     },
   },
-  plugins: [twoFactor({ issuer: "AgroHub" })],
+  // nextCookies must stay last: it copies Set-Cookie from auth.api calls in server actions.
+  plugins: [twoFactor({ issuer: "AgroHub" }), nextCookies()],
   user: {
     additionalFields: {
       // Private contact detail: kept out of every Better Auth response and session payload.

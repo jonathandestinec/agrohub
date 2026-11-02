@@ -7,17 +7,24 @@ export type TransportConfig = {
   appEnv: Env["APP_ENV"];
   nodeEnv: string | undefined;
   resendApiKey: string | undefined;
+  // Sender for real sends (EMAIL_FROM). Must be on a domain verified in Resend.
+  from?: string;
 };
 
-// TODO: the sending domain is not verified in Resend yet; replace before production.
-const FROM_ADDRESS = "AgroHub <noreply@agrohub.example>";
+const DEFAULT_FROM = "AgroHub <noreply@agrohub.example>";
 
-export const fakeOutbox: { sent: EmailMessage[]; clear(): void } = {
+type FakeOutbox = { sent: EmailMessage[]; clear(): void };
+
+// Kept on globalThis so every module instance shares one outbox: in `next dev` the
+// auth route and /api/dev/outbox can load separate copies of this module.
+const globalForOutbox = globalThis as unknown as { agrohubFakeOutbox?: FakeOutbox };
+
+export const fakeOutbox: FakeOutbox = (globalForOutbox.agrohubFakeOutbox ??= {
   sent: [],
   clear() {
     this.sent.length = 0;
   },
-};
+});
 
 export function selectTransport(config: TransportConfig): "fake" | "resend" {
   if (config.appEnv === "local" || config.nodeEnv === "test") return "fake";
@@ -40,7 +47,7 @@ export async function sendEmailWith(
   // Built lazily on the first real send, never at import.
   resendClient ??= new Resend(config.resendApiKey);
   const { error } = await resendClient.emails.send({
-    from: FROM_ADDRESS,
+    from: config.from ?? DEFAULT_FROM,
     to: msg.to,
     subject: msg.subject,
     html: msg.html,
@@ -56,6 +63,7 @@ export function sendEmail(msg: EmailMessage): Promise<void> {
       appEnv: env.APP_ENV,
       nodeEnv: process.env.NODE_ENV,
       resendApiKey: env.RESEND_API_KEY,
+      from: env.EMAIL_FROM,
     },
     msg,
   );

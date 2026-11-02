@@ -11,14 +11,25 @@ export type Actor = {
   userId: string;
   role: Role;
   cooperativeId: string | null;
+  twoFactorEnabled: boolean;
 };
 
 export type Action =
   | "cooperative:verify"
+  | "cooperative:suspend"
+  | "cooperative:queue"
   | "price:write"
   | "farmer:approve"
+  | "farmer:remove"
+  | "farmer:leave"
   | "lot:approve"
-  | "dispute:resolve";
+  | "dispute:resolve"
+  | "cooperative:read"
+  | "cooperative:upload"
+  | "cooperative:edit"
+  | "document:view"
+  | "bank:change"
+  | "invite:manage";
 
 export type Resource = {
   cooperativeId?: string;
@@ -44,12 +55,23 @@ export function can(
 ): boolean {
   switch (action) {
     case "cooperative:verify":
+    case "cooperative:suspend":
+    case "cooperative:queue":
     case "dispute:resolve":
       return actor.role === "ADMIN";
     case "price:write":
       return actor.role === "BOARD_ADMIN";
     case "farmer:approve":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "farmer:remove":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "farmer:leave":
+      // A farmer leaves only their own membership.
+      return (
+        actor.role === "FARMER" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
     case "lot:approve":
       if (actor.role === "OFFICER") {
         return (
@@ -66,6 +88,24 @@ export function can(
         );
       }
       return false;
+    case "cooperative:read":
+    case "document:view":
+      return (
+        actor.role === "ADMIN" ||
+        (actor.role === "OFFICER" && isOwnCooperative(actor, resource))
+      );
+    case "cooperative:upload":
+    case "cooperative:edit":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "bank:change":
+      // Farmers change their own account through the self-scoped banking function.
+      return (
+        actor.role === "OFFICER" &&
+        actor.twoFactorEnabled &&
+        isOwnCooperative(actor, resource)
+      );
+    case "invite:manage":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     default:
       return false;
   }

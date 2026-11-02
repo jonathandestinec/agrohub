@@ -17,12 +17,79 @@ describe("parseEnv", () => {
     expect(parseEnv(validRaw).APP_ENV).toBe("local");
   });
 
+  it("keeps the local default outside production (dev and test)", () => {
+    expect(parseEnv({ ...validRaw, NODE_ENV: "development" }).APP_ENV).toBe("local");
+    expect(parseEnv({ ...validRaw, NODE_ENV: "test" }).APP_ENV).toBe("local");
+  });
+
+  it("requires APP_ENV when NODE_ENV is production, naming the variable", () => {
+    expect(() => parseEnv({ ...validRaw, NODE_ENV: "production" })).toThrow(/APP_ENV/);
+    expect(() => parseEnv({ ...validRaw, NODE_ENV: "production", APP_ENV: "" })).toThrow(
+      /APP_ENV/,
+    );
+  });
+
+  it("accepts an explicit APP_ENV in production", () => {
+    for (const appEnv of ["local", "staging", "production"] as const) {
+      expect(parseEnv({ ...validRaw, NODE_ENV: "production", APP_ENV: appEnv }).APP_ENV).toBe(
+        appEnv,
+      );
+    }
+  });
+
   it("rejects an unknown APP_ENV", () => {
     expect(() => parseEnv({ ...validRaw, APP_ENV: "prod" })).toThrow(/APP_ENV/);
   });
 
   it("treats RESEND_API_KEY as optional", () => {
     expect(parseEnv(validRaw).RESEND_API_KEY).toBeUndefined();
+  });
+
+  describe("EMAIL_FROM", () => {
+    it("defaults to the placeholder sender when unset or empty", () => {
+      expect(parseEnv(validRaw).EMAIL_FROM).toBe("AgroHub <noreply@agrohub.example>");
+      expect(parseEnv({ ...validRaw, EMAIL_FROM: "" }).EMAIL_FROM).toBe("AgroHub <noreply@agrohub.example>");
+    });
+
+    it("uses the configured sender", () => {
+      expect(parseEnv({ ...validRaw, EMAIL_FROM: "AgroHub <hello@agrohub.ng>" }).EMAIL_FROM).toBe(
+        "AgroHub <hello@agrohub.ng>",
+      );
+    });
+  });
+
+  describe("PAYSTACK_SECRET_KEY", () => {
+    it("is optional and empty means unset", () => {
+      expect(parseEnv(validRaw).PAYSTACK_SECRET_KEY).toBeUndefined();
+      expect(parseEnv({ ...validRaw, PAYSTACK_SECRET_KEY: "" }).PAYSTACK_SECRET_KEY).toBeUndefined();
+    });
+
+    it("rejects a non-test key in staging, naming the variable but not the value", () => {
+      let message = "";
+      try {
+        parseEnv({ ...validRaw, APP_ENV: "staging", PAYSTACK_SECRET_KEY: "sk_live_x" });
+      } catch (error) {
+        message = (error as Error).message;
+      }
+      expect(message).toMatch(/PAYSTACK_SECRET_KEY/);
+      expect(message).not.toContain("sk_live_x");
+    });
+
+    it("accepts a test key in staging", () => {
+      const parsed = parseEnv({ ...validRaw, APP_ENV: "staging", PAYSTACK_SECRET_KEY: "sk_test_x" });
+      expect(parsed.PAYSTACK_SECRET_KEY).toBe("sk_test_x");
+    });
+
+    it("rejects a test key in production", () => {
+      expect(() =>
+        parseEnv({ ...validRaw, APP_ENV: "production", PAYSTACK_SECRET_KEY: "sk_test_x" }),
+      ).toThrow(/PAYSTACK_SECRET_KEY/);
+    });
+
+    it("accepts a live key in production", () => {
+      const parsed = parseEnv({ ...validRaw, APP_ENV: "production", PAYSTACK_SECRET_KEY: "sk_live_x" });
+      expect(parsed.PAYSTACK_SECRET_KEY).toBe("sk_live_x");
+    });
   });
 
   describe("BETTER_AUTH_URL on Vercel", () => {

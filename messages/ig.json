@@ -8,7 +8,8 @@
     "intro": ""
   },
   "roleSwitcher": {
-    "label": ""
+    "label": "",
+    "error": ""
   },
   "roles": {
     "FARMER": "",
@@ -16,5 +17,385 @@
     "BUYER": "",
     "ADMIN": "",
     "BOARD_ADMIN": ""
+  },
+  "header": {
+    "signIn": "",
+    "signOut": ""
+  },
+  "nav": {
+    "label": "",
+    "cooperative": "",
+    "invites": "",
+    "farmers": "",
+    "reviewCooperatives": "",
+    "farm": "",
+    "registerCooperative": "",
+    "yourFarm": ""
+  },
+  "auth": {
+    "fields": {
+      "name": "",
+      "email": "",
+      "password": "",
+      "phone": "",
+      "code": ""
+    },
+    "signUp": {
+      "title": "",
+      "consent": "",
+      "passwordHint": "",
+      "submit": "",
+      "submitting": "",
+      "checkEmailTitle": "",
+      "checkEmailBody": "",
+      "haveAccount": "",
+      "signInLink": "",
+      "emailTaken": "",
+      "passwordTooShort": "",
+      "consentRequired": "",
+      "error": ""
+    },
+    "signIn": {
+      "title": "",
+      "submit": "",
+      "submitting": "",
+      "invalid": "",
+      "unverified": "",
+      "error": "",
+      "noAccount": "",
+      "signUpLink": ""
+    },
+    "verified": {
+      "title": "",
+      "body": "",
+      "failedTitle": "",
+      "failedBody": "",
+      "signIn": ""
+    },
+    "twoFactor": {
+      "enrolTitle": "",
+      "enrolIntro": "",
+      "start": "",
+      "starting": "",
+      "wrongPassword": "",
+      "setupInstructions": "",
+      "secretLabel": "",
+      "uriLabel": "",
+      "copy": "",
+      "copied": "",
+      "backupCodesTitle": "",
+      "backupCodesBody": "",
+      "enrolConfirm": "",
+      "verifyTitle": "",
+      "verifyIntro": "",
+      "submit": "",
+      "submitting": "",
+      "invalidCode": "",
+      "expired": "",
+      "tooManyAttempts": "",
+      "signInAgain": "",
+      "error": ""
+    }
+  },
+  "privacy": {
+    "title": "",
+    "comingSoon": ""
+  },
+  "officer": {
+    "onboarding": {
+      "title": "",
+      "intro": "",
+      "detailsHeading": "",
+      "fields": {
+        "name": "",
+        "registrationNumber": "",
+        "state": "",
+        "statePlaceholder": "",
+        "lga": "",
+        "certificateExpiresAt": ""
+      },
+      "create": "",
+      "creating": "",
+      "documentsHeading": "",
+      "documentsIntro": "",
+      "kinds": {
+        "REGISTRATION_CERTIFICATE": "",
+        "BYLAWS": "",
+        "OFFICER_LIST": ""
+      },
+      "file": "",
+      "upload": "",
+      "uploading": "",
+      "uploaded": "",
+      "replace": "",
+      "status": {
+        "incomplete": "",
+        "waiting": "",
+        "verified": "",
+        "suspended": "",
+        "changesRequested": "",
+        "certificateExpired": ""
+      },
+      "errors": {
+        "ALREADY_OFFICER": "",
+        "REGISTRATION_NUMBER_TAKEN": "",
+        "VALIDATION_ERROR": "",
+        "FILE_TYPE_NOT_ALLOWED": "",
+        "FILE_TYPE_MISMATCH": "",
+        "FILE_TOO_LARGE": "",
+        "NO_FILE": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "ACCOUNT_NAME_MISMATCH": "",
+        "BANK_ACCOUNT_NOT_FOUND": "",
+        "UNKNOWN_BANK": "",
+        "INVALID_ACCOUNT_NUMBER": "",
+        "INVALID_BANK_CODE": "",
+        "CERTIFICATE_EXPIRY_INVALID": "",
+        "ILLEGAL_TRANSITION": "",
+        "COOPERATIVE_NOT_FOUND": "",
+        "INTERNAL": ""
+      },
+      "bank": {
+        "heading": "",
+        "intro": "",
+        "current": "",
+        "none": "",
+        "bank": "",
+        "bankPlaceholder": "",
+        "accountNumber": "",
+        "accountNumberHint": "",
+        "save": "",
+        "saving": "",
+        "saved": "",
+        "pending": "",
+        "confirmed": "",
+        "needsTwoFactor": "",
+        "enableTwoFactor": "",
+        "unavailable": ""
+      },
+      "certificateExpiryHint": "",
+      "edit": {
+        "heading": "",
+        "intro": "",
+        "save": "",
+        "saving": "",
+        "saved": ""
+      }
+    },
+    "invites": {
+      "title": "",
+      "intro": "",
+      "notVerified": "",
+      "linkHeading": "",
+      "linkLabel": "",
+      "copy": "",
+      "copied": "",
+      "copyFailed": "",
+      "regenerate": "",
+      "regenerateWarning": "",
+      "regenerateConfirm": "",
+      "regenerateCancel": "",
+      "regenerating": "",
+      "regenerated": "",
+      "emailHeading": "",
+      "emailIntro": "",
+      "emailLabel": "",
+      "emailSend": "",
+      "emailSending": "",
+      "emailSent": "",
+      "errors": {
+        "INVALID_EMAIL": "",
+        "VALIDATION_ERROR": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "COOPERATIVE_NOT_FOUND": "",
+        "INTERNAL": ""
+      }
+    },
+    "farmers": {
+      "title": "",
+      "intro": "",
+      "pendingHeading": "",
+      "pendingEmpty": "",
+      "activeHeading": "",
+      "activeEmpty": "",
+      "details": "",
+      "bankAdded": "",
+      "bankMissing": "",
+      "approve": "",
+      "approving": "",
+      "reject": "",
+      "rejectReasonLabel": "",
+      "rejectConfirm": "",
+      "rejecting": "",
+      "remove": "",
+      "removeWarning": "",
+      "removeReasonLabel": "",
+      "removeConfirm": "",
+      "removing": "",
+      "cancel": "",
+      "errors": {
+        "VALIDATION_ERROR": "",
+        "ILLEGAL_TRANSITION": "",
+        "UNFINISHED_ORDERS": "",
+        "MEMBERSHIP_NOT_FOUND": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "COOPERATIVE_NOT_VERIFIED": "",
+        "INTERNAL": ""
+      },
+      "rejectWarning": ""
+    }
+  },
+  "admin": {
+    "cooperatives": {
+      "title": "",
+      "empty": "",
+      "waiting": "",
+      "submitted": "",
+      "back": "",
+      "open": "",
+      "detail": {
+        "registrationNumber": "",
+        "location": "",
+        "status": "",
+        "certificateExpiresAt": "",
+        "submittedAt": "",
+        "notSubmitted": "",
+        "verifiedAt": "",
+        "reviewNote": "",
+        "documentsHeading": "",
+        "noDocument": "",
+        "viewDocument": "",
+        "actionsHeading": "",
+        "reason": ""
+      },
+      "state": {
+        "PENDING": "",
+        "VERIFIED": "",
+        "SUSPENDED": ""
+      },
+      "actions": {
+        "verify": "",
+        "reject": "",
+        "suspend": "",
+        "reinstate": "",
+        "working": "",
+        "done": ""
+      },
+      "errors": {
+        "ILLEGAL_TRANSITION": "",
+        "CERTIFICATE_EXPIRED": "",
+        "NOT_SUBMITTED": "",
+        "DOCUMENTS_MISSING": "",
+        "REASON_REQUIRED": "",
+        "REASON_TOO_LONG": "",
+        "VALIDATION_ERROR": "",
+        "COOPERATIVE_NOT_FOUND": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "INTERNAL": ""
+      }
+    }
+  },
+  "bank": {
+    "confirm": {
+      "title": "",
+      "body": "",
+      "confirm": "",
+      "confirming": "",
+      "done": "",
+      "invalid": "",
+      "error": ""
+    }
+  },
+  "farmer": {
+    "join": {
+      "title": "",
+      "signedOutIntro": "",
+      "signUp": "",
+      "signIn": "",
+      "profileIntro": "",
+      "invalidTitle": "",
+      "invalid": "",
+      "notVerifiedTitle": "",
+      "notVerified": "",
+      "emailMismatch": "",
+      "otherTitle": "",
+      "otherCooperative": "",
+      "waiting": "",
+      "approved": "",
+      "goToFarmer": ""
+    },
+    "profile": {
+      "farmSize": "",
+      "farmSizeHint": "",
+      "crops": "",
+      "cropsHint": "",
+      "state": "",
+      "statePlaceholder": "",
+      "lga": "",
+      "submit": "",
+      "submitting": ""
+    },
+    "bank": {
+      "heading": "",
+      "intro": "",
+      "current": "",
+      "none": "",
+      "bank": "",
+      "bankPlaceholder": "",
+      "accountNumber": "",
+      "accountNumberHint": "",
+      "save": "",
+      "saving": "",
+      "saved": "",
+      "pending": "",
+      "confirmed": "",
+      "unavailable": ""
+    },
+    "home": {
+      "title": "",
+      "notJoined": "",
+      "status": {
+        "PENDING": "",
+        "ACTIVE": "",
+        "LEFT": "",
+        "REMOVED": ""
+      },
+      "profileHeading": "",
+      "farmSize": "",
+      "hectares": "",
+      "crops": "",
+      "location": "",
+      "place": ""
+    },
+    "errors": {
+      "VALIDATION_ERROR": "",
+      "ALREADY_IN_COOPERATIVE": "",
+      "INVITE_INVALID": "",
+      "INVITE_EMAIL_MISMATCH": "",
+      "COOPERATIVE_NOT_VERIFIED": "",
+      "UNAUTHENTICATED": "",
+      "FORBIDDEN": "",
+      "ACCOUNT_NAME_MISMATCH": "",
+      "BANK_ACCOUNT_NOT_FOUND": "",
+      "UNKNOWN_BANK": "",
+      "INVALID_ACCOUNT_NUMBER": "",
+      "INVALID_BANK_CODE": "",
+      "INTERNAL": "",
+      "REMOVED_FROM_COOPERATIVE": "",
+      "UNFINISHED_ORDERS": "",
+      "ILLEGAL_TRANSITION": ""
+    },
+    "leave": {
+      "heading": "",
+      "button": "",
+      "warning": "",
+      "confirm": "",
+      "cancel": "",
+      "leaving": ""
+    }
   }
 }

@@ -107,7 +107,7 @@ Each module folder holds: `service.ts` (the only public entry), `schema.ts` (zod
 | --- | --- | --- |
 | Paystack | checkout, webhooks, refunds, transfer recipients, transfers | `src/lib/paystack.ts` (thin client), `modules/payments` |
 | Resend | all email | `src/lib/email.ts` with a fake transport for tests and local |
-| Private bucket (R2 or S3) | verification documents, lot photos | `src/lib/storage.ts`, signed URLs only |
+| Private bucket (S3-compatible: Backblaze B2, R2 or S3) | verification documents, lot photos | `src/lib/storage.ts`, signed URLs only |
 | Vercel Cron | scheduled jobs | `app/api/cron/[job]/route.ts` guarded by `CRON_SECRET` |
 
 Scheduled jobs: offer expiry, reservation release, lot expiry, auto-release, delivery timeout, certificate reminders, reconciliation, alerts. Each is wrapped in `runOnce`.
@@ -138,9 +138,12 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - @playwright/test: end-to-end tests; browsers are installed separately when first needed.
 - fast-check (dev): property-based tests, e.g. money splits always sum exactly to the total.
 - resend: sends transactional email (verification and later notifications) in staging and production; local and tests use the in-memory fake outbox.
+- @aws-sdk/client-s3: S3-compatible client (Backblaze B2, Cloudflare R2 or AWS S3) that uploads private documents and photos in staging and production; local and tests use the in-memory fake storage.
+- @aws-sdk/s3-request-presigner: creates the short-lived signed GET links through which private objects are opened.
 - prisma (dev) and @prisma/client: schema, migrations and the typed database client; Prisma 7 reads `prisma.config.ts` and never loads `.env`.
 - @prisma/adapter-pg: the node-postgres driver adapter Prisma 7 needs to connect to Postgres (local Docker and Neon).
-- better-auth: email and password login, email verification and sessions (its two-factor plugin provides TOTP; admin and board-admin enforcement is via `requireSecondFactor`, wired in Phase 1, and nothing is enforced yet), stored through its Prisma adapter.
+- better-auth: email and password login, email verification and sessions (its two-factor plugin provides TOTP; admin and board-admin enforcement is via `requireSecondFactor` in `getActor`, and pages use `requireActorForPage` to send them to `/two-factor`), stored through its Prisma adapter. Its `nextCookies` plugin (kept last) lets `auth.api` calls in server actions set cookies; the browser pages use its React client (`src/lib/auth-client.ts`).
 - @tailwindcss/turbopack (dev): the Tailwind CSS v4 integration for Next.js Turbopack builds.
 - auth (dev): the Better Auth CLI; `auth generate` writes Better Auth's models into `prisma/schema.prisma`. Run it only through `npm run auth:generate`, which uses an empty temp cwd so the CLI never loads `.env`.
 - next-intl: message loading and translations for the App Router; locale comes from a `locale` cookie (no locale-prefixed routing), and only locales listed in `enabledLocales` are ever served.
+- tsx (dev): runs TypeScript scripts with the `@/` alias, for `npm run admin:grant` (`scripts/grant-role.ts`). It never loads `.env`.
