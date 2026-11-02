@@ -89,6 +89,36 @@ p {
   }
 }
 
+/* Concave corners joining a photo's notch to the frame (the "clipped" look). */
+.notch-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+.notch-corner[data-at="br"] {
+  background: radial-gradient(circle at 100% 100%, transparent 23.5px, var(--color-paper) 24px);
+}
+.notch-corner[data-at="tl"] {
+  background: radial-gradient(circle at 0 0, transparent 23.5px, var(--color-paper) 24px);
+}
+
+/* Logo: the two leaves sway gently from their stem, out of step. */
+.mark-leaf {
+  transform-box: view-box;
+  animation: mark-sway 4.8s ease-in-out infinite;
+}
+.mark-leaf-right { transform-origin: 16px 12px; }
+.mark-leaf-left {
+  transform-origin: 16px 16px;
+  animation-delay: -2.4s;
+  animation-duration: 5.6s;
+}
+@keyframes mark-sway {
+  0%, 100% { transform: rotate(-14deg); }
+  50% { transform: rotate(14deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
