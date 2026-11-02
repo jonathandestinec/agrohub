@@ -28,13 +28,30 @@ export function AppNav({
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
   const toggle = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setOpenOn(null);
-      toggle.current?.focus();
+      if (event.key === "Escape") {
+        setOpenOn(null);
+        toggle.current?.focus();
+        return;
+      }
+      // Keep Tab inside the open menu (the toggle plus the menu's controls, wrapping round),
+      // so focus never lands on page content hidden behind the overlay.
+      if (event.key !== "Tab" || !toggle.current || !menu.current) return;
+      const items = [
+        toggle.current,
+        ...menu.current.querySelectorAll<HTMLElement>(
+          "a[href], button:not([disabled]), select:not([disabled])",
+        ),
+      ];
+      const at = items.indexOf(document.activeElement as HTMLElement);
+      const last = items.length - 1;
+      const next = event.shiftKey ? (at <= 0 ? last : at - 1) : at === -1 || at === last ? 0 : at + 1;
+      event.preventDefault();
+      items[next].focus();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -92,7 +109,7 @@ export function AppNav({
       </button>
 
       {open ? (
-        <div id="app-menu" className="menu-panel fixed inset-0 z-40 overflow-y-auto bg-paper/95 px-4 pb-8 pt-24 backdrop-blur-xl md:hidden">
+        <div ref={menu} id="app-menu" className="menu-panel fixed inset-0 z-40 overflow-y-auto bg-paper/95 px-4 pb-8 pt-24 backdrop-blur-xl md:hidden">
           <nav aria-label={label}>
             <ul className="flex flex-col gap-2">
               {links.map((link, i) => (

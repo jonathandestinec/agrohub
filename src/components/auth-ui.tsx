@@ -21,7 +21,7 @@ export function AuthCard({
 }) {
   return (
     <main id="main" className="grid flex-1 gap-2 md:grid-cols-12">
-      <section className={`rounded-panel bg-paper px-4 py-8 md:px-10 md:py-14 ${photo ? "md:col-span-7" : "md:col-span-12"}`}>
+      <section className={`min-w-0 rounded-panel bg-paper px-4 py-8 md:px-10 md:py-14 ${photo ? "md:col-span-7" : "md:col-span-12"}`}>
         <div className="mx-auto w-full max-w-md">
           <h1 className="heading-3 break-words">{title}</h1>
           {lead ? <p className="mt-3 body-3 text-ink-soft">{lead}</p> : null}

@@ -39,6 +39,11 @@ describe("AuthCard", () => {
     expect(html).toContain("Members sell together");
   });
 
+  it("lets the form column shrink so a long unbroken word cannot widen the page", () => {
+    const html = renderToStaticMarkup(AuthCard({ title: "Sign up", photo: "cooperative", children: "form" }));
+    expect(html).toMatch(/<section[^>]*\bmin-w-0\b/);
+  });
+
   it("renders no image without a photo", () => {
     expect(renderToStaticMarkup(AuthCard({ title: "Two-step", children: "form" }))).not.toContain("<img");
   });
