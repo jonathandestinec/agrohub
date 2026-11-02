@@ -6,7 +6,7 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { env } from "@/lib/env";
+import { env, trustedOrigins } from "@/lib/env";
 import { withVerifiedCallback } from "@/lib/verified-callback";
 
 function escapeHtml(value: string): string {
@@ -22,6 +22,7 @@ function escapeHtml(value: string): string {
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
+  trustedOrigins,
   database: prismaAdapter(prisma, { provider: "postgresql", transaction: true }),
   telemetry: { enabled: false },
   // update-user would let a user rename themselves (the bank name check compares against
