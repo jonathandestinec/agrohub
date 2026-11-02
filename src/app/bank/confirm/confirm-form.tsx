@@ -30,7 +30,7 @@ export function ConfirmForm({ token }: { token: string }) {
     return (
       <p
         role="status"
-        className="rounded-md border border-border bg-surface px-3 py-3 text-base"
+        className="rounded-inner bg-step p-4 body-3"
       >
         {t("done", { date: formatEffectiveAt(effectiveAt, locale) })}
       </p>

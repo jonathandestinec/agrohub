@@ -4,11 +4,11 @@ import { getTranslations } from "next-intl/server";
 export default async function PrivacyPage() {
   const t = await getTranslations("privacy");
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-      <h1 className="font-[family-name:var(--font-heading)] text-2xl font-semibold">
-        {t("title")}
-      </h1>
-      <p className="mt-3 text-muted">{t("comingSoon")}</p>
+    <main id="main" className="flex-1 rounded-panel bg-step px-6 py-10 md:px-12 md:py-16">
+      <div className="max-w-[65ch]">
+        <h1 className="heading-3 break-words">{t("title")}</h1>
+        <p className="mt-4 body-3">{t("comingSoon")}</p>
+      </div>
     </main>
   );
 }

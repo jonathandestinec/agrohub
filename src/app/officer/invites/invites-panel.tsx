@@ -7,6 +7,7 @@ import {
   inviteFarmerByEmailAction,
   regenerateInviteLinkAction,
 } from "../actions";
+import { buttonClass } from "@/components/ui/button";
 
 const KNOWN_ERRORS = [
   "INVALID_EMAIL",
@@ -22,7 +23,7 @@ function errorKey(code: string): `errors.${(typeof KNOWN_ERRORS)[number] | "INTE
 }
 
 const secondaryButton =
-  "min-h-11 w-full rounded-md border border-border bg-bg px-4 text-base font-semibold text-fg disabled:opacity-60";
+  `${buttonClass("step")} w-full`;
 
 export function InvitesPanel({ initialUrl }: { initialUrl: string }) {
   const t = useTranslations("officer.invites");
@@ -80,10 +81,10 @@ export function InvitesPanel({ initialUrl }: { initialUrl: string }) {
   return (
     <>
       <section className="flex flex-col gap-4">
-        <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
+        <h2 className="heading-6">
           {t("linkHeading")}
         </h2>
-        <label htmlFor="invite-link" className="text-sm font-medium">
+        <label htmlFor="invite-link" className="title-4">
           {t("linkLabel")}
         </label>
         <input
@@ -91,18 +92,18 @@ export function InvitesPanel({ initialUrl }: { initialUrl: string }) {
           readOnly
           value={url}
           onFocus={(event) => event.currentTarget.select()}
-          className="min-h-11 w-full rounded-md border border-border bg-bg px-3 text-base text-fg"
+          className="min-h-12 w-full rounded-input bg-step px-4 body-3 text-ink"
         />
-        <button type="button" onClick={copy} className="min-h-11 w-full rounded-md bg-primary px-4 text-base font-semibold text-primary-fg">
+        <button type="button" onClick={copy} className={`${buttonClass("ink")} w-full`}>
           {copyState === "copied" ? t("copied") : t("copy")}
         </button>
         {copyState === "failed" ? (
-          <p role="alert" className="text-base">
+          <p role="alert" className="body-3">
             {t("copyFailed")}
           </p>
         ) : null}
         {regenerated ? (
-          <p role="status" className="text-base">
+          <p role="status" className="body-3">
             {t("regenerated")}
           </p>
         ) : null}
@@ -111,14 +112,14 @@ export function InvitesPanel({ initialUrl }: { initialUrl: string }) {
           <div
             role="group"
             aria-label={t("regenerate")}
-            className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-3"
+            className="flex flex-col gap-3 rounded-inner bg-step p-4 md:p-6"
           >
-            <p className="text-base">{t("regenerateWarning")}</p>
+            <p className="body-3">{t("regenerateWarning")}</p>
             <button
               type="button"
               onClick={regenerate}
               disabled={regenerating}
-              className="min-h-11 w-full rounded-md bg-primary px-4 text-base font-semibold text-primary-fg disabled:opacity-60"
+              className={`${buttonClass("ink")} w-full`}
             >
               {regenerating ? t("regenerating") : t("regenerateConfirm")}
             </button>
@@ -126,7 +127,7 @@ export function InvitesPanel({ initialUrl }: { initialUrl: string }) {
               type="button"
               onClick={() => setConfirming(false)}
               disabled={regenerating}
-              className={secondaryButton}
+              className={`${buttonClass("paper")} w-full`}
             >
               {t("regenerateCancel")}
             </button>
@@ -145,10 +146,10 @@ export function InvitesPanel({ initialUrl }: { initialUrl: string }) {
         )}
       </section>
       <section className="flex flex-col gap-4">
-        <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
+        <h2 className="heading-6">
           {t("emailHeading")}
         </h2>
-        <p className="text-sm text-muted">{t("emailIntro")}</p>
+        <p className="body-6 text-ink-soft">{t("emailIntro")}</p>
         <form onSubmit={sendEmail} className="flex flex-col gap-4">
           <Field
             id="invite-email"
@@ -162,7 +163,7 @@ export function InvitesPanel({ initialUrl }: { initialUrl: string }) {
           />
           <FormError message={emailError} />
           {sent ? (
-            <p role="status" className="text-base">
+            <p role="status" className="body-3">
               {t("emailSent")}
             </p>
           ) : null}

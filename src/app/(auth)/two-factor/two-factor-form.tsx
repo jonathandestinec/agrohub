@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { AuthCard, Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { authClient } from "@/lib/auth-client";
+import { buttonClass } from "@/components/ui/button";
 
 type Setup = { totpURI: string; secret: string; backupCodes: string[] };
 
@@ -87,7 +88,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
       />
       <FormError message={error} />
       {mustRestart ? (
-        <Link href="/sign-in" className="text-primary underline">
+        <Link href="/sign-in" className="underline underline-offset-2">
           {t("signInAgain")}
         </Link>
       ) : null}
@@ -98,7 +99,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
   if (mode === "verify") {
     return (
       <AuthCard title={t("verifyTitle")}>
-        <p className="text-muted">{t("verifyIntro")}</p>
+        <p className="text-ink-soft">{t("verifyIntro")}</p>
         {codeForm}
       </AuthCard>
     );
@@ -107,7 +108,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
   if (!setup) {
     return (
       <AuthCard title={t("enrolTitle")}>
-        <p className="text-muted">{t("enrolIntro")}</p>
+        <p className="text-ink-soft">{t("enrolIntro")}</p>
         <form onSubmit={startEnrolment} className="flex flex-col gap-4">
           <Field
             id="password"
@@ -126,28 +127,28 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
 
   return (
     <AuthCard title={t("enrolTitle")}>
-      <p className="text-muted">{t("setupInstructions")}</p>
-      <div className="flex flex-col gap-2 rounded-md border border-border bg-surface p-3">
-        <span className="text-sm font-medium">{t("secretLabel")}</span>
-        <code data-testid="totp-secret" className="break-all font-mono text-base">
+      <p className="text-ink-soft">{t("setupInstructions")}</p>
+      <div className="flex flex-col gap-2 rounded-inner bg-step p-4">
+        <span className="title-4">{t("secretLabel")}</span>
+        <code data-testid="totp-secret" className="break-all font-mono body-3">
           {setup.secret}
         </code>
         <button
           type="button"
           onClick={copySecret}
-          className="min-h-11 rounded-md border border-border bg-bg px-4 text-base"
+          className={buttonClass("step")}
         >
           {copied ? t("copied") : t("copy")}
         </button>
-        <a href={setup.totpURI} className="break-all text-sm text-primary underline">
+        <a href={setup.totpURI} className="break-all body-6 underline underline-offset-2">
           {t("uriLabel")}
         </a>
       </div>
       {setup.backupCodes.length > 0 ? (
         <section className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">{t("backupCodesTitle")}</h2>
-          <p className="text-sm text-muted">{t("backupCodesBody")}</p>
-          <ul className="grid grid-cols-2 gap-1 font-mono text-sm">
+          <h2 className="heading-6">{t("backupCodesTitle")}</h2>
+          <p className="body-6 text-ink-soft">{t("backupCodesBody")}</p>
+          <ul className="grid grid-cols-2 gap-1 font-mono body-6">
             {setup.backupCodes.map((code) => (
               <li key={code}>{code}</li>
             ))}

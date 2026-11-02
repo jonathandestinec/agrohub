@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
-import { AuthCard } from "@/components/auth-ui";
+import { PageHeading } from "@/components/ui";
 import { createInviteLink } from "@/modules/cooperatives/invites";
 import { getOwnCooperative } from "@/modules/cooperatives/service";
 import { InvitesPanel } from "./invites-panel";
@@ -25,17 +25,19 @@ async function Invites() {
   const t = await getTranslations("officer.invites");
 
   return (
-    <AuthCard title={t("title")}>
-      <p className="text-base text-muted">{t("intro")}</p>
+    <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <PageHeading title={t("title")} lead={t("intro")} />
       {cooperative.status !== "VERIFIED" ? (
         <p
           role="status"
-          className="rounded-md border border-border bg-surface px-3 py-3 text-base"
+          className="rounded-inner bg-warn-soft p-4 body-3 md:p-6"
         >
           {t("notVerified")}
         </p>
       ) : null}
-      <InvitesPanel initialUrl={url} />
-    </AuthCard>
+      <div className="rounded-inner bg-paper p-4 md:p-6">
+        <InvitesPanel initialUrl={url} />
+      </div>
+    </main>
   );
 }

@@ -1,3 +1,4 @@
+import { buttonClass } from "@/components/ui/button";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
@@ -26,10 +27,10 @@ async function VerifiedResult({
   const failed = error !== undefined;
   return (
     <AuthCard title={failed ? t("failedTitle") : t("title")}>
-      <p className="text-muted">{failed ? t("failedBody") : t("body")}</p>
+      <p className="text-ink-soft">{failed ? t("failedBody") : t("body")}</p>
       <Link
         href={withNext("/sign-in", returnTo)}
-        className="flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-base font-semibold text-primary-fg"
+        className={`${buttonClass("ink")} w-full`}
       >
         {t("signIn")}
       </Link>

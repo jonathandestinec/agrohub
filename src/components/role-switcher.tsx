@@ -26,7 +26,7 @@ export function RoleSwitcher({
 
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor={selectId} className="text-sm text-muted">
+      <label htmlFor={selectId} className="caption-4 text-ink-soft">
         {t("label")}
       </label>
       <select
@@ -40,7 +40,7 @@ export function RoleSwitcher({
             setFailed(!result.ok);
           });
         }}
-        className="min-h-11 rounded-md border border-border bg-surface px-3 text-base text-fg"
+        className="press min-h-11 rounded-full bg-step px-4 title-4 text-ink hover:bg-step-deep disabled:opacity-50"
       >
         {memberships.map((m) => (
           <option key={m.id} value={m.id}>
@@ -49,7 +49,7 @@ export function RoleSwitcher({
         ))}
       </select>
       {failed ? (
-        <span role="alert" className="text-sm text-fg">
+        <span role="alert" className="body-6 text-bad">
           {t("error")}
         </span>
       ) : null}

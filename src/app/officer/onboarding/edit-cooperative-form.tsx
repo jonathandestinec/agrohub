@@ -39,12 +39,12 @@ export function EditCooperativeForm({
   }
 
   return (
-    <details className="rounded-lg border border-border bg-surface p-4">
-      <summary className="flex min-h-11 cursor-pointer items-center text-base font-medium">
+    <details className="rounded-inner bg-step p-4 md:p-6 [&_input]:bg-paper [&_select]:bg-paper">
+      <summary className="flex min-h-11 cursor-pointer items-center title-3">
         {t("edit.heading")}
       </summary>
       <form onSubmit={onSubmit} className="mt-3 flex flex-col gap-4">
-        <p className="text-sm text-muted">{t("edit.intro")}</p>
+        <p className="body-6 text-ink-soft">{t("edit.intro")}</p>
         <Field
           id="edit-name"
           name="name"
@@ -60,7 +60,7 @@ export function EditCooperativeForm({
           required
         />
         <div className="flex flex-col gap-1">
-          <label htmlFor="edit-state" className="text-sm font-medium">
+          <label htmlFor="edit-state" className="title-4">
             {t("fields.state")}
           </label>
           <select
@@ -68,7 +68,7 @@ export function EditCooperativeForm({
             name="state"
             required
             defaultValue={details.state}
-            className="min-h-11 w-full rounded-md border border-border bg-bg px-3 text-base text-fg"
+            className="min-h-12 w-full rounded-input bg-step px-4 body-3 text-ink"
           >
             {states.map((state) => (
               <option key={state} value={state}>
@@ -86,7 +86,7 @@ export function EditCooperativeForm({
         />
         <FormError message={error} />
         {saved ? (
-          <p aria-live="polite" className="text-base">
+          <p aria-live="polite" className="body-3">
             {t("edit.saved")}
           </p>
         ) : null}

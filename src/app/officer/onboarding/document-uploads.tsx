@@ -33,15 +33,15 @@ function UploadRow({ kind, done }: { kind: Kind; done: boolean }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4"
+      className="flex flex-col gap-3 rounded-inner bg-step p-4 md:p-6 [&_input]:bg-paper [&_select]:bg-paper"
     >
       <input type="hidden" name="kind" value={kind} />
       <div className="flex items-center justify-between gap-3">
-        <label htmlFor={`file-${kind}`} className="text-base font-medium">
+        <label htmlFor={`file-${kind}`} className="title-3">
           {t(`kinds.${kind}`)}
         </label>
         {done ? (
-          <span className="text-sm font-medium text-primary">{t("uploaded")}</span>
+          <span className="title-4 underline underline-offset-2">{t("uploaded")}</span>
         ) : null}
       </div>
       <input
@@ -50,7 +50,7 @@ function UploadRow({ kind, done }: { kind: Kind; done: boolean }) {
         type="file"
         accept="application/pdf,image/jpeg,image/png"
         required
-        className="min-h-11 w-full rounded-md border border-border bg-bg px-3 py-2 text-base text-fg"
+        className="min-h-12 w-full rounded-input bg-paper px-2 py-2 body-3 text-ink file:mr-3 file:min-h-9 file:cursor-pointer file:rounded-full file:border-0 file:bg-step file:px-4 file:title-4 file:text-ink"
       />
       {kind === "REGISTRATION_CERTIFICATE" ? (
         // Each upload is a renewal: the new certificate brings its own expiry date.

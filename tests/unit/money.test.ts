@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import { applyBps, formatNaira, splitByWeights, toKobo } from "@/lib/money";
+import { applyBps, formatNaira, saleBreakdown, splitByWeights, toKobo } from "@/lib/money";
 
 describe("toKobo", () => {
   it("parses naira strings to integer kobo", () => {
@@ -140,6 +140,34 @@ describe("splitByWeights", () => {
             expect(Number.isSafeInteger(p) && p >= 0).toBe(true);
             if (weights[i] === 0) expect(p).toBe(0);
           });
+        },
+      ),
+    );
+  });
+});
+
+describe("saleBreakdown", () => {
+  it("splits a sale into the cooperative cut, the AgroHub fee and the farmer's take-home", () => {
+    // 30 bags at ₦64,850 with a 5% cut and a 3% fee.
+    expect(saleBreakdown(6_485_000, 30, 500, 300)).toEqual({
+      grossKobo: 194_550_000,
+      cooperativeKobo: 9_727_500,
+      feeKobo: 5_836_500,
+      takeHomeKobo: 178_986_000,
+      takeHomePerUnitKobo: 5_966_200,
+    });
+  });
+
+  it("always adds back up to what the buyer pays", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 100_000_000 }),
+        fc.integer({ min: 0, max: 10_000 }),
+        fc.integer({ min: 0, max: 5_000 }),
+        fc.integer({ min: 0, max: 5_000 }),
+        (ask, qty, cut, fee) => {
+          const b = saleBreakdown(ask, qty, cut, fee);
+          expect(b.cooperativeKobo + b.feeKobo + b.takeHomeKobo).toBe(b.grossKobo);
         },
       ),
     );

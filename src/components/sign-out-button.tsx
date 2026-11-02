@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { signOut } from "@/app/actions/sign-out";
+import { buttonClass } from "@/components/ui/button";
 
 export function SignOutButton() {
   const t = useTranslations("header");
@@ -22,7 +23,7 @@ export function SignOutButton() {
           }
         })
       }
-      className="min-h-11 rounded-md border border-border bg-bg px-3 text-base text-fg disabled:opacity-60"
+      className={buttonClass("step")}
     >
       {t("signOut")}
     </button>

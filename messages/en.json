@@ -3,10 +3,6 @@
     "name": "AgroHub",
     "tagline": "Sell together. Get paid with confidence."
   },
-  "home": {
-    "welcome": "Welcome to AgroHub",
-    "intro": "Farmer cooperatives selling together, with payment held until delivery is confirmed."
-  },
   "roleSwitcher": {
     "label": "Acting as",
     "error": "Could not switch role. Please try again."
@@ -30,7 +26,11 @@
     "reviewCooperatives": "Review cooperatives",
     "farm": "My farm",
     "registerCooperative": "Register your cooperative",
-    "yourFarm": "Your farm"
+    "yourFarm": "Your farm",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "skip": "Skip to content",
+    "home": "AgroHub home"
   },
   "auth": {
     "fields": {
@@ -181,6 +181,13 @@
         "save": "Save details",
         "saving": "Saving…",
         "saved": "Details saved."
+      },
+      "chip": {
+        "verified": "Verified",
+        "suspended": "Suspended",
+        "waiting": "Waiting for review",
+        "changesRequested": "Changes requested",
+        "incomplete": "Not yet submitted"
       }
     },
     "invites": {
@@ -369,7 +376,13 @@
       "hectares": "{size} hectares",
       "crops": "Crops",
       "location": "Location",
-      "place": "{lga}, {state}"
+      "place": "{lga}, {state}",
+      "chip": {
+        "PENDING": "Waiting for approval",
+        "ACTIVE": "Active member",
+        "LEFT": "Left the cooperative",
+        "REMOVED": "Removed"
+      }
     },
     "errors": {
       "VALIDATION_ERROR": "Please check the details and try again.",
@@ -397,5 +410,160 @@
       "cancel": "Stay in the cooperative",
       "leaving": "Leaving…"
     }
+  },
+  "footer": {
+    "about": "AgroHub helps farmer cooperatives sell their harvests together. Buyers pay upfront and the payment is held until delivery is confirmed.",
+    "privacy": "Privacy notice",
+    "signIn": "Sign in"
+  },
+  "photo": {
+    "signUp": "Every cooperative is checked by AgroHub before it can sell.",
+    "join": "Buyers deal only with your cooperative. Your phone number stays private."
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "For farmer cooperatives in Nigeria",
+      "titleLine1": "Sell together.",
+      "titleLine2": "Get paid on delivery.",
+      "lead": "Verified cooperatives sell their members' harvests to bulk buyers in one catalogue. The buyer pays in full upfront, and the payment is held until delivery is confirmed.",
+      "cta": "Register your cooperative",
+      "signIn": "Sign in",
+      "checked": "Every cooperative is checked by AgroHub before it can sell.",
+      "verifiedTitle": "Verified cooperatives only",
+      "verifiedNote": "Documents checked by AgroHub",
+      "takeHomeNote": "Farmers see what they take home before they agree to sell.",
+      "photoAlt": "A farmer carrying a bundle of harvested rice across a paddy field",
+      "held": "Payment held until delivery",
+      "crops": "Rice, maize, yam and more, sold together"
+    },
+    "how": {
+      "title": "How a sale works",
+      "lead": "One catalogue for the whole cooperative, one payment from the buyer, and a share for every farmer who contributed.",
+      "listed": "Listed",
+      "held": "Held",
+      "paid": "Paid",
+      "steps": {
+        "list": {
+          "title": "A farmer lists a lot",
+          "body": "Crop, quantity, grade and an asking price. A private lowest price stays hidden from every buyer."
+        },
+        "approve": {
+          "title": "An officer approves it",
+          "body": "The cooperative's officer checks the lot and its price before any buyer can see it."
+        },
+        "pay": {
+          "title": "The buyer pays in full",
+          "body": "Payment goes through Paystack and is held by AgroHub, never by the cooperative or an officer."
+        },
+        "deliver": {
+          "title": "Delivery confirmed, everyone paid",
+          "body": "When the buyer confirms delivery, the cooperative and each farmer receive their share by bank transfer."
+        }
+      }
+    },
+    "promiseLabel": "Our promise",
+    "promise": "A farmer sees exactly what they will earn before they agree to sell, and nobody in between can hold or redirect that money.",
+    "calc": {
+      "title": "Know what you take home before you sell",
+      "lead": "Change the price or the quantity. This is the breakdown a farmer sees before submitting a lot, and the terms are locked once an officer approves it. This example uses a 5% cooperative cut and a 3% AgroHub fee.",
+      "takeHome": "You take home",
+      "checkNumbers": "Check your numbers",
+      "perUnit": "{amount} per {unit}, paid after delivery.",
+      "enterNumbers": "Enter a price in naira and a whole number.",
+      "formLabel": "Lot details",
+      "quantity": "Quantity",
+      "crop": "Crop",
+      "cropOption": "{unit}s of {crop}",
+      "priceShort": "Price per unit",
+      "youKeep": "You keep {percent}",
+      "split": "Cooperative {cut}, AgroHub {fee}",
+      "fullBreakdown": "See the full breakdown",
+      "buyerPays": "Buyer pays",
+      "cooperative": "Cooperative, {percent}",
+      "agrohub": "AgroHub, {percent}",
+      "minus": "minus {amount}",
+      "crops": {
+        "maize": {
+          "name": "maize",
+          "unit": "100kg bag"
+        },
+        "rice": {
+          "name": "paddy rice",
+          "unit": "100kg bag"
+        },
+        "soybeans": {
+          "name": "soybeans",
+          "unit": "100kg bag"
+        },
+        "sorghum": {
+          "name": "sorghum",
+          "unit": "100kg bag"
+        },
+        "yam": {
+          "name": "yam",
+          "unit": "100 tuber"
+        },
+        "tomatoes": {
+          "name": "tomatoes",
+          "unit": "50kg basket"
+        }
+      }
+    },
+    "roles": {
+      "title": "One platform, a screen for every role",
+      "lead": "Each role sees only what it needs.",
+      "buyers": {
+        "who": "Buyers",
+        "what": "Browse verified lots, make an offer, pay once.",
+        "tag": "Market"
+      },
+      "farmers": {
+        "who": "Farmers",
+        "what": "Join by invite link, then list a harvest and see the earnings first.",
+        "tag": "Farm"
+      },
+      "officers": {
+        "who": "Cooperative officers",
+        "what": "Approve lots, answer offers, mark deliveries.",
+        "tag": "Cooperative"
+      },
+      "admins": {
+        "who": "AgroHub admins",
+        "what": "Verify each cooperative before it can sell.",
+        "tag": "Trust"
+      }
+    },
+    "faq": {
+      "title": "Questions cooperatives ask",
+      "holds": {
+        "q": "Who holds the buyer's money?",
+        "a": "AgroHub holds it in its Paystack balance until delivery is confirmed. No cooperative or officer can hold, delay or redirect it."
+      },
+      "when": {
+        "q": "When are farmers paid?",
+        "a": "As soon as the buyer confirms delivery. If the buyer does not respond, payment is released automatically three days after the officer marks the order delivered."
+      },
+      "contact": {
+        "q": "Can buyers contact farmers directly?",
+        "a": "No. Buyers deal with the cooperative through in-app messages. Phone numbers are visible only to AgroHub admins."
+      },
+      "lower": {
+        "q": "What if a buyer offers less than my price?",
+        "a": "An officer can accept offers at or above your private lowest price. Below it, you decide. Buyers never learn your lowest price, even when an offer is turned down."
+      },
+      "verified": {
+        "q": "How is a cooperative verified?",
+        "a": "Its officer uploads the state registration certificate, by-laws and officer list. An AgroHub admin reviews them, and the cooperative renews them every year."
+      },
+      "cost": {
+        "q": "What does it cost a farmer?",
+        "a": "The cooperative's cut and AgroHub's fee, both shown before you agree and locked to your lot once it is approved. The calculator above uses 5% and 3% as an example."
+      }
+    },
+    "cta": {
+      "title": "Bring your cooperative's next harvest to buyers.",
+      "button": "Register your cooperative"
+    },
+    "photos": "Photographs from Wikimedia Commons:"
   }
 }

@@ -54,6 +54,39 @@ export function applyBps(kobo: number, bps: number): number {
   return toSafeNumber((BigInt(kobo) * BigInt(bps)) / BPS_DENOM, "result");
 }
 
+export type SaleBreakdown = {
+  grossKobo: number;
+  cooperativeKobo: number;
+  feeKobo: number;
+  takeHomeKobo: number;
+  takeHomePerUnitKobo: number;
+};
+
+/**
+ * What a sale of `quantity` units at `askKobo` each is worth to the farmer after the
+ * cooperative's cut and AgroHub's fee (both rounded down, so the farmer keeps the remainder).
+ * The parts always sum to the gross. Used by the landing page's example calculator.
+ */
+export function saleBreakdown(
+  askKobo: number,
+  quantity: number,
+  cutBps: number,
+  feeBps: number,
+): SaleBreakdown {
+  assertNonNegativeSafeInt(askKobo, "askKobo");
+  assertNonNegativeSafeInt(quantity, "quantity");
+  const grossKobo = toSafeNumber(BigInt(askKobo) * BigInt(quantity), "gross");
+  const cooperativeKobo = applyBps(grossKobo, cutBps);
+  const feeKobo = applyBps(grossKobo, feeBps);
+  return {
+    grossKobo,
+    cooperativeKobo,
+    feeKobo,
+    takeHomeKobo: grossKobo - cooperativeKobo - feeKobo,
+    takeHomePerUnitKobo: askKobo - applyBps(askKobo, cutBps) - applyBps(askKobo, feeBps),
+  };
+}
+
 /**
  * Splits totalKobo in proportion to weights using the largest-remainder method.
  * The parts always sum exactly to totalKobo; leftover kobo go one each to the

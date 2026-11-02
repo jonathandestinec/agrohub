@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
-import { AuthCard } from "@/components/auth-ui";
+import { ArrowUpRight, Card, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
 import {
@@ -78,47 +78,59 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <AuthCard title={cooperative.name}>
+    <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
       <Link
         href="/admin/cooperatives"
-        className="inline-flex min-h-11 items-center text-sm text-primary"
+        className="inline-flex min-h-11 items-center gap-2 self-start title-4 underline underline-offset-2"
       >
         {t("back")}
       </Link>
-      <dl className="flex flex-col gap-3">
-        {rows.map(([label, value]) => (
-          <div key={label}>
-            <dt className="text-sm text-muted">{label}</dt>
-            <dd className="text-base">{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
-        {t("detail.documentsHeading")}
-      </h2>
-      <ul className="flex flex-col gap-2">
-        {documents.map(({ kind, url }) => (
-          <li key={kind} className="flex items-center justify-between gap-3">
-            <span className="text-base">{kinds(kind)}</span>
-            {url ? (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-11 items-center text-base font-medium text-primary"
-              >
-                {t("detail.viewDocument")}
-              </a>
-            ) : (
-              <span className="text-sm text-muted">{t("detail.noDocument")}</span>
-            )}
-          </li>
-        ))}
-      </ul>
-      <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
-        {t("detail.actionsHeading")}
-      </h2>
-      <ReviewActions cooperativeId={cooperative.id} status={cooperative.status} />
-    </AuthCard>
+      <PageHeading title={cooperative.name} />
+      <div className="grid gap-2 md:grid-cols-12">
+        <div className="flex flex-col gap-2 md:col-span-8">
+          <Card tone="paper">
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {rows.map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <dt className="body-6 text-ink-soft">{label}</dt>
+                  <dd className="title-3 break-words">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
+          <Card tone="paper">
+            <section className="flex flex-col gap-3">
+              <h2 className="heading-6">{t("detail.documentsHeading")}</h2>
+              <ul className="flex flex-col gap-2">
+                {documents.map(({ kind, url }) => (
+                  <li key={kind} className="flex items-center justify-between gap-3 rounded-tile bg-step px-4 py-2">
+                    <span className="body-3">{kinds(kind)}</span>
+                    {url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-h-11 items-center gap-1 title-4 underline underline-offset-2"
+                      >
+                        {t("detail.viewDocument")}
+                        <ArrowUpRight />
+                      </a>
+                    ) : (
+                      <span className="body-6 text-ink-soft">{t("detail.noDocument")}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </Card>
+        </div>
+        <Card tone="paper" className="md:col-span-4">
+          <section className="flex flex-col gap-4">
+            <h2 className="heading-6">{t("detail.actionsHeading")}</h2>
+            <ReviewActions cooperativeId={cooperative.id} status={cooperative.status} />
+          </section>
+        </Card>
+      </div>
+    </main>
   );
 }

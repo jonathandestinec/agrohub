@@ -1,3 +1,4 @@
+import { buttonClass } from "@/components/ui/button";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -15,10 +16,8 @@ import { ProfileForm } from "./profile-form";
 type Invite = Awaited<ReturnType<typeof resolveInvite>>;
 type InviteProblem = "invalid" | "notVerified";
 
-const BUTTON =
-  "flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-base font-semibold text-primary-fg";
-const SECONDARY =
-  "flex min-h-11 w-full items-center justify-center rounded-md border border-border px-4 text-base font-semibold text-primary";
+const BUTTON = `${buttonClass("ink", "lg")} w-full`;
+const SECONDARY = `${buttonClass("step", "lg")} w-full`;
 
 // Opened from an officer's invite link. The token is the credential: it is never logged.
 // Opening the page never uses up an invite; only joining does.
@@ -50,6 +49,7 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
   const t = await getTranslations("farmer.join");
   const invite = await loadInvite(token);
   const user = await currentUser();
+  const photo = await getTranslations("photo");
 
   // A farmer who already joined sees their own step, even once a single-use invite is used.
   if (user) {
@@ -59,7 +59,7 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
       if (typeof invite === "object" && invite.cooperativeId !== membership.cooperativeId) {
         return (
           <AuthCard title={t("otherTitle")}>
-            <p className="text-base">
+            <p className="body-3">
               {t("otherCooperative", { cooperative: membership.cooperativeName })}
             </p>
             <Link href="/farmer" className={BUTTON}>
@@ -72,7 +72,7 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
         <AuthCard title={membership.cooperativeName}>
           <p
             role="status"
-            className="rounded-md border border-border bg-surface px-3 py-3 text-base"
+            className="rounded-inner bg-step p-4 body-3"
           >
             {membership.status === "PENDING" ? t("waiting") : t("approved")}
           </p>
@@ -88,7 +88,7 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
   if (invite === "invalid") {
     return (
       <AuthCard title={t("invalidTitle")}>
-        <p role="alert" className="text-base">
+        <p role="alert" className="body-3">
           {t("invalid")}
         </p>
       </AuthCard>
@@ -97,7 +97,7 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
   if (invite === "notVerified") {
     return (
       <AuthCard title={t("notVerifiedTitle")}>
-        <p role="alert" className="text-base">
+        <p role="alert" className="body-3">
           {t("notVerified")}
         </p>
       </AuthCard>
@@ -108,8 +108,8 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
   const here = `/join/${token}`;
   if (!user) {
     return (
-      <AuthCard title={title}>
-        <p className="text-base text-muted">{t("signedOutIntro")}</p>
+      <AuthCard title={title} photo="maize" caption={photo("join")}>
+        <p className="body-3 text-ink-soft">{t("signedOutIntro")}</p>
         <Link href={withNext("/sign-up", here)} className={BUTTON}>
           {t("signUp")}
         </Link>
@@ -123,7 +123,7 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
   if (invite.email !== null && invite.email.toLowerCase() !== user.email.trim().toLowerCase()) {
     return (
       <AuthCard title={title}>
-        <p role="alert" className="text-base">
+        <p role="alert" className="body-3">
           {t("emailMismatch")}
         </p>
       </AuthCard>
@@ -131,8 +131,8 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
   }
 
   return (
-    <AuthCard title={title}>
-      <p className="text-base text-muted">{t("profileIntro")}</p>
+    <AuthCard title={title} photo="maize" caption={photo("join")}>
+      <p className="body-3 text-ink-soft">{t("profileIntro")}</p>
       <ProfileForm token={token} states={[...STATES]} />
     </AuthCard>
   );

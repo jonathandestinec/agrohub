@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { FormError } from "@/components/auth-ui";
+import { Chip } from "@/components/ui";
 import type { OfficerFarmerRow } from "@/modules/farmers/service";
 import {
   approveFarmerAction,
   rejectFarmerAction,
   removeFarmerAction,
 } from "../actions";
+import { buttonClass } from "@/components/ui/button";
 
 const KNOWN_ERRORS = [
   "VALIDATION_ERROR",
@@ -27,9 +29,9 @@ function errorKey(code: string): `errors.${(typeof KNOWN_ERRORS)[number] | "INTE
 }
 
 const primary =
-  "min-h-11 w-full rounded-md bg-primary px-4 text-base font-semibold text-primary-fg disabled:opacity-60";
+  `${buttonClass("ink")} w-full`;
 const secondary =
-  "min-h-11 w-full rounded-md border border-border bg-bg px-4 text-base font-semibold text-fg disabled:opacity-60";
+  `${buttonClass("paper")} w-full`;
 
 type Mode = "idle" | "reject" | "remove";
 
@@ -61,10 +63,10 @@ function FarmerRow({ farmer, kind }: { farmer: OfficerFarmerRow; kind: "pending"
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-md border border-border bg-surface px-3 py-3">
+    <li className="flex flex-col gap-3 rounded-inner bg-step p-4 md:p-6">
       <div className="flex flex-col gap-1">
-        <p className="text-base font-semibold">{farmer.name}</p>
-        <p className="text-sm text-muted">
+        <p className="title-2 break-words">{farmer.name}</p>
+        <p className="body-6 text-ink-soft">
           {t("details", {
             size: farmer.farmSizeHectares,
             crops: farmer.crops.join(", "),
@@ -72,7 +74,7 @@ function FarmerRow({ farmer, kind }: { farmer: OfficerFarmerRow; kind: "pending"
             state: farmer.state,
           })}
         </p>
-        <p className="text-sm text-muted">
+        <p className="body-6 text-ink-soft">
           {farmer.hasBankAccount ? t("bankAdded") : t("bankMissing")}
         </p>
       </div>
@@ -103,10 +105,10 @@ function FarmerRow({ farmer, kind }: { farmer: OfficerFarmerRow; kind: "pending"
           className="flex flex-col gap-3"
           aria-label={mode === "reject" ? t("reject") : t("remove")}
         >
-          <p className="text-base">
+          <p className="body-3">
             {mode === "reject" ? t("rejectWarning") : t("removeWarning")}
           </p>
-          <label htmlFor={`reason-${id}`} className="text-sm font-medium">
+          <label htmlFor={`reason-${id}`} className="title-4">
             {mode === "reject" ? t("rejectReasonLabel") : t("removeReasonLabel")}
           </label>
           <textarea
@@ -115,7 +117,7 @@ function FarmerRow({ farmer, kind }: { farmer: OfficerFarmerRow; kind: "pending"
             required
             maxLength={500}
             rows={3}
-            className="w-full rounded-md border border-border bg-bg px-3 py-2 text-base text-fg"
+            className="w-full rounded-input bg-paper px-4 py-3 body-3 text-ink"
           />
           <button type="submit" disabled={busy} className={primary}>
             {mode === "reject"
@@ -152,13 +154,14 @@ export function FarmersPanel({
 }) {
   const t = useTranslations("officer.farmers");
   return (
-    <>
-      <section className="flex flex-col gap-4">
-        <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
+    <div className="grid gap-2 md:grid-cols-2">
+      <section className="flex flex-col gap-4 rounded-inner bg-paper p-4 md:p-6">
+        <h2 className="flex items-center gap-3 heading-6">
           {t("pendingHeading")}
+          <Chip tone={pending.length > 0 ? "warn" : "step"}>{pending.length}</Chip>
         </h2>
         {pending.length === 0 ? (
-          <p className="text-base text-muted">{t("pendingEmpty")}</p>
+          <p className="body-3 text-ink-soft">{t("pendingEmpty")}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {pending.map((farmer) => (
@@ -167,12 +170,13 @@ export function FarmersPanel({
           </ul>
         )}
       </section>
-      <section className="flex flex-col gap-4">
-        <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
+      <section className="flex flex-col gap-4 rounded-inner bg-paper p-4 md:p-6">
+        <h2 className="flex items-center gap-3 heading-6">
           {t("activeHeading")}
+          <Chip tone="forest">{active.length}</Chip>
         </h2>
         {active.length === 0 ? (
-          <p className="text-base text-muted">{t("activeEmpty")}</p>
+          <p className="body-3 text-ink-soft">{t("activeEmpty")}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {active.map((farmer) => (
@@ -181,6 +185,6 @@ export function FarmersPanel({
           </ul>
         )}
       </section>
-    </>
+    </div>
   );
 }

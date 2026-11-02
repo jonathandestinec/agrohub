@@ -37,7 +37,7 @@ export function FarmerBankForm({ banks }: { banks: Array<{ name: string; code: s
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="bankCode" className="text-sm font-medium">
+        <label htmlFor="bankCode" className="title-4">
           {t("bank.bank")}
         </label>
         <select
@@ -45,7 +45,7 @@ export function FarmerBankForm({ banks }: { banks: Array<{ name: string; code: s
           name="bankCode"
           required
           defaultValue=""
-          className="min-h-11 w-full rounded-md border border-border bg-bg px-3 text-base text-fg"
+          className="min-h-12 w-full rounded-input bg-step px-4 body-3 text-ink"
         >
           <option value="" disabled>
             {t("bank.bankPlaceholder")}
@@ -72,7 +72,7 @@ export function FarmerBankForm({ banks }: { banks: Array<{ name: string; code: s
       {result ? (
         <div
           role="status"
-          className="flex flex-col gap-2 rounded-md border border-border bg-surface px-3 py-3 text-base"
+          className="flex flex-col gap-2 rounded-inner bg-step p-4 body-3"
         >
           <p>{t("bank.saved", { accountName: result.accountName })}</p>
           {result.pending ? <p>{t("bank.pending")}</p> : null}
