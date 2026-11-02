@@ -1,5 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+  type S3ClientConfig,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env, type Env } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
@@ -38,17 +43,24 @@ export function selectStorage(config: StorageConfig): "fake" | "s3" {
 
 let s3Client: S3Client | undefined;
 
-function client(config: StorageConfig): S3Client {
-  // Built lazily on first real use, never at import.
-  s3Client ??= new S3Client({
+export function s3ClientOptions(config: StorageConfig): S3ClientConfig {
+  return {
     forcePathStyle: true,
     region: config.region,
     endpoint: config.endpoint,
+    // The SDK's default CRC32 checksum headers are rejected by Backblaze B2.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
     credentials: {
       accessKeyId: config.accessKeyId as string,
       secretAccessKey: config.secretAccessKey as string,
     },
-  });
+  };
+}
+
+function client(config: StorageConfig): S3Client {
+  // Built lazily on first real use, never at import.
+  s3Client ??= new S3Client(s3ClientOptions(config));
   return s3Client;
 }
 

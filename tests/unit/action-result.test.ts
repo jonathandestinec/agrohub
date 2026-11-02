@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { toActionResult } from "@/lib/action-result";
 import {
   ConflictError,
@@ -43,5 +43,23 @@ describe("toActionResult", () => {
 
   it("maps non-error throwables to INTERNAL", () => {
     expect(toActionResult("boom")).toEqual({ ok: false, code: "INTERNAL" });
+  });
+
+  it("logs an untyped error server-side by name and message only", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = Object.assign(new Error("Unsupported header"), { name: "InvalidRequest" });
+    toActionResult(error);
+    expect(spy).toHaveBeenCalledWith("server action failed", {
+      name: "InvalidRequest",
+      message: "Unsupported header",
+    });
+    spy.mockRestore();
+  });
+
+  it("does not log typed errors", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    toActionResult(new ValidationError("bad"));
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

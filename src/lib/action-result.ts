@@ -11,7 +11,8 @@ export type ActionResult<T = undefined> =
   | { ok: false; code: string };
 
 // Maps a thrown error to a client-safe result: typed errors expose their code,
-// anything else becomes INTERNAL. The message is never included.
+// anything else becomes INTERNAL. The message is never included in the result; an
+// untyped error is logged server-side by name and message so it can be diagnosed.
 export function toActionResult(error: unknown): { ok: false; code: string } {
   if (
     error instanceof ValidationError ||
@@ -22,5 +23,9 @@ export function toActionResult(error: unknown): { ok: false; code: string } {
   ) {
     return { ok: false, code: error.code };
   }
+  console.error("server action failed", {
+    name: error instanceof Error ? error.name : typeof error,
+    message: error instanceof Error ? error.message.slice(0, 500) : undefined,
+  });
   return { ok: false, code: "INTERNAL" };
 }
