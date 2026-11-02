@@ -7,10 +7,11 @@ export type TransportConfig = {
   appEnv: Env["APP_ENV"];
   nodeEnv: string | undefined;
   resendApiKey: string | undefined;
+  // Sender for real sends (EMAIL_FROM). Must be on a domain verified in Resend.
+  from?: string;
 };
 
-// TODO: the sending domain is not verified in Resend yet; replace before production.
-const FROM_ADDRESS = "AgroHub <noreply@agrohub.example>";
+const DEFAULT_FROM = "AgroHub <noreply@agrohub.example>";
 
 type FakeOutbox = { sent: EmailMessage[]; clear(): void };
 
@@ -46,7 +47,7 @@ export async function sendEmailWith(
   // Built lazily on the first real send, never at import.
   resendClient ??= new Resend(config.resendApiKey);
   const { error } = await resendClient.emails.send({
-    from: FROM_ADDRESS,
+    from: config.from ?? DEFAULT_FROM,
     to: msg.to,
     subject: msg.subject,
     html: msg.html,
@@ -62,6 +63,7 @@ export function sendEmail(msg: EmailMessage): Promise<void> {
       appEnv: env.APP_ENV,
       nodeEnv: process.env.NODE_ENV,
       resendApiKey: env.RESEND_API_KEY,
+      from: env.EMAIL_FROM,
     },
     msg,
   );

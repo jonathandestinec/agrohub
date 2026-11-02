@@ -45,6 +45,19 @@ describe("parseEnv", () => {
     expect(parseEnv(validRaw).RESEND_API_KEY).toBeUndefined();
   });
 
+  describe("EMAIL_FROM", () => {
+    it("defaults to the placeholder sender when unset or empty", () => {
+      expect(parseEnv(validRaw).EMAIL_FROM).toBe("AgroHub <noreply@agrohub.example>");
+      expect(parseEnv({ ...validRaw, EMAIL_FROM: "" }).EMAIL_FROM).toBe("AgroHub <noreply@agrohub.example>");
+    });
+
+    it("uses the configured sender", () => {
+      expect(parseEnv({ ...validRaw, EMAIL_FROM: "AgroHub <hello@agrohub.ng>" }).EMAIL_FROM).toBe(
+        "AgroHub <hello@agrohub.ng>",
+      );
+    });
+  });
+
   describe("PAYSTACK_SECRET_KEY", () => {
     it("is optional and empty means unset", () => {
       expect(parseEnv(validRaw).PAYSTACK_SECRET_KEY).toBeUndefined();

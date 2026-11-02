@@ -29,22 +29,31 @@ Required variables in every environment: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `
 
 Use placeholders like these in docs and tickets; real values live only in Vercel and the provider dashboards.
 
-### Private storage (Cloudflare R2)
+### Private storage (Backblaze B2)
 
-1. In Cloudflare, create two R2 buckets: `<storage-staging-bucket>` and `<storage-production-bucket>`. Never share one bucket between environments.
-2. Leave both private: no public bucket URL (r2.dev) and no custom public domain. Objects are opened only through the short-lived signed links the app makes.
-3. Create one R2 API token per bucket, with Object Read & Write on that bucket only. Note its access key id and secret; the secret is shown once.
-4. The endpoint is `https://<cloudflare-account-id>.r2.cloudflarestorage.com`.
+Any S3-compatible store works (`src/lib/storage.ts` uses path-style requests). Staging uses Backblaze B2.
+
+1. In Backblaze, create two buckets: `<storage-staging-bucket>` and `<storage-production-bucket>`. Never share one bucket between environments.
+2. Set both to Private. Objects are opened only through the short-lived signed links the app makes.
+3. Create one application key per bucket, restricted to that bucket, with Read and Write access. Note its `keyID` and `applicationKey`; the key is shown once.
+4. The endpoint is on the bucket's card, for example `https://s3.us-west-004.backblazeb2.com`. Set `STORAGE_REGION` to its region part (`us-west-004`); B2 rejects the `auto` default.
+
+For Cloudflare R2 instead, the endpoint is `https://<cloudflare-account-id>.r2.cloudflarestorage.com` and `STORAGE_REGION` stays unset (`auto`).
+
+### Email sender
+
+`EMAIL_FROM` is the sender for real email, for example `AgroHub <noreply@<your-domain>>`. Resend refuses any sender whose domain is not verified in the Resend account (Domains, then add the DNS records it lists). Until a domain is verified, staging and production cannot send email, so sign-up verification links never arrive. Unset, it defaults to the placeholder `AgroHub <noreply@agrohub.example>`, which Resend rejects.
 
 ### Variables per environment
 
 | Variable | Local | Staging (Vercel Preview) | Production (Vercel Production) |
 | --- | --- | --- | --- |
-| `STORAGE_ENDPOINT` | empty (fake store) | `https://<cloudflare-account-id>.r2.cloudflarestorage.com` | same endpoint |
+| `STORAGE_ENDPOINT` | empty (fake store) | `https://s3.<b2-region>.backblazeb2.com` | same endpoint |
 | `STORAGE_BUCKET` | empty | `<storage-staging-bucket>` | `<storage-production-bucket>` |
-| `STORAGE_ACCESS_KEY_ID` | empty | `<staging-r2-access-key-id>` | `<production-r2-access-key-id>` |
-| `STORAGE_SECRET_ACCESS_KEY` | empty | `<staging-r2-secret-access-key>` | `<production-r2-secret-access-key>` |
-| `STORAGE_REGION` | unset (`auto`) | unset (`auto`) | unset (`auto`) |
+| `STORAGE_ACCESS_KEY_ID` | empty | `<staging-b2-key-id>` | `<production-b2-key-id>` |
+| `STORAGE_SECRET_ACCESS_KEY` | empty | `<staging-b2-application-key>` | `<production-b2-application-key>` |
+| `STORAGE_REGION` | unset (`auto`) | `<b2-region>` | `<b2-region>` |
+| `EMAIL_FROM` | unset (fake outbox) | `AgroHub <noreply@<verified-domain>>` | same |
 | `PAYSTACK_SECRET_KEY` | empty (fake Paystack) | `sk_test_<...>` (a test key only) | `sk_live_<...>` |
 
 - Mark the secrets as Sensitive in Vercel and scope each to its one environment.

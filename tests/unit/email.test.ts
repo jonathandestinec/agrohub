@@ -77,6 +77,18 @@ describe("email adapter", () => {
       expect(fakeOutbox.sent).toEqual([]);
     });
 
+    it("sends from the configured sender address", async () => {
+      resendMocks.send.mockResolvedValue({ data: { id: "1" }, error: null });
+      const config = {
+        appEnv: "staging" as const,
+        nodeEnv: "production",
+        resendApiKey: "test-key",
+        from: "AgroHub <hello@agrohub.ng>",
+      };
+      await sendEmailWith(config, msg);
+      expect(resendMocks.send).toHaveBeenCalledWith(expect.objectContaining({ from: "AgroHub <hello@agrohub.ng>" }));
+    });
+
     it("throws when Resend returns an error, without leaking the body", async () => {
       resendMocks.send.mockResolvedValue({ data: null, error: { message: "bad", name: "validation_error" } });
       const config = { appEnv: "staging" as const, nodeEnv: "production", resendApiKey: "test-key" };

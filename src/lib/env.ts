@@ -24,6 +24,11 @@ const schema = z
       .string()
       .optional()
       .transform((value) => (value ? value : undefined)),
+    // Must be on a domain verified in Resend, or Resend refuses the send. The default is a placeholder.
+    EMAIL_FROM: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : "AgroHub <noreply@agrohub.example>")),
     // Optional: local and tests use the fake. Calls fail at call time without it.
     PAYSTACK_SECRET_KEY: emptyToUndefined,
   })
