@@ -62,6 +62,16 @@ function withVercelAuthUrl(raw: Record<string, string | undefined>) {
   return vercelHost ? { ...raw, BETTER_AUTH_URL: `https://${vercelHost}` } : raw;
 }
 
+// Better Auth trusts only BETTER_AUTH_URL's origin, so a deployment opened on its own hash
+// URL, or production on an alias, fails sign-in with "Invalid origin". Trust exactly the
+// URLs Vercel gives this deployment, never a wildcard such as *.vercel.app.
+export function vercelTrustedOrigins(raw: Record<string, string | undefined>): string[] {
+  const hosts = [raw.VERCEL_URL, raw.VERCEL_BRANCH_URL];
+  if (raw.VERCEL_ENV === "production") hosts.push(raw.VERCEL_PROJECT_PRODUCTION_URL);
+  const origins = hosts.filter((host) => host).map((host) => `https://${host}`);
+  return [...new Set(origins)];
+}
+
 export function parseEnv(raw: Record<string, string | undefined>): Env {
   // The local default selects the fake email, storage and Paystack adapters, so a production
   // build that omits APP_ENV must fail closed, not quietly run on fakes. Dev and test keep it.
@@ -82,3 +92,5 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
 
 // Validated at startup: importing this module fails fast on bad configuration.
 export const env: Env = parseEnv(process.env);
+
+export const trustedOrigins: string[] = vercelTrustedOrigins(process.env);
