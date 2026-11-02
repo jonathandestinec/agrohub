@@ -39,7 +39,7 @@ export function EditCooperativeForm({
   }
 
   return (
-    <details className="rounded-inner bg-step p-4 md:p-6">
+    <details className="rounded-inner bg-step p-4 md:p-6 [&_input]:bg-paper [&_select]:bg-paper">
       <summary className="flex min-h-11 cursor-pointer items-center title-3">
         {t("edit.heading")}
       </summary>

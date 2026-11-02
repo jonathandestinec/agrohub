@@ -41,7 +41,7 @@ async function FarmerHome() {
     LEFT: t("status.LEFT"),
     REMOVED: t("status.REMOVED"),
   }[membership.status];
-  const chipTone = ({ PENDING: "warn", ACTIVE: "forest", LEFT: "step", REMOVED: "step" } as const)[
+  const chipTone = ({ PENDING: "warn", ACTIVE: "forest", LEFT: "paper", REMOVED: "paper" } as const)[
     membership.status
   ];
 

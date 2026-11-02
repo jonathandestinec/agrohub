@@ -119,7 +119,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
                 <Link
                   href="/"
                   aria-label={t("home")}
-                  className="press flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 heading-6"
+                  className="press relative z-50 flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 heading-6"
                 >
                   <Mark />
                   AgroHub

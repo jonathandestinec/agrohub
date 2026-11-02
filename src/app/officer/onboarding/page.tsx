@@ -68,7 +68,7 @@ async function OnboardingStep() {
     chip = { tone: "forest", key: "verified" };
   } else if (view.status === "SUSPENDED") {
     statusText = t("status.suspended");
-    chip = { tone: "step", key: "suspended" };
+    chip = { tone: "paper", key: "suspended" };
   } else if (view.submittedAt) {
     statusText = t("status.waiting", { date: formatDate(view.submittedAt) });
     chip = { tone: "warn", key: "waiting" };
@@ -81,7 +81,7 @@ async function OnboardingStep() {
     chip = { tone: "warn", key: "changesRequested" };
   } else {
     statusText = t("status.incomplete");
-    chip = { tone: "step", key: "incomplete" };
+    chip = { tone: "paper", key: "incomplete" };
   }
 
   const uploaded = DOCUMENT_KINDS.filter((kind) =>

@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 
-export type ChipTone = "step" | "lime" | "forest" | "warn";
+export type ChipTone = "step" | "paper" | "lime" | "forest" | "warn";
 
 const TONES: Record<ChipTone, string> = {
   step: "bg-step text-ink-soft",
+  paper: "bg-paper text-ink-soft",
   lime: "bg-lime text-lime-ink",
   forest: "bg-forest text-forest-ink",
   warn: "bg-warn-soft text-warn",

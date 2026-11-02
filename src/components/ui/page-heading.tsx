@@ -15,7 +15,7 @@ export function PageHeading({
         <h1 className="heading-3 break-words">{title}</h1>
         {lead ? <p className="mt-3 body-3 text-ink-soft">{lead}</p> : null}
       </div>
-      {children}
+      {children ? <div className="flex shrink-0 flex-wrap items-center gap-2">{children}</div> : null}
     </div>
   );
 }
