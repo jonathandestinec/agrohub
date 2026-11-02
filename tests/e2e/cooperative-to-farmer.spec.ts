@@ -273,6 +273,8 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
     await expect(page.getByText("Waiting for your officer's approval")).toBeVisible();
     // Pending approval, so no ACTIVE membership: the header links to the farm page.
+    // (Scrolled up first: the pinned nav hides its links while the page is scrolled down.)
+    await page.evaluate(() => window.scrollTo(0, 0));
     await expect(nav(page, "Your farm")).toBeVisible();
 
     const accountNumber = uniqueAccountNumber();

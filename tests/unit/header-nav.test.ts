@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
-import { isCurrent } from "@/components/nav-current";
+import { centreNavLinks, isCurrent } from "@/components/nav-current";
 
 describe("navLinksFor", () => {
   it("gives officers onboarding, invites and farmers", () => {
@@ -68,5 +68,17 @@ describe("isCurrent", () => {
   it("does not match a shared prefix or a sibling", () => {
     expect(isCurrent("/farmers-old", "/farmer")).toBe(false);
     expect(isCurrent("/officer/invites", "/officer/farmers")).toBe(false);
+  });
+});
+
+describe("centreNavLinks", () => {
+  it("keeps one or two links beside the account action", () => {
+    expect(centreNavLinks(1)).toBe(false);
+    expect(centreNavLinks(2)).toBe(false);
+  });
+
+  it("centres three or more links in the bar", () => {
+    expect(centreNavLinks(3)).toBe(true);
+    expect(centreNavLinks(6)).toBe(true);
   });
 });
