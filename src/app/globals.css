@@ -182,6 +182,36 @@ p {
   .calc-total { font-size: 2.25rem; line-height: 2.5rem; }
 }
 
+/* Pinned nav, as in the demo: scrolling down fades the links up and out, then the bar narrows
+   to a pill with the logo and the account action; scrolling up reverses it. */
+.nav-bar {
+  width: 100%;
+  transition:
+    width 560ms var(--ease),
+    background-color 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
+}
+.nav-bar[data-compact] {
+  width: min(380px, 100%);
+}
+.nav-bar[data-scrolled] {
+  background: rgb(255 255 255 / 0.86);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgb(16 20 15 / 0.08);
+}
+.nav-links li {
+  transition:
+    opacity 240ms var(--ease-out),
+    transform 320ms var(--ease);
+}
+.nav-bar[data-compact] .nav-links li {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+}
+@media (max-width: 767px) {
+  .nav-bar[data-compact] { width: min(280px, 100%); }
+}
+
 /* Phone menu: the panel fades in and its links arrive one after another, rising 24px. */
 @keyframes menu-fade {
   from { opacity: 0; }

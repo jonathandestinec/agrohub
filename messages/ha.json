@@ -436,7 +436,9 @@
       "verifiedTitle": "",
       "verifiedNote": "",
       "takeHomeNote": "",
-      "photoAlt": ""
+      "photoAlt": "",
+      "held": "",
+      "crops": ""
     },
     "how": {
       "title": "",
@@ -568,6 +570,7 @@
     "cta": {
       "title": "",
       "button": ""
-    }
+    },
+    "photos": ""
   }
 }

@@ -15,6 +15,8 @@ export function resist(pull: number, limit: number): number {
 // Scrolling past the end of a page (wheel, touchpad or finger) lifts the frame and shows the
 // logo large on the ground behind it; letting go springs the frame back. Browsers on Windows
 // and Android have no rubber band of their own, so this draws one. Off under reduced motion.
+// It moves the page with a relative `top`, not a transform: a transform would turn the pinned
+// nav (position: fixed, inside the page) into part of the page and drag it away.
 export function OverscrollReveal({ children }: { children: ReactNode }) {
   const frame = useRef<HTMLDivElement>(null);
   const logo = useRef<HTMLDivElement>(null);
@@ -32,8 +34,8 @@ export function OverscrollReveal({ children }: { children: ReactNode }) {
       const shown = lift / LIMIT;
       const ease = springing ? "600ms cubic-bezier(0.34, 1.56, 0.64, 1)" : "0ms";
       if (frame.current) {
-        frame.current.style.transition = `transform ${ease}`;
-        frame.current.style.transform = lift ? `translateY(${-lift}px)` : "";
+        frame.current.style.transition = `top ${ease}`;
+        frame.current.style.top = lift ? `${-lift}px` : "";
       }
       if (logo.current) {
         logo.current.style.transition = springing ? "opacity 300ms ease-out, transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1)" : "none";

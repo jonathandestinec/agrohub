@@ -13,7 +13,6 @@ import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-l
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
 import { buttonClass } from "@/components/ui/button";
-import { Mark } from "@/components/ui/icons";
 import { pickActiveMembership } from "@/modules/identity/active-role";
 import { listMembershipStates, listMemberships } from "@/modules/identity/service";
 import { toSwitcherMembership } from "@/modules/identity/views";
@@ -60,16 +59,6 @@ async function AccountSlot() {
 // cooperative, or the farm page while approval is pending). Pages still check access themselves.
 async function NavSlot() {
   const t = await getTranslations("nav");
-  const extras = (
-    <>
-      <Suspense fallback={null}>
-        <SwitcherSlot />
-      </Suspense>
-      <Suspense fallback={null}>
-        <AccountSlot />
-      </Suspense>
-    </>
-  );
   const session = await auth.api.getSession({ headers: await headers() });
   let links: { href: string; label: string }[] = [];
   if (session) {
@@ -88,9 +77,19 @@ async function NavSlot() {
     <AppNav
       links={links}
       label={t("label")}
+      homeLabel={t("home")}
       openLabel={t("openMenu")}
       closeLabel={t("closeMenu")}
-      extras={extras}
+      switcher={
+        <Suspense fallback={null}>
+          <SwitcherSlot />
+        </Suspense>
+      }
+      account={
+        <Suspense fallback={null}>
+          <AccountSlot />
+        </Suspense>
+      }
     />
   );
 }
@@ -117,19 +116,9 @@ async function Shell({ children }: { children: React.ReactNode }) {
           <OverscrollReveal>
           <div className="mx-auto w-full max-w-[1360px] p-2 md:p-4">
             <div className="flex min-h-[calc(100vh-1rem)] flex-col rounded-frame bg-paper p-2 md:min-h-[calc(100vh-2rem)] md:p-3">
-              <header className="flex min-h-[52px] items-center justify-between gap-3 px-1 py-1">
-                <Link
-                  href="/"
-                  aria-label={t("home")}
-                  className="press relative z-50 flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 heading-6"
-                >
-                  <Mark />
-                  AgroHub
-                </Link>
-                <Suspense fallback={null}>
-                  <NavSlot />
-                </Suspense>
-              </header>
+              <Suspense fallback={<div className="h-[52px]" />}>
+                <NavSlot />
+              </Suspense>
               <div className="mt-2 flex flex-1 flex-col">{children}</div>
               <Suspense fallback={null}>
                 <FooterSlot />

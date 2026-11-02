@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { EarningsCalculator } from "@/components/landing/earnings-calculator";
 import { Reveal, TaglineReveal } from "@/components/landing/motion";
 import { ArrowRight, ButtonLink, Check } from "@/components/ui";
+import { PHOTOS } from "@/components/ui/photo-credits";
 import hero from "../../public/photos/farmer-at-harvest.jpg";
 import sky from "../../public/photos/sky.png";
 
@@ -26,6 +27,20 @@ export default async function Home() {
       <Roles />
       <Faq />
       <FinalCta />
+      <p className="mt-10 max-w-[72ch] px-2 caption-2 text-ink-soft md:px-6">
+        {t("photos")}{" "}
+        {(["harvest", "rice"] as const).map((key, i) => {
+          const { what, by, license, url } = PHOTOS[key].credit;
+          return (
+            <span key={key}>
+              <a href={url} className="underline underline-offset-2 hover:text-ink" target="_blank" rel="noreferrer">
+                {what}
+              </a>{" "}
+              by {by} ({license}){i === 0 ? "; " : "."}
+            </span>
+          );
+        })}
+      </p>
     </main>
   );
 }
@@ -57,7 +72,21 @@ async function Hero() {
             </ButtonLink>
           </div>
         </div>
-        <p className="rise rise-4 max-w-[300px] body-5">{t("checked")}</p>
+        <div className="rise rise-4 flex items-center gap-3">
+          <div className="flex -space-x-2" aria-hidden="true">
+            {["AO", "FA", "MA"].map((initials, n) => (
+              <span
+                key={initials}
+                className={`flex size-9 shrink-0 items-center justify-center rounded-full caption-4 ring-2 ring-lime ${
+                  ["bg-forest text-paper", "bg-ink-soft text-paper", "bg-paper text-ink"][n]
+                }`}
+              >
+                {initials}
+              </span>
+            ))}
+          </div>
+          <p className="max-w-[300px] body-5">{t("checked")}</p>
+        </div>
       </div>
 
       <div className="relative min-h-[460px] overflow-hidden rounded-panel md:col-span-5 md:min-h-[640px]">
@@ -87,6 +116,20 @@ async function Hero() {
           <span className="notch-corner left-full top-0" data-at="br" />
           <span className="notch-corner left-0 top-full" data-at="br" />
         </div>
+
+        {/* Chips floating on the photograph: what is sold, and the held-payment promise. */}
+        <p className="absolute bottom-[23%] left-5 flex items-center gap-3 rounded-full bg-paper/90 py-2 pl-2 pr-4 backdrop-blur md:left-8">
+          <span className="relative block size-8 shrink-0 overflow-hidden rounded-full bg-step-deep" aria-hidden="true">
+            <Image src={PHOTOS.rice.src} alt="" fill sizes="32px" className="object-cover" />
+          </span>
+          <span className="body-5">
+            {t("crops")}
+          </span>
+        </p>
+        <p className="absolute bottom-[14%] left-5 flex items-center gap-2 rounded-full bg-lime px-4 py-2 body-5 text-lime-ink md:left-8">
+          <span className="size-2 rounded-full bg-forest" aria-hidden="true" />
+          {t("held")}
+        </p>
 
         {/* Bottom-right notch with the promise to farmers. */}
         <div className="absolute bottom-0 right-0 max-w-[260px] rounded-tl-3xl bg-paper pl-4 pt-4">

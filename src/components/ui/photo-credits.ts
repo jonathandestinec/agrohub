@@ -1,6 +1,6 @@
 // Openly licensed photographs of Nigerian farms (copied from the demo), with their credits.
 
-export type PhotoKey = "harvest" | "cooperative" | "maize";
+export type PhotoKey = "harvest" | "cooperative" | "maize" | "rice";
 
 export type Photo = {
   src: string;
@@ -37,6 +37,16 @@ export const PHOTOS: Record<PhotoKey, Photo> = {
       by: "BarryTheOctopus",
       license: "CC BY-SA 4.0",
       url: "https://commons.wikimedia.org/wiki/File:Farmers_in_Tula.jpg",
+    },
+  },
+  rice: {
+    src: "/photos/rice.jpg",
+    alt: "Rice paddies seen from the air near Munjibir, Kano",
+    credit: {
+      what: "Rice farm in Munjibir town",
+      by: "Bappancey",
+      license: "CC BY-SA 4.0",
+      url: "https://commons.wikimedia.org/wiki/File:RICE_FARM_IN_MUNJIBIR_TOWN.jpg",
     },
   },
 };

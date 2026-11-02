@@ -436,7 +436,9 @@
       "verifiedTitle": "Verified cooperatives only",
       "verifiedNote": "Documents checked by AgroHub",
       "takeHomeNote": "Farmers see what they take home before they agree to sell.",
-      "photoAlt": "A farmer carrying a bundle of harvested rice across a paddy field"
+      "photoAlt": "A farmer carrying a bundle of harvested rice across a paddy field",
+      "held": "Payment held until delivery",
+      "crops": "Rice, maize, yam and more, sold together"
     },
     "how": {
       "title": "How a sale works",
@@ -568,6 +570,7 @@
     "cta": {
       "title": "Bring your cooperative's next harvest to buyers.",
       "button": "Register your cooperative"
-    }
+    },
+    "photos": "Photographs from Wikimedia Commons:"
   }
 }
