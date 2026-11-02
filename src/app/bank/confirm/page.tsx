@@ -24,11 +24,11 @@ async function ConfirmStep({
     <AuthCard title={t("title")}>
       {typeof token === "string" && token.length > 0 ? (
         <>
-          <p className="text-base text-muted">{t("body")}</p>
+          <p className="body-3 text-ink-soft">{t("body")}</p>
           <ConfirmForm token={token} />
         </>
       ) : (
-        <p role="alert" className="text-base">
+        <p role="alert" className="body-3">
           {t("invalid")}
         </p>
       )}

@@ -20,8 +20,9 @@ async function SignInCard({
 }) {
   const { next } = await searchParams;
   const t = await getTranslations("auth.signIn");
+  const app = await getTranslations("app");
   return (
-    <AuthCard title={t("title")}>
+    <AuthCard title={t("title")} photo="harvest" caption={app("tagline")}>
       <SignInForm next={safeNext(next)} />
     </AuthCard>
   );

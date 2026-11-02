@@ -61,9 +61,9 @@ export function SignInForm({ next }: { next: string }) {
       />
       <FormError message={error} />
       <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
-      <p className="text-sm text-muted">
+      <p className="body-6 text-ink-soft">
         {t("noAccount")}{" "}
-        <Link href={withNext("/sign-up", returnTo)} className="text-primary underline">
+        <Link href={withNext("/sign-up", returnTo)} className="underline underline-offset-2">
           {t("signUpLink")}
         </Link>
       </p>

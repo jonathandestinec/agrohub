@@ -56,9 +56,9 @@ export function SignUpForm({ next }: { next: string }) {
   if (sentTo) {
     return (
       <section aria-live="polite" className="flex flex-col gap-2">
-        <h2 className="text-xl font-semibold">{t("checkEmailTitle")}</h2>
-        <p className="text-muted">{t("checkEmailBody", { email: sentTo })}</p>
-        <Link href={withNext("/sign-in", returnTo)} className="text-primary underline">
+        <h2 className="heading-6">{t("checkEmailTitle")}</h2>
+        <p className="text-ink-soft">{t("checkEmailBody", { email: sentTo })}</p>
+        <Link href={withNext("/sign-in", returnTo)} className="underline underline-offset-2">
           {t("signInLink")}
         </Link>
       </section>
@@ -101,12 +101,12 @@ export function SignUpForm({ next }: { next: string }) {
           name="consent"
           type="checkbox"
           required
-          className="mt-1 size-5 shrink-0 accent-primary"
+          className="mt-1 size-5 shrink-0 accent-forest"
         />
-        <label htmlFor="consent" className="text-sm">
+        <label htmlFor="consent" className="body-6">
           {t.rich("consent", {
             link: (chunks) => (
-              <Link href="/privacy" className="text-primary underline">
+              <Link href="/privacy" className="underline underline-offset-2">
                 {chunks}
               </Link>
             ),
@@ -115,9 +115,9 @@ export function SignUpForm({ next }: { next: string }) {
       </div>
       <FormError message={error} />
       <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
-      <p className="text-sm text-muted">
+      <p className="body-6 text-ink-soft">
         {t("haveAccount")}{" "}
-        <Link href={withNext("/sign-in", returnTo)} className="text-primary underline">
+        <Link href={withNext("/sign-in", returnTo)} className="underline underline-offset-2">
           {t("signInLink")}
         </Link>
       </p>
