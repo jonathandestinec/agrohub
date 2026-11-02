@@ -8,18 +8,33 @@ export type Crop = {
   id: string;
   name: string;
   unit: string;
-  // Flat field colours standing in for crop photographs.
+  // Field colours for small swatches; the photo is used wherever there is room.
   field: string;
   ink: string;
+  photo: string;
+  alt: string;
 };
 
 export const CROPS: Crop[] = [
-  { id: "maize", name: "Maize", unit: "100kg bag", field: "#E9C54B", ink: "#2A2205" },
-  { id: "rice", name: "Paddy rice", unit: "100kg bag", field: "#C9B98A", ink: "#2A2412" },
-  { id: "yam", name: "Yam", unit: "100 tubers", field: "#8C6A4A", ink: "#FFF8EE" },
-  { id: "soybeans", name: "Soybeans", unit: "100kg bag", field: "#D8D27A", ink: "#25240A" },
-  { id: "tomatoes", name: "Tomatoes", unit: "50kg basket", field: "#D2513A", ink: "#FFF4F0" },
-  { id: "sorghum", name: "Sorghum", unit: "100kg bag", field: "#A8553A", ink: "#FFF4EE" },
+  { id: "maize", name: "Maize", unit: "100kg bag", field: "#E9C54B", ink: "#2A2205", photo: "/demo/maize.jpg", alt: "Farmers carrying harvested maize stalks past a maize field in Tula, Gombe" },
+  { id: "rice", name: "Paddy rice", unit: "100kg bag", field: "#C9B98A", ink: "#2A2412", photo: "/demo/rice.jpg", alt: "Rice paddies seen from the air near Munjibir, Kano" },
+  { id: "yam", name: "Yam", unit: "100 tubers", field: "#8C6A4A", ink: "#FFF8EE", photo: "/demo/yam.jpg", alt: "Yam tubers stacked for sale at an open market" },
+  { id: "soybeans", name: "Soybeans", unit: "100kg bag", field: "#D8D27A", ink: "#25240A", photo: "/demo/soybeans.jpg", alt: "Soybeans and other beans in basins at a market stall" },
+  { id: "tomatoes", name: "Tomatoes", unit: "50kg basket", field: "#D2513A", ink: "#FFF4F0", photo: "/demo/tomatoes.jpg", alt: "Tomatoes laid out for sale at the Monday Market in Kakuri, Kaduna" },
+  { id: "sorghum", name: "Sorghum", unit: "100kg bag", field: "#A8553A", ink: "#FFF4EE", photo: "/demo/sorghum.jpg", alt: "Bags of guinea corn, one open, at a market" },
+];
+
+// Photographs from Wikimedia Commons, credited in the demo footer as their licences require.
+export const PHOTO_CREDITS = [
+  { what: "Farmer at harvest", by: "Photobyamin", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Farmer_at_harvest.jpg" },
+  { what: "Nigeria farmer cooperative", by: "USAID in Africa", license: "Public domain", url: "https://commons.wikimedia.org/wiki/File:Nigeria_farmer_cooperative_(14353069405).jpg" },
+  { what: "Farmers in Tula", by: "BarryTheOctopus", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Farmers_in_Tula.jpg" },
+  { what: "Rice farm in Munjibir town", by: "Bappancey", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:RICE_FARM_IN_MUNJIBIR_TOWN.jpg" },
+  { what: "Yam market", by: "Chizurumebuka", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Yam_market.jpg" },
+  { what: "Tomatoes on sale at the Monday Market in Kakuri, Kaduna", by: "Kambai Akau", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Tomatoes_on_sale_at_the_Monday_Market_in_Kakuri,_Kaduna_01.jpg" },
+  { what: "Guinea corn in bags", by: "Zeerun", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Guinea_Corn_in_bags.jpg" },
+  { what: "Soybeans and other beans at a market", by: "Bembety", license: "CC BY-SA 4.0", url: "https://commons.wikimedia.org/wiki/File:Soybeans,_different_types_of_beans_market.jpg" },
+  { what: "Trees with open sky", by: "supplied by the AgroHub team", license: "", url: "" },
 ];
 
 export function cropById(id: string): Crop {

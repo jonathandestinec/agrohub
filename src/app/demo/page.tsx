@@ -3,9 +3,10 @@ import Link from "next/link";
 import { formatNaira } from "@/lib/money";
 import { EarningsCalculator } from "./_components/earnings-calculator";
 import { Reveal, TaglineReveal } from "./_components/motion";
-import { ArrowRight, ArrowUpRight, ButtonLink, Check } from "./_components/ui";
+import { ArrowRight, ArrowUpRight, ButtonLink, Check, CropThumb } from "./_components/ui";
 import { BOARD, cropById } from "./_lib/data";
-import hero from "../../../public/trees-with-open-sky-in-the-center.png";
+import hero from "../../../public/demo/farmer-at-harvest.jpg";
+import sky from "../../../public/trees-with-open-sky-in-the-center.png";
 
 const STEPS = [
   { title: "A farmer lists a lot", body: "Crop, quantity, grade and an asking price. A private lowest price stays hidden from every buyer." },
@@ -16,7 +17,7 @@ const STEPS = [
 
 const ROLES = [
   { href: "/demo/market", who: "Buyers", what: "Browse verified lots, make an offer, pay once.", tag: "Market" },
-  { href: "/demo/farmer", who: "Farmers", what: "List a harvest and see what they take home first.", tag: "Farm" },
+  { href: "/demo/join", who: "Farmers", what: "Join by invite link, then list a harvest and see the earnings first.", tag: "Farm" },
   { href: "/demo/officer", who: "Cooperative officers", what: "Approve lots, answer offers, mark deliveries.", tag: "Cooperative" },
   { href: "/demo/admin", who: "AgroHub admins", what: "Verify each cooperative before it can sell.", tag: "Trust" },
 ];
@@ -93,18 +94,18 @@ function Hero() {
 
       <div className="relative min-h-[460px] overflow-hidden rounded-3xl md:col-span-5 md:min-h-[640px]">
         <div className="drift absolute inset-0">
-          <Image src={hero} alt="Tree canopy opening onto a clear sky" fill priority sizes="(min-width: 768px) 42vw, 100vw" className="object-cover" placeholder="blur" />
+          <Image src={hero} alt="A farmer carrying a bundle of harvested rice across a paddy field" fill priority sizes="(min-width: 768px) 42vw, 100vw" className="object-cover object-[62%_center]" placeholder="blur" />
         </div>
 
         {/* Top-left notch with the cooperative card. */}
         <div className="absolute left-0 top-0 rounded-br-3xl bg-[var(--d-paper)] pb-3 pr-3">
           <div className="flex items-center gap-3 rounded-2xl bg-[var(--d-step)] p-3 pr-4">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--d-forest)] text-[var(--d-forest-ink)] caption-4">OM</span>
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--d-forest)] text-[var(--d-forest-ink)]">
+              <Check className="size-5" />
+            </span>
             <div>
-              <p className="title-4">Ogbomoso Maize Growers</p>
-              <p className="flex items-center gap-1 caption-4 text-[var(--d-good)]">
-                <Check className="size-3.5" /> Verified cooperative
-              </p>
+              <p className="title-4">Verified cooperatives only</p>
+              <p className="caption-4 text-[var(--d-ink-2)]">Documents checked by AgroHub</p>
             </div>
           </div>
           <span className="notch-corner left-full top-0" data-at="br" />
@@ -113,15 +114,15 @@ function Hero() {
 
         {/* Live sample lot floating on the photograph. */}
         <Link
-          href="/demo/market/lot-1042"
-          className="press press-lift absolute left-5 top-1/2 flex items-center gap-3 rounded-full bg-[var(--d-paper)]/90 py-2 pl-2 pr-4 backdrop-blur md:left-8"
+          href="/demo/market/lot-1043"
+          className="press press-lift absolute bottom-[23%] left-5 flex items-center gap-3 rounded-full bg-[var(--d-paper)]/90 py-2 pl-2 pr-4 backdrop-blur md:left-8"
         >
-          <span className="size-8 shrink-0 rounded-full bg-[#e9c54b]" aria-hidden="true" />
+          <CropThumb crop={cropById("rice")} className="size-8 rounded-full" />
           <span className="body-5">
-            Maize, Grade A · <span className="title-4">{formatNaira(6_485_000)}</span> per bag
+            Paddy rice, Grade A · <span className="title-4">{formatNaira(7_150_000)}</span> per bag
           </span>
         </Link>
-        <p className="absolute right-5 top-[64%] flex items-center gap-2 rounded-full bg-[var(--d-lime)] px-4 py-2 body-5 text-[var(--d-lime-ink)] md:right-8">
+        <p className="absolute bottom-[14%] left-5 flex items-center gap-2 rounded-full bg-[var(--d-lime)] px-4 py-2 body-5 text-[var(--d-lime-ink)] md:left-8">
           <span className="size-2 rounded-full bg-[var(--d-forest)]" aria-hidden="true" />
           Payment held until delivery
         </p>
@@ -151,7 +152,7 @@ function HowItWorks() {
       <Reveal className="mt-14 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3" >
         <div className="flex h-28 items-center justify-center rounded-full bg-[var(--d-step)] heading-3 md:h-44 md:text-6xl md:leading-none">Listed</div>
         <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-full md:h-44">
-          <Image src={hero} alt="" fill sizes="25vw" className="object-cover" />
+          <Image src={sky} alt="" fill sizes="25vw" className="object-cover" />
           <span className="absolute inset-0 bg-black/30" aria-hidden="true" />
           <span className="relative heading-3 text-white md:text-6xl md:leading-none">Held</span>
         </div>
@@ -244,15 +245,17 @@ function PriceTeaser() {
             <Link
               key={row.cropId}
               href="/demo/prices"
-              className={`press press-lift flex flex-col justify-between rounded-3xl p-5 ${i % 2 ? "h-80 md:mt-12" : "h-80"} md:h-[420px]`}
-              style={{ background: crop.field, color: crop.ink }}
+              className={`press press-lift group relative isolate flex flex-col justify-between overflow-hidden rounded-3xl p-5 text-white ${i % 2 ? "h-80 md:mt-12" : "h-80"} md:h-[420px]`}
+              style={{ background: crop.field }}
             >
-              <span className="self-end flex size-10 items-center justify-center rounded-full bg-white/80 text-[var(--d-ink)]">
+              <Image src={crop.photo} alt={crop.alt} fill sizes="(min-width: 768px) 25vw, 50vw" className="-z-10 object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105" />
+              <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <span className="self-end flex size-10 items-center justify-center rounded-full bg-white/85 text-[var(--d-ink)]">
                 <ArrowUpRight />
               </span>
               <span>
                 <span className="block heading-4">{crop.name}</span>
-                <span className="mt-2 block body-5 opacity-80">{m.name}, per {crop.unit}</span>
+                <span className="mt-2 block body-5 opacity-90">{m.name}, per {crop.unit}</span>
                 <span className="mt-4 flex items-center justify-between gap-2 rounded-full bg-white/85 px-4 py-2 text-[var(--d-ink)]">
                   <span className="title-4">{formatNaira(m.thisWeekKobo)}</span>
                   <span className={`caption-4 ${change >= 0 ? "text-[var(--d-good)]" : "text-[var(--d-bad)]"}`}>

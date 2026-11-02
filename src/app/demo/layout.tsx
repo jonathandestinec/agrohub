@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import Link from "next/link";
 import { DemoNav } from "./_components/demo-nav";
+import { PHOTO_CREDITS } from "./_lib/data";
 import "./demo.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-demo", display: "swap" });
@@ -58,6 +59,18 @@ function DemoFooter() {
           ))}
         </ul>
       </div>
+      <p className="mt-10 max-w-4xl caption-2 text-[var(--d-ink-2)]">
+        Photographs from Wikimedia Commons:{" "}
+        {PHOTO_CREDITS.filter((c) => c.url).map((c, i, all) => (
+          <span key={c.url}>
+            <a href={c.url} className="underline underline-offset-2 hover:text-[var(--d-ink)]" target="_blank" rel="noreferrer">
+              {c.what}
+            </a>{" "}
+            by {c.by} ({c.license}){i < all.length - 1 ? "; " : "."}
+          </span>
+        ))}{" "}
+        Licences: <a href="https://creativecommons.org/licenses/by-sa/4.0/" className="underline underline-offset-2" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>.
+      </p>
       <p aria-hidden="true" className="mt-12 select-none text-[22vw] font-semibold leading-none tracking-[-0.06em] text-[var(--d-ink)] md:text-[17vw] xl:text-[15rem]">
         AgroHub
       </p>

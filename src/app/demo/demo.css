@@ -149,6 +149,67 @@ body:has([data-demo]) {
   transform: none;
 }
 
+/* Onboarding: each step slides in from the side it comes from, with a short blur to
+   bridge the swap; its fields follow one after another. */
+@keyframes demo-step-in {
+  from { opacity: 0; transform: translateX(32px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes demo-step-in-back {
+  from { opacity: 0; transform: translateX(-32px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.step-in { animation: demo-step-in 560ms var(--d-ease) both; }
+.step-in-back { animation: demo-step-in-back 560ms var(--d-ease) both; }
+.stagger > * { animation: demo-rise 640ms var(--d-ease) both; }
+.stagger > *:nth-child(1) { animation-delay: 120ms; }
+.stagger > *:nth-child(2) { animation-delay: 180ms; }
+.stagger > *:nth-child(3) { animation-delay: 240ms; }
+.stagger > *:nth-child(4) { animation-delay: 300ms; }
+.stagger > *:nth-child(n + 5) { animation-delay: 360ms; }
+
+@keyframes demo-caption-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.caption-in { animation: demo-caption-in 700ms var(--d-ease) 200ms both; }
+
+/* Done: the ring draws, then the tick. */
+@keyframes demo-draw { to { stroke-dashoffset: 0; } }
+.draw-ring {
+  stroke-dasharray: 277;
+  stroke-dashoffset: 277;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  animation: demo-draw 700ms var(--d-ease) 150ms forwards;
+}
+.draw-check {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: demo-draw 420ms var(--d-ease-out) 760ms forwards;
+}
+@keyframes demo-pulse {
+  from { transform: scale(0.6); opacity: 1; }
+  to { transform: scale(1.4); opacity: 0; }
+}
+.pulse-dot { animation: demo-pulse 1600ms var(--d-ease-out) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .step-in,
+  .step-in-back,
+  .stagger > *,
+  .caption-in {
+    animation: demo-fade 300ms linear both;
+  }
+  .draw-ring,
+  .draw-check {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .pulse-dot { animation: none; }
+}
+@keyframes demo-fade { from { opacity: 0; } to { opacity: 1; } }
+
 @media (prefers-reduced-motion: reduce) {
   .reveal > *,
   .menu-link {

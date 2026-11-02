@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
@@ -67,29 +68,34 @@ export function Chip({ children, tone = "step" }: { children: ReactNode; tone?: 
   return <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 caption-4 ${tones[tone]}`}>{children}</span>;
 }
 
-// A flat colour field standing in for a crop photograph.
-export function CropField({
-  name,
-  field,
-  ink,
+// A crop photograph with a dark scrim at the bottom so white text on it stays readable.
+export function CropPhoto({
+  crop,
+  sizes,
   className = "",
+  priority = false,
+  children,
 }: {
-  name: string;
-  field: string;
-  ink: string;
+  crop: { photo: string; alt: string; field: string };
+  sizes: string;
   className?: string;
+  priority?: boolean;
+  children?: ReactNode;
 }) {
   return (
-    <div
-      className={`relative flex items-end overflow-hidden ${className}`}
-      style={{ background: field, color: ink }}
-      role="img"
-      aria-label={name}
-    >
-      <span aria-hidden="true" className="select-none p-4 heading-3 opacity-90">
-        {name}
-      </span>
+    <div className={`relative isolate overflow-hidden text-white ${className}`} style={{ background: crop.field }}>
+      <Image src={crop.photo} alt={crop.alt} fill sizes={sizes} priority={priority} className="-z-10 object-cover" />
+      <span aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+      {children}
     </div>
+  );
+}
+
+export function CropThumb({ crop, className = "size-12" }: { crop: { photo: string; field: string }; className?: string }) {
+  return (
+    <span className={`relative block shrink-0 overflow-hidden rounded-xl ${className}`} style={{ background: crop.field }} aria-hidden="true">
+      <Image src={crop.photo} alt="" fill sizes="64px" className="object-cover" />
+    </span>
   );
 }
 

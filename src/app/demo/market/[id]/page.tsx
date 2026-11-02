@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { formatNaira } from "@/lib/money";
-import { ArrowRight, Check, Chip } from "../../_components/ui";
+import { ArrowRight, Check, Chip, CropPhoto } from "../../_components/ui";
 import { LOTS, cooperativeById, cropById, lotById } from "../../_lib/data";
 import { BuyBox } from "./buy-box";
 
@@ -34,13 +34,13 @@ async function Lot({ params }: { params: Promise<{ id: string }> }) {
 
       <div className="mt-6 grid gap-3 lg:grid-cols-12">
         <div className="flex flex-col gap-3 lg:col-span-8">
-          <div className="flex min-h-72 flex-col justify-between rounded-3xl p-6 md:min-h-96 md:p-8" style={{ background: crop.field, color: crop.ink }}>
+          <CropPhoto crop={crop} priority sizes="(min-width: 1024px) 64vw, 100vw" className="flex min-h-80 flex-col justify-between rounded-3xl p-6 md:min-h-[460px] md:p-8">
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-white/85 px-3 py-1 caption-4 text-[var(--d-ink)]">{lot.grade}</span>
               <span className="rounded-full bg-white/85 px-3 py-1 caption-4 text-[var(--d-ink)]">Harvested {lot.harvested}</span>
             </div>
             <h1 className="heading-1">{crop.name}</h1>
-          </div>
+          </CropPhoto>
 
           <section aria-labelledby="details" className="rounded-3xl bg-[var(--d-step)] p-6 md:p-8">
             <h2 id="details" className="heading-6">About this lot</h2>

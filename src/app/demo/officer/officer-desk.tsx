@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatNaira } from "@/lib/money";
-import { Button, Check, Chip } from "../_components/ui";
+import { Button, Check, Chip, CropThumb } from "../_components/ui";
 import { DELIVERIES, OFFERS, SCREENING_QUEUE, cropById, lotById } from "../_lib/data";
 
 type Done = Record<string, string>;
@@ -28,7 +28,7 @@ export function OfficerDesk() {
             return (
               <li key={l.id} className="rounded-[20px] bg-[var(--d-paper)] p-4 md:p-5">
                 <div className="flex items-start gap-4">
-                  <span className="size-12 shrink-0 rounded-xl" style={{ background: crop.field }} aria-hidden="true" />
+                  <CropThumb crop={crop} className="size-14" />
                   <div className="flex-1">
                     <p className="title-3">{crop.name}, {l.grade} · {l.quantity} {crop.unit}s</p>
                     <p className="caption-2 text-[var(--d-ink-2)]">{l.farmer} · {l.submitted}</p>

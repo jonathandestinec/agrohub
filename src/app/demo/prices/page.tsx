@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { formatNaira } from "@/lib/money";
-import { Chip, PageHeading } from "../_components/ui";
+import { Chip, CropPhoto, PageHeading } from "../_components/ui";
 import { BOARD, BOARD_WEEK, cropById } from "../_lib/data";
 
 export const metadata: Metadata = { title: "Price board" };
@@ -20,10 +20,10 @@ export default function PricesPage() {
           const crop = cropById(row.cropId);
           return (
             <li key={row.cropId} className="grid gap-2 rounded-3xl bg-[var(--d-step)] p-2 md:grid-cols-[minmax(200px,1fr)_3fr]">
-              <div className="flex min-h-28 flex-col justify-end rounded-[20px] p-5" style={{ background: crop.field, color: crop.ink }}>
+              <CropPhoto crop={crop} sizes="(min-width: 768px) 25vw, 100vw" className="flex min-h-32 flex-col justify-end rounded-[20px] p-5">
                 <h2 className="heading-5">{crop.name}</h2>
-                <p className="body-6 opacity-80">per {crop.unit}</p>
-              </div>
+                <p className="body-6 opacity-90">per {crop.unit}</p>
+              </CropPhoto>
               <dl className="grid gap-2 sm:grid-cols-3">
                 {row.markets.map((m) => {
                   const change = m.thisWeekKobo - m.lastWeekKobo;

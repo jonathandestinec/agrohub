@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatNaira } from "@/lib/money";
-import { ArrowUpRight, Check } from "../_components/ui";
+import { ArrowUpRight, Check, CropPhoto } from "../_components/ui";
 import { CROPS, LOTS, cooperativeById, cropById } from "../_lib/data";
 
 const STATES = Array.from(new Set(LOTS.map((l) => cooperativeById(l.cooperativeId).state))).sort();
@@ -61,13 +61,13 @@ export function MarketBrowser() {
                   href={`/demo/market/${lot.id}`}
                   className="press press-lift group flex h-full flex-col overflow-hidden rounded-3xl bg-[var(--d-step)] p-2 hover:bg-[var(--d-step-2)]"
                 >
-                  <div className="relative flex h-44 items-end rounded-2xl p-4" style={{ background: c.field, color: c.ink }}>
+                  <CropPhoto crop={c} sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw" className="flex h-52 items-end rounded-2xl p-4">
                     <span className="heading-4">{c.name}</span>
                     <span className="absolute right-3 top-3 flex size-10 items-center justify-center rounded-full bg-white/85 text-[var(--d-ink)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:rotate-45">
                       <ArrowUpRight />
                     </span>
                     <span className="absolute left-3 top-3 rounded-full bg-white/85 px-3 py-1 caption-4 text-[var(--d-ink)]">{lot.grade}</span>
-                  </div>
+                  </CropPhoto>
                   <div className="flex flex-1 flex-col gap-3 p-4">
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="heading-6">{formatNaira(lot.askKobo)}</span>

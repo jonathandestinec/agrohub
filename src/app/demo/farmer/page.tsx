@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { formatNaira } from "@/lib/money";
 import { EarningsCalculator } from "../_components/earnings-calculator";
-import { ArrowUpRight, Chip, PageHeading } from "../_components/ui";
+import { ArrowUpRight, Chip, CropThumb, PageHeading } from "../_components/ui";
 import { DEMO_FARMER, cooperativeById, cropById, lotById } from "../_lib/data";
 import { SubmitLot } from "./submit-lot";
 
@@ -49,7 +49,7 @@ export default function FarmerPage() {
             const tone = l.status === "Live" ? "lime" : l.status === "Sold and paid" ? "forest" : "warn";
             const row = (
               <>
-                <span className="size-10 shrink-0 rounded-xl" style={{ background: crop.field }} aria-hidden="true" />
+                <CropThumb crop={crop} className="size-12" />
                 <span className="flex-1">
                   <span className="block title-3">{crop.name} · {l.contributed} {crop.unit}s</span>
                   <span className="block caption-2 text-[var(--d-ink-2)]">{l.id} · {formatNaira(info.askKobo)} per {crop.unit}</span>
