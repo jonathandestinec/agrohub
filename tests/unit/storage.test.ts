@@ -55,6 +55,13 @@ describe("storage adapter", () => {
     expect(storage.selectStorage(s3Config)).toBe("s3");
   });
 
+  it("only sends checksums when an operation requires them (Backblaze B2 rejects the defaults)", () => {
+    const options = storage.s3ClientOptions(s3Config);
+    expect(options.requestChecksumCalculation).toBe("WHEN_REQUIRED");
+    expect(options.responseChecksumValidation).toBe("WHEN_REQUIRED");
+    expect(options.forcePathStyle).toBe(true);
+  });
+
   it("passes expiresIn to the S3 presigner", async () => {
     presign.getSignedUrl.mockResolvedValue("https://signed.invalid/x");
     const url = await storage.signedUrlWith(s3Config, "coops/1/doc.pdf", 300);
