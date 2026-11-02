@@ -73,11 +73,11 @@ function ActionForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4"
+      className="flex flex-col gap-3 rounded-inner bg-step p-4 md:p-6"
     >
       {withReason ? (
         <div className="flex flex-col gap-1">
-          <label htmlFor={`reason-${name}`} className="text-sm font-medium">
+          <label htmlFor={`reason-${name}`} className="title-4">
             {t("detail.reason")}
           </label>
           <textarea
@@ -86,7 +86,7 @@ function ActionForm({
             required
             maxLength={500}
             rows={3}
-            className="w-full rounded-md border border-border bg-bg px-3 py-2 text-base text-fg"
+            className="w-full rounded-input bg-paper px-4 py-3 body-3 text-ink"
           />
         </div>
       ) : null}
