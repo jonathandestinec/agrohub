@@ -533,7 +533,8 @@ function PhotoPanel({ index }: { index: number }) {
           className="absolute inset-0 transition-[opacity,transform] duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{ opacity: i === index ? 1 : 0, transform: i === index ? "scale(1)" : "scale(1.06)" }}
         >
-          <Image src={s.photo} alt={i === index ? s.alt : ""} fill sizes="(min-width: 1024px) 40vw, 100vw" priority={i === 0} className="object-cover" />
+          {/* Eager, so the next step's photo is ready before the crossfade starts. */}
+          <Image src={s.photo} alt={i === index ? s.alt : ""} fill sizes="(min-width: 1024px) 40vw, 100vw" priority={i === 0} loading={i === 0 ? undefined : "eager"} className="object-cover" />
         </div>
       ))}
       <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
