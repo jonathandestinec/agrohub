@@ -97,7 +97,7 @@ DATABASE_URL=<database-url> npm run admin:grant -- <email> <ADMIN|BOARD_ADMIN>
 
 `vercel.json` lists the cron jobs; each calls `GET /api/cron/<job>` with `Authorization: Bearer $CRON_SECRET`.
 
-- `bank-change-apply`, hourly (`0 * * * *`): copies confirmed bank account changes whose 48-hour wait has passed onto the cooperative. Payout code reads the effective account through `effectiveRecipientCode`, so a change counts at its effective time even before the job runs.
+- `bank-change-apply`, daily at 05:00 UTC (`0 5 * * *`; Vercel Hobby allows only daily crons): copies confirmed bank account changes whose 48-hour wait has passed onto the cooperative. Payout code reads the effective account through `effectiveRecipientCode`, so a change counts at its effective time even before the job runs.
 
 ## Local development pages
 
