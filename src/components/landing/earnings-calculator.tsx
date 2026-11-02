@@ -48,7 +48,7 @@ export function EarningsCalculator() {
         </p>
       </div>
 
-      <form onSubmit={(e) => e.preventDefault()} aria-label={t("formLabel")} className="grid grid-cols-2 gap-x-2.5 gap-y-3 pt-1 sm:grid-cols-[7rem_minmax(0,1fr)_10rem]">
+      <form onSubmit={(e) => e.preventDefault()} aria-label={t("formLabel")} className="grid grid-cols-2 items-end gap-x-2.5 gap-y-3 pt-1 sm:grid-cols-[7rem_minmax(0,1fr)_10rem]">
         <div className="grid min-w-0 gap-1.5">
           <label className="caption-4" htmlFor={`${id}-qty`}>
             {t("quantity")}
@@ -62,7 +62,7 @@ export function EarningsCalculator() {
             className="calc-pill w-full min-w-0 text-center"
           />
         </div>
-        <div className="col-span-2 grid min-w-0 gap-1.5 sm:col-span-1">
+        <div className="order-first col-span-2 grid min-w-0 gap-1.5 sm:order-none sm:col-span-1">
           <label className="caption-4" htmlFor={`${id}-crop`}>
             {t("crop")}
           </label>
@@ -76,7 +76,7 @@ export function EarningsCalculator() {
         </div>
         <div className="grid min-w-0 gap-1.5">
           <label className="caption-4" htmlFor={`${id}-price`}>
-            {t("price")}
+            {t("priceShort")}
           </label>
           <span className="calc-pill w-full min-w-0 flex items-center gap-1">
             ₦
