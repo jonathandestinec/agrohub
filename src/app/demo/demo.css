@@ -1,0 +1,162 @@
+/* Demo-only visual system. Scoped to [data-demo] so the real app's tokens are untouched. */
+
+/* The root layout's header and nav belong to the real app; the demo brings its own. */
+body:has([data-demo]) > header,
+body:has([data-demo]) > nav {
+  display: none;
+}
+body:has([data-demo]) {
+  background: #e9eae3;
+}
+
+[data-demo] {
+  --d-ground: #e9eae3;
+  --d-paper: #ffffff;
+  --d-step: #f3f4ee;
+  --d-step-2: #e3e5dc;
+  --d-ink: #10140f;
+  --d-ink-2: #4a5148;
+  --d-lime: #dcef6a;
+  --d-lime-ink: #1a2004;
+  --d-forest: #173a2a;
+  --d-forest-ink: #f3f7ef;
+  --d-warn: #8a5a00;
+  --d-bad: #a3341f;
+  --d-good: #2f6b2c;
+  --d-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --d-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  color-scheme: light;
+  color: var(--d-ink);
+  font-family: var(--font-demo), ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Named text styles (landing-page-design B1). */
+[data-demo] :is(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+[data-demo] p {
+  text-wrap: pretty;
+}
+.heading-1 { font-size: 3.75rem; line-height: 1; font-weight: 600; letter-spacing: -0.035em; }
+.heading-2 { font-size: 3rem; line-height: 1; font-weight: 600; letter-spacing: -0.03em; }
+.heading-3 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.025em; }
+.heading-4 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.02em; }
+.heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.015em; }
+.heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+.title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
+.title-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.title-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.body-1 { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+.body-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+.body-5 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.body-6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.button-md { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+.button-sm { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+.caption-2 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.caption-4 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+
+@media (max-width: 767px) {
+  .heading-1 { font-size: 2.25rem; line-height: 2.5rem; }
+  .heading-2 { font-size: 1.875rem; line-height: 2.25rem; }
+  .heading-3 { font-size: 1.5rem; line-height: 2rem; }
+  .heading-4 { font-size: 1.5rem; line-height: 2rem; }
+}
+
+/* Pressable things: weighted, quick, never a browser default curve. */
+.press {
+  transition:
+    transform 160ms var(--d-ease-out),
+    background-color 240ms var(--d-ease-out),
+    color 240ms var(--d-ease-out),
+    opacity 240ms var(--d-ease-out);
+}
+.press:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .press-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Concave corners for the hero's notched photograph (the "clipped" look). */
+.notch-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+.notch-corner[data-at="br"] {
+  background: radial-gradient(circle at 100% 100%, transparent 23.5px, var(--d-paper) 24px);
+}
+.notch-corner[data-at="tl"] {
+  background: radial-gradient(circle at 0 0, transparent 23.5px, var(--d-paper) 24px);
+}
+
+/* Scroll reveal: children rise 24px and fade in, staggered, once. */
+.reveal > * {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 700ms var(--d-ease),
+    transform 700ms var(--d-ease);
+}
+.reveal[data-shown] > * {
+  opacity: 1;
+  transform: none;
+}
+.reveal[data-shown] > *:nth-child(2) { transition-delay: 70ms; }
+.reveal[data-shown] > *:nth-child(3) { transition-delay: 140ms; }
+.reveal[data-shown] > *:nth-child(4) { transition-delay: 210ms; }
+.reveal[data-shown] > *:nth-child(5) { transition-delay: 280ms; }
+.reveal[data-shown] > *:nth-child(n + 6) { transition-delay: 340ms; }
+
+/* Tagline reveal: each word moves from muted to full ink. */
+.tagline-word {
+  color: color-mix(in srgb, var(--d-ink) 28%, transparent);
+  transition: color 500ms var(--d-ease);
+}
+.tagline-word[data-on] {
+  color: var(--d-ink);
+}
+
+/* Hero entrance and the slow drift on the photograph. */
+@keyframes demo-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes demo-drift {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+.rise { animation: demo-rise 800ms var(--d-ease) both; }
+.rise-1 { animation-delay: 80ms; }
+.rise-2 { animation-delay: 160ms; }
+.rise-3 { animation-delay: 240ms; }
+.rise-4 { animation-delay: 320ms; }
+.drift { animation: demo-drift 2400ms var(--d-ease) both; }
+
+/* Mobile menu: links arrive one after another. */
+.menu-link {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 500ms var(--d-ease), transform 500ms var(--d-ease);
+}
+[data-open] .menu-link {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal > *,
+  .menu-link {
+    transform: none;
+    transition: opacity 300ms linear;
+  }
+  .rise { animation: none; }
+  .drift { animation: none; }
+  .tagline-word { transition: none; color: var(--d-ink); }
+  .press:active { transform: none; }
+}
