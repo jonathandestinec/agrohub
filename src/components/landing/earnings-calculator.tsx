@@ -39,16 +39,16 @@ export function EarningsCalculator() {
   const unit = t(`crops.${cropId}.unit`);
 
   return (
-    <div className="flex flex-col gap-6 rounded-panel bg-lime p-6 text-lime-ink md:p-8">
-      <div aria-live="polite">
+    <div className="flex flex-col gap-7 rounded-panel bg-lime p-6 text-lime-ink md:p-8">
+      <div className="grid gap-1.5" aria-live="polite">
         <p className="title-3">{t("takeHome")}</p>
-        <p className="calc-total mt-2">{b ? formatNaira(b.takeHomeKobo) : t("checkNumbers")}</p>
-        <p className="mt-3 body-3">
+        <p className="calc-total">{b ? formatNaira(b.takeHomeKobo) : t("checkNumbers")}</p>
+        <p className="body-3">
           {b ? t("perUnit", { amount: formatNaira(b.takeHomePerUnitKobo), unit }) : t("enterNumbers")}
         </p>
       </div>
 
-      <form onSubmit={(e) => e.preventDefault()} aria-label={t("formLabel")} className="flex flex-wrap items-center gap-x-2 gap-y-3 body-1">
+      <form onSubmit={(e) => e.preventDefault()} aria-label={t("formLabel")} className="flex flex-wrap items-center gap-x-2 gap-y-2.5 pt-1 body-1">
         <span>{t("selling")}</span>
         <label className="sr-only" htmlFor={`${id}-qty`}>
           {t("quantity")}
@@ -90,20 +90,29 @@ export function EarningsCalculator() {
       </form>
 
       {b ? (
-        <div className="flex flex-col gap-2">
+        <div className="grid gap-2.5">
           <div className="flex h-3 overflow-hidden rounded-full bg-paper" aria-hidden="true">
             <span className="calc-seg bg-forest" style={{ flexGrow: FARMER_BPS }} />
             <span className="calc-seg bg-lime-ink/30" style={{ flexGrow: COOP_CUT_BPS + AGROHUB_FEE_BPS }} />
           </div>
-          <p className="flex justify-between gap-4 body-5">
-            <span>{t("youKeep", { percent: percent(FARMER_BPS) })}</span>
-            <span>{t("split", { cut: percent(COOP_CUT_BPS), fee: percent(AGROHUB_FEE_BPS) })}</span>
+          <p className="flex flex-wrap gap-x-5 gap-y-1.5 body-5">
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2.5 flex-none rounded-full bg-forest" aria-hidden="true" />
+              {t("youKeep", { percent: percent(FARMER_BPS) })}
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2.5 flex-none rounded-full bg-lime-ink/30" aria-hidden="true" />
+              {t("split", { cut: percent(COOP_CUT_BPS), fee: percent(AGROHUB_FEE_BPS) })}
+            </span>
           </p>
-          <details className="mt-2">
-            <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center body-5 underline underline-offset-4 [&::-webkit-details-marker]:hidden">
+          <details className="calc-more">
+            <summary className="body-5">
               {t("fullBreakdown")}
+              <svg viewBox="0 0 24 24" className="size-4" fill="none" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </summary>
-            <dl className="mt-2 flex flex-col gap-2 rounded-2xl bg-paper p-4 body-6 text-ink">
+            <dl className="mt-3 flex flex-col gap-2 rounded-2xl bg-paper p-4 body-6 text-ink">
               <Line label={t("buyerPays")} value={formatNaira(b.grossKobo)} />
               <Line label={t("cooperative", { percent: percent(COOP_CUT_BPS) })} value={t("minus", { amount: formatNaira(b.cooperativeKobo) })} />
               <Line label={t("agrohub", { percent: percent(AGROHUB_FEE_BPS) })} value={t("minus", { amount: formatNaira(b.feeKobo) })} />

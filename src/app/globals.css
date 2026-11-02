@@ -178,6 +178,30 @@ p {
 .calc-seg {
   transition: flex-grow 500ms var(--ease);
 }
+.calc-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.55);
+  cursor: pointer;
+  list-style: none;
+  transition: background-color 240ms var(--ease-out);
+}
+.calc-more > summary::-webkit-details-marker {
+  display: none;
+}
+.calc-more > summary:hover {
+  background: var(--color-paper);
+}
+.calc-more > summary svg {
+  transition: transform 400ms var(--ease);
+}
+.calc-more[open] > summary svg {
+  transform: rotate(180deg);
+}
 @media (max-width: 767px) {
   .calc-total { font-size: 2.25rem; line-height: 2.5rem; }
 }
