@@ -113,6 +113,13 @@ function nav(page: Page, name: string): Locator {
   return page.getByRole("navigation").getByRole("link", { name, exact: true });
 }
 
+// The pinned nav narrows to a pill (links hidden and inert) while scrolled down, and comes
+// back when the reader scrolls up; a person reaching for the nav scrolls up first, so do that.
+async function clickNav(page: Page, name: string) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await nav(page, name).click();
+}
+
 async function saveBankAccount(page: Page, bankName: string, accountNumber: string) {
   await page.getByLabel("Bank", { exact: true }).selectOption({ label: bankName });
   await page.getByLabel("Account number").fill(accountNumber);
@@ -145,7 +152,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await expect(page).toHaveURL(HOME);
 
     // No membership yet: the header offers to register a cooperative.
-    await nav(page, "Register your cooperative").click();
+    await clickNav(page, "Register your cooperative");
     await expect(page.getByRole("heading", { name: "Set up your cooperative" })).toBeVisible();
     await page.getByLabel("Cooperative name").fill(cooperativeName);
     await page.getByLabel("Registration number").fill(`RC-${tag}`);
@@ -192,7 +199,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     const accountNumber = uniqueAccountNumber();
     const accountName = `SUNRISE ${tag} FARMERS MULTIPURPOSE COOPERATIVE SOCIETY LTD`;
     await addFakeBankAccount(request, { bankCode: "058", accountNumber, accountName });
-    await nav(page, "My cooperative").click();
+    await clickNav(page, "My cooperative");
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
     await expect(nav(page, "My cooperative")).toHaveAttribute("aria-current", "page");
     await saveBankAccount(page, "Guaranty Trust Bank", accountNumber);
@@ -212,13 +219,13 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await signIn(page, admin.email);
     await expect(page).toHaveURL(HOME);
     // An admin without two-factor is sent to enrol before the queue opens.
-    await nav(page, "Review cooperatives").click();
+    await clickNav(page, "Review cooperatives");
     await expect(page).toHaveURL(/\/two-factor$/);
     await enrolTwoFactor(page);
 
     // Clicked, not loaded with goto: pins that enrolling clears the client router's
     // cached redirect to /two-factor (it used to bounce the admin back home).
-    await nav(page, "Review cooperatives").click();
+    await clickNav(page, "Review cooperatives");
     await expect(page.getByRole("heading", { name: "Cooperatives awaiting review" })).toBeVisible();
     await page.getByRole("link", { name: new RegExp(cooperativeName) }).click();
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
@@ -231,7 +238,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
   let inviteUrl = "";
   await test.step("3. the officer copies the invite link", async () => {
     const page = officerPage;
-    await nav(page, "Invite farmers").click();
+    await clickNav(page, "Invite farmers");
     await expect(page.getByRole("heading", { name: "Invite farmers" })).toBeVisible();
     // The cooperative is verified now, so there is no "not verified yet" notice.
     await expect(page.getByText(/Farmers can join only after/)).toHaveCount(0);
@@ -279,7 +286,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
 
   await test.step("5. the officer approves the farmer", async () => {
     const page = officerPage;
-    await nav(page, "Farmers").click();
+    await clickNav(page, "Farmers");
     await expect(page.getByRole("heading", { name: "Your farmers" })).toBeVisible();
     const row = page.getByRole("listitem").filter({ hasText: farmer.name });
     await expect(row).toContainText("Bank account added");
@@ -292,7 +299,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     const page = farmerPage;
     await page.reload();
     await expect(page.getByText("Your officer has approved you.")).toBeVisible();
-    await nav(page, "My farm").click();
+    await clickNav(page, "My farm");
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
     await expect(page.getByRole("status")).toHaveText("You are an approved member.");
   });
