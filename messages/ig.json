@@ -185,6 +185,13 @@
         "save": "",
         "saving": "",
         "saved": ""
+      },
+      "chip": {
+        "verified": "",
+        "suspended": "",
+        "waiting": "",
+        "changesRequested": "",
+        "incomplete": ""
       }
     },
     "invites": {
@@ -373,7 +380,13 @@
       "hectares": "",
       "crops": "",
       "location": "",
-      "place": ""
+      "place": "",
+      "chip": {
+        "PENDING": "",
+        "ACTIVE": "",
+        "LEFT": "",
+        "REMOVED": ""
+      }
     },
     "errors": {
       "VALIDATION_ERROR": "",

@@ -27,20 +27,20 @@ export async function FarmerBankSection({
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
+      <h2 className="heading-6">
         {t("heading")}
       </h2>
-      <p className="text-sm text-muted">{t("intro")}</p>
-      <p className="rounded-md border border-border bg-surface px-3 py-3 text-base">
+      <p className="body-6 text-ink-soft">{t("intro")}</p>
+      <p className="rounded-inner bg-step p-4 body-3">
         {bank?.accountName ? t("current", { accountName: bank.accountName }) : t("none")}
       </p>
       {bank?.change?.state === "AWAITING_CONFIRMATION" ? (
-        <p role="status" className="text-base">
+        <p role="status" className="body-3">
           {t("pending")}
         </p>
       ) : null}
       {bank?.change?.state === "CONFIRMED" ? (
-        <p role="status" className="text-base">
+        <p role="status" className="body-3">
           {t("confirmed", { date: formatEffectiveAt(bank.change.effectiveAt, locale) })}
         </p>
       ) : null}
@@ -48,7 +48,7 @@ export async function FarmerBankSection({
         banks ? (
           <FarmerBankForm banks={banks} />
         ) : (
-          <p role="alert" className="text-base">
+          <p role="alert" className="body-3">
             {t("unavailable")}
           </p>
         )

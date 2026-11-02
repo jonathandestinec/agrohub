@@ -185,6 +185,13 @@
         "save": "Save details",
         "saving": "Saving…",
         "saved": "Details saved."
+      },
+      "chip": {
+        "verified": "Verified",
+        "suspended": "Suspended",
+        "waiting": "Waiting for review",
+        "changesRequested": "Changes requested",
+        "incomplete": "Not yet submitted"
       }
     },
     "invites": {
@@ -373,7 +380,13 @@
       "hectares": "{size} hectares",
       "crops": "Crops",
       "location": "Location",
-      "place": "{lga}, {state}"
+      "place": "{lga}, {state}",
+      "chip": {
+        "PENDING": "Waiting for approval",
+        "ACTIVE": "Active member",
+        "LEFT": "Left the cooperative",
+        "REMOVED": "Removed"
+      }
     },
     "errors": {
       "VALIDATION_ERROR": "Please check the details and try again.",
