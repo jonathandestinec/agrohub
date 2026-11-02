@@ -48,45 +48,48 @@ export function EarningsCalculator() {
         </p>
       </div>
 
-      <form onSubmit={(e) => e.preventDefault()} aria-label={t("formLabel")} className="flex flex-wrap items-center gap-x-2 gap-y-2.5 pt-1 body-1">
-        <span>{t("selling")}</span>
-        <label className="sr-only" htmlFor={`${id}-qty`}>
-          {t("quantity")}
-        </label>
-        <input
-          id={`${id}-qty`}
-          inputMode="numeric"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          aria-invalid={qty === null}
-          className="calc-pill w-20 text-center"
-        />
-        <label className="sr-only" htmlFor={`${id}-crop`}>
-          {t("crop")}
-        </label>
-        <select id={`${id}-crop`} value={cropId} onChange={(e) => setCropId(e.target.value as CropId)} className="calc-pill">
-          {CROPS.map((c) => (
-            <option key={c} value={c}>
-              {t("cropOption", { unit: t(`crops.${c}.unit`), crop: t(`crops.${c}.name`) })}
-            </option>
-          ))}
-        </select>
-        <span>{t("at")}</span>
-        <label className="sr-only" htmlFor={`${id}-price`}>
-          {t("price")}
-        </label>
-        <span className="calc-pill flex items-center gap-1">
-          ₦
+      <form onSubmit={(e) => e.preventDefault()} aria-label={t("formLabel")} className="grid grid-cols-2 gap-x-2.5 gap-y-3 pt-1 sm:grid-cols-[7rem_minmax(0,1fr)_10rem]">
+        <div className="grid min-w-0 gap-1.5">
+          <label className="caption-4" htmlFor={`${id}-qty`}>
+            {t("quantity")}
+          </label>
           <input
-            id={`${id}-price`}
-            inputMode="decimal"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            aria-invalid={askKobo === null}
-            className="w-24 bg-transparent font-semibold outline-none"
+            id={`${id}-qty`}
+            inputMode="numeric"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            aria-invalid={qty === null}
+            className="calc-pill w-full min-w-0 text-center"
           />
-        </span>
-        <span>{t("each")}</span>
+        </div>
+        <div className="col-span-2 grid min-w-0 gap-1.5 sm:col-span-1">
+          <label className="caption-4" htmlFor={`${id}-crop`}>
+            {t("crop")}
+          </label>
+          <select id={`${id}-crop`} value={cropId} onChange={(e) => setCropId(e.target.value as CropId)} className="calc-pill w-full min-w-0">
+            {CROPS.map((c) => (
+              <option key={c} value={c}>
+                {t("cropOption", { unit: t(`crops.${c}.unit`), crop: t(`crops.${c}.name`) })}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid min-w-0 gap-1.5">
+          <label className="caption-4" htmlFor={`${id}-price`}>
+            {t("price")}
+          </label>
+          <span className="calc-pill w-full min-w-0 flex items-center gap-1">
+            ₦
+            <input
+              id={`${id}-price`}
+              inputMode="decimal"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              aria-invalid={askKobo === null}
+              className="w-full min-w-0 bg-transparent font-semibold outline-none"
+            />
+          </span>
+        </div>
       </form>
 
       {b ? (
