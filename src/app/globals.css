@@ -2,30 +2,102 @@
 @import "../styles/tokens.css";
 
 /* Token variables live in tokens.css; `@theme inline` makes Tailwind utilities
-   (bg-surface, text-muted, rounded-md, ...) resolve to them. */
+   (bg-step, text-ink-soft, rounded-panel, ...) resolve to them. */
 @theme inline {
-  --color-bg: var(--color-bg);
-  --color-fg: var(--color-fg);
-  --color-surface: var(--color-surface);
-  --color-border: var(--color-border);
-  --color-muted: var(--color-muted);
-  --color-primary: var(--color-primary);
-  --color-primary-fg: var(--color-primary-fg);
-  --color-focus: var(--color-focus);
+  --color-ground: var(--color-ground);
+  --color-paper: var(--color-paper);
+  --color-step: var(--color-step);
+  --color-step-deep: var(--color-step-deep);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-lime: var(--color-lime);
+  --color-lime-ink: var(--color-lime-ink);
+  --color-forest: var(--color-forest);
+  --color-forest-ink: var(--color-forest-ink);
+  --color-good: var(--color-good);
+  --color-warn: var(--color-warn);
+  --color-warn-soft: var(--color-warn-soft);
+  --color-bad: var(--color-bad);
+  --color-bad-soft: var(--color-bad-soft);
   --font-sans: var(--font-body);
-  --font-heading: var(--font-heading);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
+  --radius-input: var(--radius-input);
+  --radius-tile: var(--radius-tile);
+  --radius-inner: var(--radius-inner);
+  --radius-panel: var(--radius-panel);
+  --radius-frame: var(--radius-frame);
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-fg);
+  background: var(--color-ground);
+  color: var(--color-ink);
   font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
+}
+
+:is(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* Named text styles, from the demo. */
+.heading-1 { font-size: 3.75rem; line-height: 1; font-weight: 600; letter-spacing: -0.035em; }
+.heading-2 { font-size: 3rem; line-height: 1; font-weight: 600; letter-spacing: -0.03em; }
+.heading-3 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.025em; }
+.heading-4 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.02em; }
+.heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.015em; }
+.heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+.title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
+.title-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.title-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.body-1 { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+.body-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+.body-5 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.body-6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.button-md { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+.button-sm { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+.caption-2 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.caption-4 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+
+@media (max-width: 767px) {
+  .heading-1 { font-size: 2.25rem; line-height: 2.5rem; }
+  .heading-2 { font-size: 1.875rem; line-height: 2.25rem; }
+  .heading-3 { font-size: 1.5rem; line-height: 2rem; }
+  .heading-4 { font-size: 1.5rem; line-height: 2rem; }
+}
+
+/* Pressable things: weighted, quick, never a browser default curve. */
+.press {
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 240ms var(--ease-out),
+    color 240ms var(--ease-out),
+    opacity 240ms var(--ease-out);
+}
+.press:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .press-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-property: opacity !important;
+  }
+  .press:active,
+  .press-lift:hover {
+    transform: none;
+  }
 }

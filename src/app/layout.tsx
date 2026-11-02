@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Geist } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -12,6 +13,8 @@ import { pickActiveMembership } from "@/modules/identity/active-role";
 import { listMembershipStates, listMemberships } from "@/modules/identity/service";
 import { toSwitcherMembership } from "@/modules/identity/views";
 import "./globals.css";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
 export const metadata: Metadata = {
   title: "AgroHub",
@@ -86,7 +89,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
   return (
-    <html lang={locale} className="h-full antialiased">
+    <html lang={locale} className={`${geist.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2">
