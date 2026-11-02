@@ -115,7 +115,8 @@ body:has([data-demo]) {
 
 /* Tagline reveal: each word moves from muted to full ink. */
 .tagline-word {
-  color: color-mix(in srgb, var(--d-ink) 28%, transparent);
+  /* Muted, but still readable (above 3:1 for large text) before each word lights up. */
+  color: color-mix(in srgb, var(--d-ink) 52%, transparent);
   transition: color 500ms var(--d-ease);
 }
 .tagline-word[data-on] {
@@ -147,6 +148,72 @@ body:has([data-demo]) {
 [data-open] .menu-link {
   opacity: 1;
   transform: none;
+}
+
+/* Pinned nav: scrolling down fades the links up and out, then the bar narrows to a pill
+   with the logo and the main action; scrolling up reverses it. */
+.nav-bar {
+  width: 100%;
+  transition:
+    width 560ms var(--d-ease),
+    background-color 300ms var(--d-ease-out),
+    box-shadow 300ms var(--d-ease-out);
+}
+.nav-bar[data-compact] {
+  width: min(380px, 100%);
+}
+.nav-bar[data-scrolled] {
+  background: rgb(255 255 255 / 0.86);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgb(16 20 15 / 0.08);
+}
+.nav-links li {
+  transition:
+    opacity 240ms var(--d-ease-out),
+    transform 320ms var(--d-ease);
+}
+.nav-bar[data-compact] .nav-links li {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
+}
+@media (max-width: 767px) {
+  .nav-bar[data-compact] { width: min(220px, 100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-bar,
+  .nav-links li { transition-duration: 1ms; }
+}
+
+/* Earnings calculator: the take-home figure leads; the lot reads as one sentence of pills. */
+.calc-total {
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.calc-pill {
+  min-height: 44px;
+  border-radius: 9999px;
+  background: var(--d-paper);
+  color: var(--d-ink);
+  padding: 0 16px;
+  font-weight: 600;
+  outline-offset: 2px;
+}
+.calc-pill:focus-visible,
+.calc-pill:has(input:focus-visible) {
+  outline: 2px solid var(--d-ink);
+}
+.calc-pill[aria-invalid="true"],
+.calc-pill:has(input[aria-invalid="true"]) {
+  outline: 2px solid var(--d-bad);
+}
+.calc-seg {
+  transition: flex-grow 500ms var(--d-ease);
+}
+@media (max-width: 767px) {
+  .calc-total { font-size: 2.25rem; line-height: 2.5rem; }
 }
 
 /* Onboarding: each step slides in from the side it comes from, with a short blur to
@@ -220,4 +287,24 @@ body:has([data-demo]) {
   .drift { animation: none; }
   .tagline-word { transition: none; color: var(--d-ink); }
   .press:active { transform: none; }
+}
+
+/* Logo: the two leaves sway gently from their stem, out of step, like a light breeze. */
+.mark-leaf {
+  transform-box: view-box;
+  animation: mark-sway 4.8s ease-in-out infinite;
+}
+.mark-leaf-right { transform-origin: 16px 12px; }
+.mark-leaf-left {
+  transform-origin: 16px 16px;
+  animation-delay: -2.4s;
+  animation-duration: 5.6s;
+}
+@keyframes mark-sway {
+  /* The leaves are ~6px wide at nav size, so the swing has to be wide enough to read. */
+  0%, 100% { transform: rotate(-14deg); }
+  50% { transform: rotate(14deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mark-leaf { animation: none; }
 }

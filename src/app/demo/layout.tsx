@@ -59,7 +59,7 @@ function DemoFooter() {
           ))}
         </ul>
       </div>
-      <p className="mt-10 max-w-4xl caption-2 text-[var(--d-ink-2)]">
+      <p className="mt-10 max-w-[72ch] caption-2 text-[var(--d-ink-2)]">
         Photographs from Wikimedia Commons:{" "}
         {PHOTO_CREDITS.filter((c) => c.url).map((c, i, all) => (
           <span key={c.url}>

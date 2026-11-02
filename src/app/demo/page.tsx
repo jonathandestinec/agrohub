@@ -82,7 +82,7 @@ function Hero() {
               <span
                 key={i}
                 className="flex size-9 shrink-0 items-center justify-center rounded-full caption-4 ring-2 ring-[var(--d-lime)]"
-                style={{ background: ["#173a2a", "#8c6a4a", "#e9c54b"][n], color: n === 2 ? "#2a2205" : "#fff" }}
+                style={{ background: ["var(--d-forest)", "var(--d-ink-2)", "var(--d-paper)"][n], color: n === 2 ? "var(--d-ink)" : "var(--d-paper)" }}
               >
                 {i}
               </span>
@@ -153,7 +153,7 @@ function HowItWorks() {
         <div className="flex h-28 items-center justify-center rounded-full bg-[var(--d-step)] heading-3 md:h-44 md:text-6xl md:leading-none">Listed</div>
         <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-full md:h-44">
           <Image src={sky} alt="" fill sizes="25vw" className="object-cover" />
-          <span className="absolute inset-0 bg-black/30" aria-hidden="true" />
+          <span className="absolute inset-0 bg-black/55" aria-hidden="true" />
           <span className="relative heading-3 text-white md:text-6xl md:leading-none">Held</span>
         </div>
         <div className="flex h-28 items-center justify-center rounded-full bg-[var(--d-lime)] text-[var(--d-lime-ink)] md:h-44">
