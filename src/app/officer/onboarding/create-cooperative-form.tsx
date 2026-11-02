@@ -36,7 +36,7 @@ export function CreateCooperativeForm({ states }: { states: string[] }) {
         required
       />
       <div className="flex flex-col gap-1">
-        <label htmlFor="state" className="text-sm font-medium">
+        <label htmlFor="state" className="title-4">
           {t("fields.state")}
         </label>
         <select
@@ -44,7 +44,7 @@ export function CreateCooperativeForm({ states }: { states: string[] }) {
           name="state"
           required
           defaultValue=""
-          className="min-h-11 w-full rounded-md border border-border bg-bg px-3 text-base text-fg"
+          className="min-h-12 w-full rounded-input bg-step px-4 body-3 text-ink"
         >
           <option value="" disabled>
             {t("fields.statePlaceholder")}

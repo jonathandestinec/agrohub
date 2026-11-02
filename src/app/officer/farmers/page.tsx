@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
-import { AuthCard } from "@/components/auth-ui";
+import { PageHeading } from "@/components/ui";
 import { listActiveFarmers, listPendingFarmers } from "@/modules/farmers/service";
 import { FarmersPanel } from "./farmers-panel";
 
@@ -25,9 +25,9 @@ async function OfficerFarmers() {
   const t = await getTranslations("officer.farmers");
 
   return (
-    <AuthCard title={t("title")}>
-      <p className="text-base text-muted">{t("intro")}</p>
+    <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <PageHeading title={t("title")} lead={t("intro")} />
       <FarmersPanel pending={pending} active={active} />
-    </AuthCard>
+    </main>
   );
 }

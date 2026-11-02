@@ -1,3 +1,5 @@
+import { buttonClass } from "@/components/ui/button";
+import { Card, Chip, PageHeading, type ChipTone } from "@/components/ui";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -43,7 +45,7 @@ async function OnboardingStep() {
   if (!memberships.some((m) => m.role === "OFFICER")) {
     return (
       <AuthCard title={t("title")}>
-        <p className="text-base text-muted">{t("intro")}</p>
+        <p className="body-3 text-ink-soft">{t("intro")}</p>
         <CreateCooperativeForm states={[...STATES]} />
       </AuthCard>
     );
@@ -60,50 +62,68 @@ async function OnboardingStep() {
     );
 
   let statusText: string;
-  if (view.status === "VERIFIED") statusText = t("status.verified");
-  else if (view.status === "SUSPENDED") statusText = t("status.suspended");
-  else if (view.submittedAt) {
+  let chip: { tone: ChipTone; key: "verified" | "suspended" | "waiting" | "changesRequested" | "incomplete" };
+  if (view.status === "VERIFIED") {
+    statusText = t("status.verified");
+    chip = { tone: "forest", key: "verified" };
+  } else if (view.status === "SUSPENDED") {
+    statusText = t("status.suspended");
+    chip = { tone: "step", key: "suspended" };
+  } else if (view.submittedAt) {
     statusText = t("status.waiting", { date: formatDate(view.submittedAt) });
+    chip = { tone: "warn", key: "waiting" };
   } else if (view.reviewNote === CERTIFICATE_EXPIRED_NOTE) {
     statusText = t("status.certificateExpired");
+    chip = { tone: "warn", key: "changesRequested" };
   } else if (view.reviewNote) {
     // Rejected: submittedAt was cleared, so re-uploading a document sends it back for review.
     statusText = t("status.changesRequested", { note: view.reviewNote });
-  } else statusText = t("status.incomplete");
+    chip = { tone: "warn", key: "changesRequested" };
+  } else {
+    statusText = t("status.incomplete");
+    chip = { tone: "step", key: "incomplete" };
+  }
 
   const uploaded = DOCUMENT_KINDS.filter((kind) =>
     documents.some((d) => toDocumentSummary(d).kind === kind),
   );
 
   return (
-    <AuthCard title={view.name}>
-      <p className="text-sm text-muted">
-        {view.registrationNumber} · {view.lga}, {view.state}
-      </p>
-      <p
-        role="status"
-        className="rounded-md border border-border bg-surface px-3 py-3 text-base"
-      >
+    <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <PageHeading title={view.name} lead={`${view.registrationNumber} · ${view.lga}, ${view.state}`}>
+        <Chip tone={chip.tone}>{t(`chip.${chip.key}`)}</Chip>
+      </PageHeading>
+      <p role="status" className="rounded-inner bg-paper p-4 body-3 md:p-6">
         {statusText}
       </p>
-      {view.status === "PENDING" ? (
-        <EditCooperativeForm
-          details={{
-            name: view.name,
-            registrationNumber: view.registrationNumber,
-            state: view.state,
-            lga: view.lga,
-          }}
-          states={[...STATES]}
-        />
-      ) : null}
-      <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
-        {t("documentsHeading")}
-      </h2>
-      <p className="text-sm text-muted">{t("documentsIntro")}</p>
-      <DocumentUploads kinds={[...DOCUMENT_KINDS]} uploaded={uploaded} />
-      <BankSection actor={actor} cooperativeId={view.id} locale={locale} />
-    </AuthCard>
+      <div className="grid gap-2 md:grid-cols-12">
+        <div className="flex flex-col gap-2 md:col-span-7">
+          {view.status === "PENDING" ? (
+            <Card tone="paper">
+              <EditCooperativeForm
+                details={{
+                  name: view.name,
+                  registrationNumber: view.registrationNumber,
+                  state: view.state,
+                  lga: view.lga,
+                }}
+                states={[...STATES]}
+              />
+            </Card>
+          ) : null}
+          <Card tone="paper">
+            <section className="flex flex-col gap-4">
+              <h2 className="heading-6">{t("documentsHeading")}</h2>
+              <p className="body-6 text-ink-soft">{t("documentsIntro")}</p>
+              <DocumentUploads kinds={[...DOCUMENT_KINDS]} uploaded={uploaded} />
+            </section>
+          </Card>
+        </div>
+        <Card tone="paper" className="md:col-span-5">
+          <BankSection actor={actor} cooperativeId={view.id} locale={locale} />
+        </Card>
+      </div>
+    </main>
   );
 }
 
@@ -130,31 +150,31 @@ async function BankSection({
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold">
+      <h2 className="heading-6">
         {t("heading")}
       </h2>
-      <p className="text-sm text-muted">{t("intro")}</p>
-      <p className="rounded-md border border-border bg-surface px-3 py-3 text-base">
+      <p className="body-6 text-ink-soft">{t("intro")}</p>
+      <p className="rounded-inner bg-step p-4 body-3">
         {account.accountName && account.bankName
           ? t("current", { accountName: account.accountName, bankName: account.bankName })
           : t("none")}
       </p>
       {account.change?.state === "AWAITING_CONFIRMATION" ? (
-        <p role="status" className="text-base">
+        <p role="status" className="body-3">
           {t("pending")}
         </p>
       ) : null}
       {account.change?.state === "CONFIRMED" ? (
-        <p role="status" className="text-base">
+        <p role="status" className="body-3">
           {t("confirmed", { date: formatEffectiveAt(account.change.effectiveAt, locale) })}
         </p>
       ) : null}
       {!actor.twoFactorEnabled ? (
         <>
-          <p className="text-base">{t("needsTwoFactor")}</p>
+          <p className="body-3">{t("needsTwoFactor")}</p>
           <Link
             href="/two-factor"
-            className="flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-base font-semibold text-primary-fg"
+            className={`${buttonClass("ink")} w-full`}
           >
             {t("enableTwoFactor")}
           </Link>
@@ -162,7 +182,7 @@ async function BankSection({
       ) : banks ? (
         <BankForm banks={banks} />
       ) : (
-        <p role="alert" className="text-base">
+        <p role="alert" className="body-3">
           {t("unavailable")}
         </p>
       )}
