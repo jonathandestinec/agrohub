@@ -147,7 +147,7 @@ components:
 
 # Design System: AgroHub
 
-Scope: this records the `/demo` visual world (`src/app/demo/demo.css` and `src/app/demo/_components`). The signed-in app still uses the neutral placeholder tokens in `src/styles/tokens.css`, which is the slot where the final brand identity will land.
+Scope: this records the visual world first built for the `/demo` presentation and now used by the whole app. The tokens live in `src/styles/tokens.css` (exposed as Tailwind utilities in `src/app/globals.css`), the shared kit in `src/components/ui/`, and the shell (pinned pill nav, phone menu, wordmark footer, overscroll logo reveal) in `src/app/layout.tsx` and `src/components/`. `tokens.css` stays the single slot for any later change to the brand identity.
 
 ## Overview
 
