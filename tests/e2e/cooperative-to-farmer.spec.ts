@@ -194,6 +194,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await addFakeBankAccount(request, { bankCode: "058", accountNumber, accountName });
     await nav(page, "My cooperative").click();
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
+    await expect(nav(page, "My cooperative")).toHaveAttribute("aria-current", "page");
     await saveBankAccount(page, "Guaranty Trust Bank", accountNumber);
     await expect(page.getByText(`Saved. The name on the account is ${accountName}.`)).toBeVisible();
     await expect(

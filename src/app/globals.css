@@ -103,6 +103,18 @@ p {
   background: radial-gradient(circle at 0 0, transparent 23.5px, var(--color-paper) 24px);
 }
 
+/* Phone menu: the panel fades in and its links arrive one after another, rising 24px. */
+@keyframes menu-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes menu-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+.menu-panel { animation: menu-fade 300ms var(--ease) both; }
+.menu-link { animation: menu-rise 500ms var(--ease) both; }
+
 /* Logo: the two leaves sway gently from their stem, out of step. */
 .mark-leaf {
   transform-box: view-box;
@@ -129,5 +141,10 @@ p {
   .press:active,
   .press-lift:hover {
     transform: none;
+  }
+  /* The phone menu still fades, without movement. */
+  .menu-panel,
+  .menu-link {
+    animation: menu-fade 300ms linear both !important;
   }
 }

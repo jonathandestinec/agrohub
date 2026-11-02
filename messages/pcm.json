@@ -30,7 +30,11 @@
     "reviewCooperatives": "",
     "farm": "",
     "registerCooperative": "",
-    "yourFarm": ""
+    "yourFarm": "",
+    "openMenu": "",
+    "closeMenu": "",
+    "skip": "",
+    "home": ""
   },
   "auth": {
     "fields": {
@@ -397,5 +401,14 @@
       "cancel": "",
       "leaving": ""
     }
+  },
+  "footer": {
+    "about": "",
+    "privacy": "",
+    "signIn": ""
+  },
+  "photo": {
+    "signUp": "",
+    "join": ""
   }
 }

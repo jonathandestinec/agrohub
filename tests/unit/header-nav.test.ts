@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
+import { isCurrent } from "@/components/nav-current";
 
 describe("navLinksFor", () => {
   it("gives officers onboarding, invites and farmers", () => {
@@ -55,5 +56,17 @@ describe("navLinksWithoutActiveMembership", () => {
         { role: "FARMER", status: "PENDING" },
       ]),
     ).toEqual(yourFarm);
+  });
+});
+
+describe("isCurrent", () => {
+  it("matches exact and nested paths", () => {
+    expect(isCurrent("/officer/farmers", "/officer/farmers")).toBe(true);
+    expect(isCurrent("/admin/cooperatives/abc", "/admin/cooperatives")).toBe(true);
+  });
+
+  it("does not match a shared prefix or a sibling", () => {
+    expect(isCurrent("/farmers-old", "/farmer")).toBe(false);
+    expect(isCurrent("/officer/invites", "/officer/farmers")).toBe(false);
   });
 });

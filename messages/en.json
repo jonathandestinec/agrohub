@@ -30,7 +30,11 @@
     "reviewCooperatives": "Review cooperatives",
     "farm": "My farm",
     "registerCooperative": "Register your cooperative",
-    "yourFarm": "Your farm"
+    "yourFarm": "Your farm",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "skip": "Skip to content",
+    "home": "AgroHub home"
   },
   "auth": {
     "fields": {
@@ -397,5 +401,14 @@
       "cancel": "Stay in the cooperative",
       "leaving": "Leaving…"
     }
+  },
+  "footer": {
+    "about": "AgroHub helps farmer cooperatives sell their harvests together. Buyers pay upfront and the payment is held until delivery is confirmed.",
+    "privacy": "Privacy notice",
+    "signIn": "Sign in"
+  },
+  "photo": {
+    "signUp": "Every cooperative is checked by AgroHub before it can sell.",
+    "join": "Buyers deal only with your cooperative. Your phone number stays private."
   }
 }
