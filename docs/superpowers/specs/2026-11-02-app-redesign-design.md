@@ -76,7 +76,7 @@ Other ad-hoc class strings in panels (for example `primary`/`secondary` in `farm
 - The current link needs the pathname, so the nav list becomes a small client component (`src/components/app-nav.tsx`). It receives the already-filtered links and labels from the server `NavSlot`. Access logic stays where it is.
 - Below `md`, a 44px round `Menu` toggle opens a full-height paper panel (95% opacity, backdrop blur) holding the links, role switcher and account action. It has `aria-expanded`, `aria-controls`, closes on Escape and on navigation, and links arrive 60ms apart. Under reduced motion it only fades.
 - A skip link goes to `#main`. Each page's `<main>` keeps its single `main` landmark: the shell wraps `children` in a `div`, not a second `main`.
-- Footer inside the frame: a step panel with the privacy link, and photo credits shown only on pages that use photos (passed as a prop by the auth layout, not global).
+- Footer inside the frame, as in the demo: a step panel (`mt-24`, `rounded-panel`) with one plain line about AgroHub, pill links (privacy notice; sign in when signed out), photo credits only on pages that use photos, and the large "AgroHub" wordmark (`text-[22vw] md:text-[17vw] xl:text-[15rem]`, `aria-hidden`). The credits are rendered by the page itself, under its photo panel, rather than by the global footer.
 
 ## 4. Screens
 
@@ -116,4 +116,5 @@ Copy `public/demo/farmer-at-harvest.jpg`, `cooperative.jpg` and `maize.jpg` from
 
 - Inputs use a step fill on paper panels (DESIGN.md shows paper inputs on step panels; auth forms sit on paper).
 - The old token names are removed rather than aliased, so missed screens show up.
-- The hero wordmark footer from the demo is not carried over; the app footer stays slim.
+- The demo's wordmark footer is carried over (the user's call, 2026-11-02).
+- New message keys get `""` in `ha`, `ig`, `pcm` and `yo`, matching the existing untranslated keys, so the key-parity test passes.
