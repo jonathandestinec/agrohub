@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
 import { AppNav } from "@/components/app-nav";
 import { OverscrollReveal } from "@/components/overscroll";
+import { showRoleSwitcher } from "@/components/nav-current";
 import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -29,7 +30,7 @@ async function SwitcherSlot() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
   const memberships = await listMemberships(session.user.id);
-  if (memberships.length < 2) return null;
+  if (!showRoleSwitcher(memberships.length)) return null;
   const cookieStore = await cookies();
   const active = pickActiveMembership(
     memberships,
@@ -61,6 +62,7 @@ async function NavSlot() {
   const t = await getTranslations("nav");
   const session = await auth.api.getSession({ headers: await headers() });
   let links: { href: string; label: string }[] = [];
+  let hasSwitcher = false;
   if (session) {
     const memberships = await listMemberships(session.user.id);
     const cookieStore = await cookies();
@@ -72,6 +74,7 @@ async function NavSlot() {
       ? navLinksFor(active.role)
       : navLinksWithoutActiveMembership(await listMembershipStates(session.user.id));
     links = raw.map((link) => ({ href: link.href, label: t(link.labelKey) }));
+    hasSwitcher = showRoleSwitcher(memberships.length);
   }
   return (
     <AppNav
@@ -80,6 +83,7 @@ async function NavSlot() {
       homeLabel={t("home")}
       openLabel={t("openMenu")}
       closeLabel={t("closeMenu")}
+      hasSwitcher={hasSwitcher}
       switcher={
         <Suspense fallback={null}>
           <SwitcherSlot />
