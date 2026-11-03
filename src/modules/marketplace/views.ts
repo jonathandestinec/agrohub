@@ -1,5 +1,5 @@
 import type { Offer, OfferStatus } from "@/generated/prisma/client";
-import { lineTotalKobo } from "@/lib/money";
+import { lineTotalKobo, type SaleBreakdown } from "@/lib/money";
 
 // What the buyer may know about an offer's state. OPEN and AWAITING_FARMER both read WAITING,
 // so a buyer cannot tell that an officer found the offer below the farmer's floor; a rejection
@@ -68,5 +68,103 @@ export function toBuyerOffer(offer: Offer, lot: OfferLotSummary, lotVisible: boo
     expiresAt: offer.expiresAt.toISOString(),
     payByAt: offer.payByAt?.toISOString() ?? null,
     createdAt: offer.createdAt.toISOString(),
+  };
+}
+
+// Pure: the status officers see. An offer still waiting reads EXPIRED once its time has passed
+// or its lot is off sale, and an accepted one once its time to pay ends, before the job runs.
+export function effectiveStatus(
+  status: OfferStatus,
+  expiresAt: Date,
+  payByAt: Date | null,
+  lotVisible: boolean,
+  now: Date,
+): OfferStatus {
+  if ((status === "OPEN" || status === "AWAITING_FARMER" || status === "COUNTERED") && (expiresAt <= now || !lotVisible)) {
+    return "EXPIRED";
+  }
+  if (status === "ACCEPTED" && payByAt !== null && payByAt <= now) return "EXPIRED";
+  return status;
+}
+
+// The cooperative's view: the officer negotiates for the cooperative, so it sees the floor and
+// the buyer's name, never the buyer's email or phone.
+export type OfficerOffer = {
+  id: string;
+  lotId: string;
+  crop: string;
+  unit: string;
+  buyerName: string;
+  quantity: number;
+  offeredKobo: number;
+  counterKobo: number | null;
+  agreedKobo: number | null;
+  askKobo: number;
+  floorKobo: number;
+  belowFloor: boolean;
+  status: OfferStatus;
+  expiresAt: string;
+  payByAt: string | null;
+  createdAt: string;
+};
+
+export function toOfficerOffer(
+  offer: Offer,
+  lot: { crop: string; unit: string; askKobo: number; floorKobo: number },
+  buyerName: string,
+  lotVisible: boolean,
+  now: Date,
+): OfficerOffer {
+  return {
+    id: offer.id,
+    lotId: offer.lotId,
+    crop: lot.crop,
+    unit: lot.unit,
+    buyerName,
+    quantity: offer.quantity,
+    offeredKobo: offer.offeredKobo,
+    counterKobo: offer.counterKobo,
+    agreedKobo: offer.agreedKobo,
+    askKobo: lot.askKobo,
+    floorKobo: lot.floorKobo,
+    belowFloor: offer.offeredKobo < lot.floorKobo,
+    status: effectiveStatus(offer.status, offer.expiresAt, offer.payByAt, lotVisible, now),
+    expiresAt: offer.expiresAt.toISOString(),
+    payByAt: offer.payByAt?.toISOString() ?? null,
+    createdAt: offer.createdAt.toISOString(),
+  };
+}
+
+// The farmer's view of an offer referred to them: what they would take home, and no buyer
+// identity (spec 6.9: buyer identities are never shown to farmers).
+export type FarmerOffer = {
+  id: string;
+  lotId: string;
+  crop: string;
+  unit: string;
+  quantity: number;
+  offeredKobo: number;
+  breakdown: SaleBreakdown;
+  status: OfferStatus;
+  expiresAt: string;
+};
+
+export function toFarmerOffer(
+  offer: Offer,
+  lot: { crop: string; unit: string },
+  breakdown: SaleBreakdown,
+  lotVisible: boolean,
+  now: Date,
+): FarmerOffer {
+  return {
+    id: offer.id,
+    lotId: offer.lotId,
+    crop: lot.crop,
+    unit: lot.unit,
+    quantity: offer.quantity,
+    offeredKobo: offer.offeredKobo,
+    breakdown,
+    status: effectiveStatus(offer.status, offer.expiresAt, offer.payByAt, lotVisible, now),
+    expiresAt: offer.expiresAt.toISOString(),
   };
 }
