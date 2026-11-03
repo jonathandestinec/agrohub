@@ -31,7 +31,8 @@ export type Action =
   | "bank:change"
   | "invite:manage"
   | "catalog:manage"
-  | "setting:write";
+  | "setting:write"
+  | "farmer:profile";
 
 export type Resource = {
   cooperativeId?: string;
@@ -70,7 +71,8 @@ export function can(
     case "farmer:remove":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     case "farmer:leave":
-      // A farmer leaves only their own membership.
+    case "farmer:profile":
+      // A farmer leaves, or edits, only their own membership and profile.
       return (
         actor.role === "FARMER" &&
         resource?.ownerUserId !== undefined &&

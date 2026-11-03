@@ -123,18 +123,27 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["setting:write", "BUYER", false],
   ["setting:write", "ADMIN", true],
   ["setting:write", "BOARD_ADMIN", false],
+
+  // farmer:profile, like farmer:leave, is checked against a resource the actor owns.
+  ["farmer:profile", "FARMER", true],
+  ["farmer:profile", "OFFICER", false],
+  ["farmer:profile", "BUYER", false],
+  ["farmer:profile", "ADMIN", false],
+  ["farmer:profile", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
   it.each(matrix)("%s as %s -> %s", (action, role, expected) => {
     const cooperativeId = role === "OFFICER" || role === "FARMER" ? COOP : null;
     const resource =
-      action === "farmer:leave" ? { ...own, ownerUserId: "user-1" } : own;
+      action === "farmer:leave" || action === "farmer:profile"
+        ? { ...own, ownerUserId: "user-1" }
+        : own;
     expect(can(actor(role, cooperativeId), action, resource)).toBe(expected);
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(85);
+    expect(matrix).toHaveLength(90);
   });
 });
 

@@ -266,7 +266,6 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await expect(page).toHaveURL(new RegExp(`${joinPath}$`));
 
     await page.getByLabel("Farm size (hectares)").fill("2.5");
-    await page.getByLabel("Crops you grow").fill("Maize, Cassava");
     await page.getByLabel("State").selectOption("Kaduna");
     await page.getByLabel("Local government area").fill("Zaria");
     await page.getByRole("button", { name: "Join cooperative" }).click();

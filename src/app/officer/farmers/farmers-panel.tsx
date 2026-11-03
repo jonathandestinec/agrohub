@@ -69,7 +69,7 @@ function FarmerRow({ farmer, kind }: { farmer: OfficerFarmerRow; kind: "pending"
         <p className="body-6 text-ink-soft">
           {t("details", {
             size: farmer.farmSizeHectares,
-            crops: farmer.crops.join(", "),
+            crops: farmer.crops.map((c) => c.name).join(", ") || "—",
             lga: farmer.lga,
             state: farmer.state,
           })}

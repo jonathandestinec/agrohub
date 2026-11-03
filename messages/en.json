@@ -374,12 +374,13 @@
       "farmSize": "Farm size (hectares)",
       "farmSizeHint": "For example 2.5",
       "crops": "Crops you grow",
-      "cropsHint": "Separate crops with commas, for example: Maize, Cassava, Yam",
+      "cropsHint": "Tick every crop you grow. You can change this later.",
       "state": "State",
       "statePlaceholder": "Choose a state",
       "lga": "Local government area",
       "submit": "Join cooperative",
-      "submitting": "Joining…"
+      "submitting": "Joining…",
+      "cropsEmpty": "The crop list is empty for now. You can add your crops after joining."
     },
     "bank": {
       "heading": "Bank account for payouts",
@@ -417,7 +418,12 @@
         "ACTIVE": "Active member",
         "LEFT": "Left the cooperative",
         "REMOVED": "Removed"
-      }
+      },
+      "noCrops": "None chosen yet",
+      "editCrops": "Change your crops",
+      "saveCrops": "Save crops",
+      "savingCrops": "Saving…",
+      "cropsSaved": "Crops saved."
     },
     "errors": {
       "VALIDATION_ERROR": "Please check the details and try again.",
@@ -435,7 +441,9 @@
       "INTERNAL": "Something went wrong. Please try again.",
       "REMOVED_FROM_COOPERATIVE": "You cannot join this cooperative again. You can join a different one.",
       "UNFINISHED_ORDERS": "You cannot leave while orders for your produce are still in progress.",
-      "ILLEGAL_TRANSITION": "Your membership has changed. Refresh the page."
+      "ILLEGAL_TRANSITION": "Your membership has changed. Refresh the page.",
+      "CROP_INACTIVE": "One of those crops is no longer on the list. Refresh the page and choose again.",
+      "INVALID_CROPS": "Choose at most 20 crops."
     },
     "leave": {
       "heading": "Leave this cooperative",

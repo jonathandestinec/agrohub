@@ -8,6 +8,8 @@ import { getOwnFarmerOverview } from "@/modules/farmers/service";
 import { currentUser } from "@/modules/identity/session";
 import { FarmerBankSection } from "./bank-section";
 import { LeaveSection } from "./leave-section";
+import { CropsForm } from "./crops-form";
+import { listActiveCatalog } from "@/modules/catalog/service";
 
 // A PENDING farmer has no Actor yet, so this page works from the signed-in user and the
 // self-scoped farmer overview.
@@ -61,10 +63,15 @@ async function FarmerHome() {
               <dt className="body-6 text-ink-soft">{t("farmSize")}</dt>
               <dd className="title-3">{t("hectares", { size: profile.farmSizeHectares })}</dd>
               <dt className="body-6 text-ink-soft">{t("crops")}</dt>
-              <dd className="title-3 break-words">{profile.crops.join(", ")}</dd>
+              <dd className="title-3 break-words">
+                {profile.crops.length > 0 ? profile.crops.map((c) => c.name).join(", ") : t("noCrops")}
+              </dd>
               <dt className="body-6 text-ink-soft">{t("location")}</dt>
               <dd className="title-3">{t("place", { lga: profile.lga, state: profile.state })}</dd>
             </dl>
+            {membership.status === "ACTIVE" ? (
+              <CropsForm crops={(await listActiveCatalog()).crops} chosen={profile.crops.map((c) => c.id)} />
+            ) : null}
           </section>
         </Card>
         <div className="flex flex-col gap-2 md:col-span-7">

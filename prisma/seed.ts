@@ -208,7 +208,6 @@ export async function seed(): Promise<{ password: string | null; created: string
       userId: farmerId,
       cooperativeId: cooperative.id,
       farmSizeHectares: SEED.profile.farmSizeHectares,
-      crops: [...SEED.profile.crops],
       state: SEED.profile.state,
       lga: SEED.profile.lga,
     },

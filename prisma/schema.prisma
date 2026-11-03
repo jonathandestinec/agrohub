@@ -263,7 +263,8 @@ model FarmerProfile {
   cooperativeId    String
   cooperative      Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
   farmSizeHectares Decimal     @db.Decimal(8, 2)
-  crops            String[]
+  // Chosen from the board's crop list (Phase 3); see migration farmer_crop_list.
+  crops            Crop[]      @relation("FarmerCrops")
   state            String
   lga              String
   recipientCode    String?
@@ -286,6 +287,7 @@ model Crop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   prices    PricePoint[]
+  farmers   FarmerProfile[] @relation("FarmerCrops")
 
   @@map("crop")
 }

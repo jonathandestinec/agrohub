@@ -379,7 +379,8 @@
       "statePlaceholder": "",
       "lga": "",
       "submit": "",
-      "submitting": ""
+      "submitting": "",
+      "cropsEmpty": ""
     },
     "bank": {
       "heading": "",
@@ -417,7 +418,12 @@
         "ACTIVE": "",
         "LEFT": "",
         "REMOVED": ""
-      }
+      },
+      "noCrops": "",
+      "editCrops": "",
+      "saveCrops": "",
+      "savingCrops": "",
+      "cropsSaved": ""
     },
     "errors": {
       "VALIDATION_ERROR": "",
@@ -435,7 +441,9 @@
       "INTERNAL": "",
       "REMOVED_FROM_COOPERATIVE": "",
       "UNFINISHED_ORDERS": "",
-      "ILLEGAL_TRANSITION": ""
+      "ILLEGAL_TRANSITION": "",
+      "CROP_INACTIVE": "",
+      "INVALID_CROPS": ""
     },
     "leave": {
       "heading": "",

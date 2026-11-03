@@ -12,6 +12,7 @@ import { getOwnFarmerOverview } from "@/modules/farmers/service";
 import { STATES } from "@/modules/geo/states";
 import { currentUser } from "@/modules/identity/session";
 import { ProfileForm } from "./profile-form";
+import { listActiveCatalog } from "@/modules/catalog/service";
 
 type Invite = Awaited<ReturnType<typeof resolveInvite>>;
 type InviteProblem = "invalid" | "notVerified";
@@ -133,7 +134,7 @@ async function JoinStep({ params }: { params: PageProps<"/join/[token]">["params
   return (
     <AuthCard title={title} photo="maize" caption={photo("join")}>
       <p className="body-3 text-ink-soft">{t("profileIntro")}</p>
-      <ProfileForm token={token} states={[...STATES]} />
+      <ProfileForm token={token} states={[...STATES]} crops={(await listActiveCatalog()).crops} />
     </AuthCard>
   );
 }

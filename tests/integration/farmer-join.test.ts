@@ -11,10 +11,19 @@ const T = new Date("2031-06-10T12:00:00Z");
 
 const PROFILE = {
   farmSizeHectares: "2.5",
-  crops: ["Maize", "Cassava"],
+  cropIds: [] as string[],
   state: "Ogun",
   lga: "Abeokuta North",
 };
+
+async function crops(...names: string[]): Promise<string[]> {
+  const ids: string[] = [];
+  for (const name of names) {
+    const row = await prisma.crop.create({ data: { name, nameKey: name.toLowerCase() } });
+    ids.push(row.id);
+  }
+  return ids;
+}
 
 let coopA: string;
 let coopB: string;
@@ -54,7 +63,8 @@ describe("joinViaLink", () => {
   it("creates one PENDING membership and one profile", async () => {
     const user = await createTestUser({ id: "u-farmer" });
     const token = await shareableInvite(coopA);
-    const { membershipId } = await joinViaLink({ userId: user.id }, token, PROFILE, T);
+    const cropIds = await crops("Maize", "Cassava");
+    const { membershipId } = await joinViaLink({ userId: user.id }, token, { ...PROFILE, cropIds }, T);
 
     const memberships = await prisma.membership.findMany({ where: { userId: user.id } });
     expect(memberships).toHaveLength(1);
@@ -69,13 +79,17 @@ describe("joinViaLink", () => {
     expect(profiles).toHaveLength(1);
     expect(profiles[0]).toMatchObject({
       cooperativeId: coopA,
-      crops: ["Maize", "Cassava"],
       state: "Ogun",
       lga: "Abeokuta North",
       recipientCode: null,
       accountName: null,
     });
     expect(profiles[0].farmSizeHectares.toString()).toBe("2.5");
+    const linked = await prisma.farmerProfile.findUniqueOrThrow({
+      where: { userId: user.id },
+      include: { crops: { orderBy: { nameKey: "asc" } } },
+    });
+    expect(linked.crops.map((c) => c.name)).toEqual(["Cassava", "Maize"]);
 
     // The audit log is append-only, so earlier runs' rows remain; scope by the new id.
     const audit = await prisma.auditLog.findMany({
@@ -129,7 +143,7 @@ describe("joinViaLink", () => {
     await joinViaLink(
       { userId: user.id },
       await shareableInvite(coopB),
-      { ...PROFILE, crops: ["Yam"] },
+      { ...PROFILE, cropIds: await crops("Yam") },
       T,
     );
     const memberships = await prisma.membership.findMany({
@@ -141,10 +155,13 @@ describe("joinViaLink", () => {
       [coopB, "PENDING"],
     ]);
     // One profile per user: it moves to the new cooperative.
-    const profiles = await prisma.farmerProfile.findMany({ where: { userId: user.id } });
+    const profiles = await prisma.farmerProfile.findMany({
+      where: { userId: user.id },
+      include: { crops: true },
+    });
     expect(profiles).toHaveLength(1);
     expect(profiles[0].cooperativeId).toBe(coopB);
-    expect(profiles[0].crops).toEqual(["Yam"]);
+    expect(profiles[0].crops.map((c) => c.name)).toEqual(["Yam"]);
   });
 
   it("farmer_can_rejoin_same_cooperative_after_leaving", async () => {
@@ -257,10 +274,8 @@ describe("profile validation", () => {
     ["a farm size over 100000", { farmSizeHectares: "100000.01" }],
     ["a non-numeric farm size", { farmSizeHectares: "two" }],
     ["an unknown state", { state: "Lagoss" }],
-    ["no crops", { crops: [] }],
-    ["21 crops", { crops: Array.from({ length: 21 }, (_, i) => `Crop ${i}`) }],
-    ["a crop over 60 characters", { crops: ["x".repeat(61)] }],
-    ["an empty crop", { crops: ["  "] }],
+    ["21 crops", { cropIds: Array.from({ length: 21 }, (_, i) => `crop-${i}`) }],
+    ["an empty crop id", { cropIds: [""] }],
     ["an empty LGA", { lga: " " }],
     ["an LGA over 80 characters", { lga: "x".repeat(81) }],
   ];
@@ -283,7 +298,7 @@ describe("profile validation", () => {
       await shareableInvite(coopA),
       {
         farmSizeHectares: "100000",
-        crops: Array.from({ length: 20 }, (_, i) => `Crop ${i}`),
+        cropIds: await crops(...Array.from({ length: 20 }, (_, i) => `Crop ${i}`)),
         state: "FCT",
         lga: "x".repeat(80),
       },
