@@ -41,7 +41,8 @@
     "browseLots": "Browse lots",
     "myOffers": "My offers",
     "buyProduce": "Buy produce",
-    "messages": "Messages"
+    "messages": "Messages",
+    "offers": "Offers"
   },
   "auth": {
     "fields": {
@@ -1119,6 +1120,51 @@
       "UNAUTHENTICATED": "Please sign in again.",
       "FORBIDDEN": "You can't do this with your current role.",
       "INTERNAL": "Something went wrong. Please try again."
+    },
+    "officerStatus": {
+      "OPEN": "Waiting for you",
+      "AWAITING_FARMER": "With the farmer",
+      "COUNTERED": "Countered",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "EXPIRED": "Expired",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "officer": {
+      "title": "Offers",
+      "lead": "Offers from buyers on your cooperative's lots. Answer within 48 hours.",
+      "empty": "No offers yet.",
+      "from": "From {buyer}",
+      "priceLine": "{price} per {unit}",
+      "belowFloor": "Below the farmer's lowest price",
+      "until": "Answer by {time}",
+      "offered": "Offered: {price}",
+      "ask": "Asking price: {price}",
+      "floor": "Farmer's lowest price, private: {price}",
+      "countered": "Your counter: {price}",
+      "agreed": "Agreed: {price}",
+      "withFarmer": "This offer is below the farmer's lowest price, so it is with the farmer to agree or decline. The buyer sees it as waiting.",
+      "viewLot": "View the lot",
+      "message": "Message to the buyer (optional)",
+      "messageHint": "Never share the farmer's lowest price, phone numbers or email addresses.",
+      "belowFloorExplain": "This offer is below the farmer's lowest price. If you think it is fair, send it to the farmer to agree.",
+      "accept": "Accept offer",
+      "sendToFarmer": "Send to the farmer to agree",
+      "reject": "Reject",
+      "counterPrice": "Counter price per unit (₦)",
+      "counter": "Counter",
+      "threadHeading": "Messages with the buyer",
+      "noThread": "The buyer has not written yet. A message you add to your answer starts the conversation.",
+      "messageFarmer": "Message the farmer about this lot"
+    },
+    "farmer": {
+      "heading": "A buyer offers {price} per {unit} for {quantity}",
+      "explain": "This is below your lowest price. Your officer thinks it is worth considering. It is your choice.",
+      "agree": "Agree to this offer",
+      "decline": "Decline",
+      "waitingHeading": "Offers waiting for you",
+      "waitingLine": "{quantity} {unit} of {crop} at {price}",
+      "messageOfficer": "Message your officer about this lot"
     }
   }
 }

@@ -94,6 +94,7 @@ export type OfficerOffer = {
   lotId: string;
   crop: string;
   unit: string;
+  buyerUserId: string;
   buyerName: string;
   quantity: number;
   offeredKobo: number;
@@ -120,6 +121,7 @@ export function toOfficerOffer(
     lotId: offer.lotId,
     crop: lot.crop,
     unit: lot.unit,
+    buyerUserId: offer.buyerUserId,
     buyerName,
     quantity: offer.quantity,
     offeredKobo: offer.offeredKobo,

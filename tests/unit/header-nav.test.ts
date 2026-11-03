@@ -9,6 +9,7 @@ describe("navLinksFor", () => {
       { href: "/officer/invites", labelKey: "invites" },
       { href: "/officer/farmers", labelKey: "farmers" },
       { href: "/officer/lots", labelKey: "screenLots" },
+      { href: "/officer/offers", labelKey: "offers" },
       { href: "/messages", labelKey: "messages" },
     ]);
   });

@@ -6,6 +6,9 @@ import { Breakdown } from "@/components/lots/breakdown";
 import { LotDetails } from "@/components/lots/lot-details";
 import { formatNaira } from "@/lib/money";
 import { CounterResponse } from "./counter-response";
+import { OfferDecision } from "./offer-decision";
+import { OpenThreadButton } from "@/components/messages/open-thread-button";
+import { listOffersAwaitingFarmer } from "@/modules/marketplace/service";
 import { ReviseForm, WithdrawButton } from "./revise-form";
 import { boardReference } from "@/modules/board/service";
 import { getPlatformSettings } from "@/modules/settings/service";
@@ -34,6 +37,9 @@ async function FarmerLotView({ params }: { params: Promise<{ id: string }> }) {
     throw error;
   }
   const t = await getTranslations("lots");
+  const to = await getTranslations("offers");
+  const waiting = (await listOffersAwaitingFarmer(actor)).filter((offer) => offer.lotId === lot.id);
+  const terms = lot.lockedTerms ?? lot.quoted;
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
@@ -63,6 +69,28 @@ async function FarmerLotView({ params }: { params: Promise<{ id: string }> }) {
           </section>
         </Card>
       ) : null}
+      {waiting.map((offer) => (
+        <Card tone="paper" key={offer.id}>
+          <section className="flex flex-col gap-4">
+            <h2 className="heading-6">
+              {to("farmer.heading", {
+                quantity: offer.quantity,
+                unit: lot.unit.name,
+                price: formatNaira(offer.offeredKobo),
+              })}
+            </h2>
+            <p className="body-4">{to("farmer.explain")}</p>
+            <Breakdown
+              askKobo={offer.offeredKobo}
+              quantity={offer.quantity}
+              cutBps={terms.cooperativeCutBps}
+              feeBps={terms.platformFeeBps}
+              unit={lot.unit.name}
+            />
+            <OfferDecision offerId={offer.id} />
+          </section>
+        </Card>
+      ))}
       {lot.pendingRevision ? (
         <p role="status" className="rounded-inner bg-paper p-4 body-3 md:p-6">
           {t("revision.pendingFarmer", {
@@ -84,6 +112,7 @@ async function FarmerLotView({ params }: { params: Promise<{ id: string }> }) {
           />
         </Card>
       ) : null}
+      <OpenThreadButton lotId={lot.id} label={to("farmer.messageOfficer")} />
       {lot.status === "PENDING_REVIEW" || lot.status === "COUNTERED" || lot.status === "LIVE" ? (
         <Card tone="paper">
           <WithdrawButton lotId={lot.id} />

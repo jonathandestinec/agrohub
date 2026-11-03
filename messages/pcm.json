@@ -41,7 +41,8 @@
     "browseLots": "",
     "myOffers": "",
     "buyProduce": "",
-    "messages": ""
+    "messages": "",
+    "offers": ""
   },
   "auth": {
     "fields": {
@@ -1119,6 +1120,51 @@
       "UNAUTHENTICATED": "",
       "FORBIDDEN": "",
       "INTERNAL": ""
+    },
+    "officerStatus": {
+      "OPEN": "",
+      "AWAITING_FARMER": "",
+      "COUNTERED": "",
+      "ACCEPTED": "",
+      "REJECTED": "",
+      "EXPIRED": "",
+      "WITHDRAWN": ""
+    },
+    "officer": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "from": "",
+      "priceLine": "",
+      "belowFloor": "",
+      "until": "",
+      "offered": "",
+      "ask": "",
+      "floor": "",
+      "countered": "",
+      "agreed": "",
+      "withFarmer": "",
+      "viewLot": "",
+      "message": "",
+      "messageHint": "",
+      "belowFloorExplain": "",
+      "accept": "",
+      "sendToFarmer": "",
+      "reject": "",
+      "counterPrice": "",
+      "counter": "",
+      "threadHeading": "",
+      "noThread": "",
+      "messageFarmer": ""
+    },
+    "farmer": {
+      "heading": "",
+      "explain": "",
+      "agree": "",
+      "decline": "",
+      "waitingHeading": "",
+      "waitingLine": "",
+      "messageOfficer": ""
     }
   }
 }
