@@ -1,6 +1,10 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_DEVIATION_THRESHOLD_BPS, priceDeviation } from "@/modules/board/deviation";
+import {
+  askDeviation,
+  DEFAULT_DEVIATION_THRESHOLD_BPS,
+  priceDeviation,
+} from "@/modules/board/deviation";
 
 describe("priceDeviation", () => {
   it("defaults to a 20% threshold", () => {
@@ -34,5 +38,18 @@ describe("priceDeviation", () => {
         (kobo, bps) => priceDeviation(kobo, kobo, bps) === "OK",
       ),
     );
+  });
+});
+
+describe("askDeviation against every market", () => {
+  it("is HIGH or LOW only when every board price says so", () => {
+    expect(askDeviation(130000, [100000, 105000], 2000)).toBe("HIGH");
+    expect(askDeviation(130000, [100000, 120000], 2000)).toBe("OK");
+    expect(askDeviation(70000, [100000, 95000], 2000)).toBe("LOW");
+    expect(askDeviation(100000, [100000], 2000)).toBe("OK");
+  });
+
+  it("gives no warning without a board price", () => {
+    expect(askDeviation(50000, [], 2000)).toBeNull();
   });
 });

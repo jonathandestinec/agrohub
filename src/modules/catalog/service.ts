@@ -150,3 +150,6 @@ export type {
   CatalogRequestView,
   OfficerCatalogRequestView,
 } from "./views";
+
+export { submitLot } from "./lots";
+export type { FarmerLot, OfficerLot, PublicLot, LotTerms } from "./views";

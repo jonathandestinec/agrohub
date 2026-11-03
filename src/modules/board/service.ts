@@ -206,3 +206,44 @@ export async function listPublicBoard(
   `;
   return rows.map(toPublicBoardRow);
 }
+
+export type BoardPrice = { market: string; weekOf: string; priceKobo: number };
+
+// Each market's latest price, within the board window, for every active crop and unit pair
+// (or one pair), keyed "cropId:unitId". Public reference data like the board itself, so no
+// Actor. The lot form's warning compares an asking price with these.
+export async function boardReferences(
+  filter: { cropId?: string; unitId?: string } = {},
+  now: Date = new Date(),
+): Promise<Map<string, BoardPrice[]>> {
+  const since = new Date(weekStart(now).getTime() - BOARD_WINDOW_WEEKS * WEEK_MS);
+  const cropFilter = filter.cropId ? Prisma.sql`AND p."cropId" = ${filter.cropId}` : Prisma.empty;
+  const unitFilter = filter.unitId ? Prisma.sql`AND p."unitId" = ${filter.unitId}` : Prisma.empty;
+  const rows = await prisma.$queryRaw<
+    Array<{ cropId: string; unitId: string; market: string; weekOf: Date; priceKobo: number }>
+  >`
+    SELECT DISTINCT ON (p."cropId", p."unitId", p."marketKey")
+           p."cropId", p."unitId", p.market, p."weekOf", p."priceKobo"
+    FROM price_point p
+    JOIN crop c ON c.id = p."cropId" AND c.active
+    JOIN unit u ON u.id = p."unitId" AND u.active
+    WHERE p."weekOf" >= ${since}::date ${cropFilter} ${unitFilter}
+    ORDER BY p."cropId", p."unitId", p."marketKey", p."weekOf" DESC
+  `;
+  const byPair = new Map<string, BoardPrice[]>();
+  for (const row of rows) {
+    const key = `${row.cropId}:${row.unitId}`;
+    const list = byPair.get(key) ?? [];
+    list.push({ market: row.market, weekOf: toWeekKey(row.weekOf), priceKobo: row.priceKobo });
+    byPair.set(key, list);
+  }
+  return byPair;
+}
+
+export async function boardReference(
+  cropId: string,
+  unitId: string,
+  now: Date = new Date(),
+): Promise<BoardPrice[]> {
+  return (await boardReferences({ cropId, unitId }, now)).get(`${cropId}:${unitId}`) ?? [];
+}

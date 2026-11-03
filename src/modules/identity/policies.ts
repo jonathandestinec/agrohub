@@ -34,7 +34,9 @@ export type Action =
   | "setting:write"
   | "farmer:profile"
   | "catalog:request"
-  | "catalog:forward";
+  | "catalog:forward"
+  | "lot:submit"
+  | "lot:own";
 
 export type Resource = {
   cooperativeId?: string;
@@ -116,7 +118,16 @@ export function can(
     case "catalog:forward":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     case "catalog:request":
+    case "lot:submit":
       return actor.role === "FARMER" && isOwnCooperative(actor, resource);
+    case "lot:own":
+      // The farmer who submitted the lot, while still in that cooperative.
+      return (
+        actor.role === "FARMER" &&
+        isOwnCooperative(actor, resource) &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
     default:
       return false;
   }

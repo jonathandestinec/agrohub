@@ -22,6 +22,7 @@ model User {
   accounts          Account[]
   memberships       Membership[]
   farmerProfile     FarmerProfile?
+  lots              Lot[]
 
   phoneConfirmed Boolean @default(false)
 
@@ -141,6 +142,7 @@ model Cooperative {
   inviteLinks          InviteLink[]
   farmerProfiles       FarmerProfile[]
   catalogRequests      CatalogRequest[]
+  lots                 Lot[]
 
   @@map("cooperative")
 }
@@ -289,6 +291,7 @@ model Crop {
   updatedAt DateTime @updatedAt
   prices    PricePoint[]
   farmers   FarmerProfile[] @relation("FarmerCrops")
+  lots      Lot[]
 
   @@map("crop")
 }
@@ -301,6 +304,7 @@ model Unit {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   prices    PricePoint[]
+  lots      Lot[]
 
   @@map("unit")
 }
@@ -375,4 +379,110 @@ model CatalogRequest {
   @@index([cooperativeId, status])
   @@index([status, kind, nameKey])
   @@map("catalog_request")
+}
+
+enum LotStatus {
+  PENDING_REVIEW
+  COUNTERED
+  REJECTED
+  LIVE
+  WITHDRAWN
+  EXPIRED
+  SOLD_OUT
+}
+
+enum LotGrade {
+  A
+  B
+  C
+  UNGRADED
+}
+
+enum Deviation {
+  OK
+  HIGH
+  LOW
+}
+
+// A farmer's harvest offered through their cooperative. floorKobo is the farmer's private
+// lowest price: it leaves the server only through src/modules/catalog/views.ts mappers that
+// buyers never see. quotedCutBps and quotedFeeBps are the terms the farmer was shown at
+// submission; approval locks exactly those into LotFeeTerms. availableUntil is a Lagos date.
+model Lot {
+  id               String            @id @default(cuid())
+  cooperativeId    String
+  cooperative      Cooperative       @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  farmerUserId     String
+  farmer           User              @relation(fields: [farmerUserId], references: [id], onDelete: Restrict)
+  cropId           String
+  crop             Crop              @relation(fields: [cropId], references: [id], onDelete: Restrict)
+  unitId           String
+  unit             Unit              @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  quantity         Int
+  grade            LotGrade
+  pickupState      String
+  pickupLga        String
+  pickupNote       String?
+  askKobo          Int
+  floorKobo        Int
+  note             String?
+  deviation        Deviation?
+  quotedCutBps     Int
+  quotedFeeBps     Int
+  status           LotStatus         @default(PENDING_REVIEW)
+  availableUntil   DateTime          @db.Date
+  minOrderQty      Int               @default(1)
+  counterAskKobo   Int?
+  counterMessage   String?
+  rejectionReason  String?
+  screenedByUserId String?
+  approvedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  contributions    LotContribution[]
+  photos           LotPhoto[]
+  feeTerms         LotFeeTerms?
+
+  @@index([cooperativeId, status])
+  @@index([status, availableUntil])
+  @@index([farmerUserId])
+  @@map("lot")
+}
+
+// Which farmer contributed what quantity to a lot; Phase 5 apportions payouts by it.
+model LotContribution {
+  id           String @id @default(cuid())
+  lotId        String
+  lot          Lot    @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  farmerUserId String
+  quantity     Int
+
+  @@unique([lotId, farmerUserId])
+  @@map("lot_contribution")
+}
+
+// Photos live in the private bucket and are shown only through short-lived signed links.
+model LotPhoto {
+  id          String @id @default(cuid())
+  lotId       String
+  lot         Lot    @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  storageKey  String
+  contentType String
+  sizeBytes   Int
+  position    Int
+
+  @@unique([lotId, position])
+  @@map("lot_photo")
+}
+
+// The cut and fee locked to a lot when it goes live. Later changes apply only to new lots.
+model LotFeeTerms {
+  id                String   @id @default(cuid())
+  lotId             String   @unique
+  lot               Lot      @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  cooperativeCutBps Int
+  platformFeeBps    Int
+  lockedAt          DateTime
+
+  @@map("lot_fee_terms")
 }

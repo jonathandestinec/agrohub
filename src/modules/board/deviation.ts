@@ -30,3 +30,16 @@ export function priceDeviation(askKobo: number, boardKobo: number, thresholdBps:
   if ((board - ask) * denom > allowed) return "LOW";
   return "OK";
 }
+
+/**
+ * The lot form's neutral warning: compares the ask with every market's latest board price
+ * for the crop and unit. HIGH or LOW only when every price agrees, so one odd market never
+ * triggers it; null when there is no board price at all. No averaging, so no division.
+ */
+export function askDeviation(askKobo: number, boardPrices: number[], thresholdBps: number): Deviation | null {
+  if (boardPrices.length === 0) return null;
+  const results = boardPrices.map((board) => priceDeviation(askKobo, board, thresholdBps));
+  if (results.every((r) => r === "HIGH")) return "HIGH";
+  if (results.every((r) => r === "LOW")) return "LOW";
+  return "OK";
+}
