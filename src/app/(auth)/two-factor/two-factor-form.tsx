@@ -3,11 +3,25 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import QRCode from "qrcode";
 import { AuthCard, Field, FormError, SubmitButton } from "@/components/auth-ui";
+import { OtpInput } from "@/components/otp-input";
 import { authClient } from "@/lib/auth-client";
 import { buttonClass } from "@/components/ui/button";
 
-type Setup = { totpURI: string; secret: string; backupCodes: string[] };
+type Setup = { totpURI: string; secret: string; backupCodes: string[]; qrSrc: string };
+
+// The QR code is drawn in the browser: the setup key never goes to a QR service.
+// Always dark on white, whatever the theme, so every authenticator app can read it.
+async function qrImage(uri: string): Promise<string> {
+  const svg = await QRCode.toString(uri, {
+    type: "svg",
+    margin: 0,
+    errorCorrectionLevel: "M",
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
 
 function codeErrorKey(code: string | undefined): string {
   if (code === "INVALID_CODE") return "invalidCode";
@@ -26,6 +40,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
   const [mustRestart, setMustRestart] = useState(false);
   const [setup, setSetup] = useState<Setup | null>(null);
   const [copied, setCopied] = useState(false);
+  const [refusals, setRefusals] = useState(0);
 
   async function startEnrolment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,13 +50,16 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
     const { data, error: failure } = await authClient.twoFactor.enable({
       password: String(form.get("password") ?? ""),
     });
-    setPending(false);
     if (failure || data?.method !== "totp") {
+      setPending(false);
       setError(t(failure?.code === "INVALID_PASSWORD" ? "wrongPassword" : "error"));
       return;
     }
     const secret = new URL(data.totpURI).searchParams.get("secret") ?? "";
-    setSetup({ totpURI: data.totpURI, secret, backupCodes: data.backupCodes });
+    // Without a QR code the setup key and link below still work.
+    const qrSrc = await qrImage(data.totpURI).catch(() => "");
+    setPending(false);
+    setSetup({ totpURI: data.totpURI, secret, backupCodes: data.backupCodes, qrSrc });
   }
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
@@ -50,12 +68,13 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
     setPending(true);
     setError(null);
     const { error: failure } = await authClient.twoFactor.verifyTotp({
-      code: String(form.get("code") ?? "").replace(/\s+/g, ""),
+      code: String(form.get("code") ?? ""),
     });
     if (failure) {
       setPending(false);
       const key = codeErrorKey(failure.code);
       setError(t(key));
+      setRefusals((n) => n + 1);
       // The pending sign-in is gone: the user has to sign in again.
       setMustRestart(mode === "verify" && (key === "expired" || key === "tooManyAttempts"));
       return;
@@ -77,14 +96,12 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
 
   const codeForm = (
     <form onSubmit={verifyCode} className="flex flex-col gap-4">
-      <Field
+      <OtpInput
         id="code"
         name="code"
         label={fields("code")}
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        maxLength={7}
-        required
+        invalid={error !== null}
+        shakeKey={refusals}
       />
       <FormError message={error} />
       {mustRestart ? (
@@ -128,7 +145,20 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
   return (
     <AuthCard title={t("enrolTitle")}>
       <p className="text-ink-soft">{t("setupInstructions")}</p>
+      {setup.qrSrc ? (
+        <div className="flex justify-center rounded-inner bg-step p-6">
+          {/* eslint-disable-next-line @next/next/no-img-element -- a generated data: URI, nothing to optimise */}
+          <img
+            src={setup.qrSrc}
+            alt={t("qrAlt")}
+            width={208}
+            height={208}
+            className="size-52 rounded-tile bg-white p-3"
+          />
+        </div>
+      ) : null}
       <div className="flex flex-col gap-2 rounded-inner bg-step p-4">
+        <p className="body-6 text-ink-soft">{t("manualIntro")}</p>
         <span className="title-4">{t("secretLabel")}</span>
         <code data-testid="totp-secret" className="break-all font-mono body-3">
           {setup.secret}

@@ -1,30 +1,25 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { signOut } from "@/app/actions/sign-out";
 import { buttonClass } from "@/components/ui/button";
 
+// A form, not an onClick: React replays a submit made before hydration (and without
+// JavaScript the browser posts it), so an early tap is never lost.
 export function SignOutButton() {
-  const t = useTranslations("header");
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() =>
-        startTransition(async () => {
-          const result = await signOut();
-          if (result.ok) {
-            router.replace("/sign-in");
-            router.refresh();
-          }
-        })
-      }
-      className={buttonClass("step")}
-    >
+    <form action={signOut}>
+      <SubmitButton />
+    </form>
+  );
+}
+
+function SubmitButton() {
+  const t = useTranslations("header");
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className={buttonClass("step")}>
       {t("signOut")}
     </button>
   );

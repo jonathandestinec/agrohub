@@ -146,4 +146,5 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - @tailwindcss/turbopack (dev): the Tailwind CSS v4 integration for Next.js Turbopack builds.
 - auth (dev): the Better Auth CLI; `auth generate` writes Better Auth's models into `prisma/schema.prisma`. Run it only through `npm run auth:generate`, which uses an empty temp cwd so the CLI never loads `.env`.
 - next-intl: message loading and translations for the App Router; locale comes from a `locale` cookie (no locale-prefixed routing), and only locales listed in `enabledLocales` are ever served.
+- qrcode (+ @types/qrcode, dev): draws the two-factor setup QR code as an SVG in the browser, so the TOTP secret is never sent to a QR service.
 - tsx (dev): runs TypeScript scripts with the `@/` alias, for `npm run admin:grant` (`scripts/grant-role.ts`). It never loads `.env`.

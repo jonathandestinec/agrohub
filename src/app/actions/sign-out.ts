@@ -1,16 +1,20 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
-import { toActionResult, type ActionResult } from "@/lib/action-result";
+import { redirect } from "next/navigation";
+import { toActionResult } from "@/lib/action-result";
 import { auth } from "@/lib/auth";
 
-export async function signOut(): Promise<ActionResult> {
+// A form action, so a tap that lands before hydration still signs out. On failure the
+// user stays where they are, signed in; the error is logged by toActionResult.
+export async function signOut(): Promise<void> {
   try {
     const cookieStore = await cookies();
     cookieStore.delete("activeMembershipId");
     await auth.api.signOut({ headers: await headers() });
-    return { ok: true, data: undefined };
   } catch (error) {
-    return toActionResult(error);
+    toActionResult(error);
+    return;
   }
+  redirect("/sign-in");
 }
