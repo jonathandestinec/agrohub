@@ -5,6 +5,7 @@ import {
   ForbiddenError,
   NotFoundError,
   UnauthenticatedError,
+  UnavailableError,
   ValidationError,
 } from "@/lib/errors";
 
@@ -13,6 +14,13 @@ describe("toActionResult", () => {
     expect(toActionResult(new ForbiddenError("X"))).toEqual({
       ok: false,
       code: "X",
+    });
+  });
+
+  it("maps an unavailable outside service to its code", () => {
+    expect(toActionResult(new UnavailableError("PAYSTACK_UNAVAILABLE"))).toEqual({
+      ok: false,
+      code: "PAYSTACK_UNAVAILABLE",
     });
   });
 

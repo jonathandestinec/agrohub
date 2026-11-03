@@ -54,6 +54,9 @@ async function enrolTwoFactor(page: Page) {
 async function saveBankAccount(page: Page, bankName: string, accountNumber: string) {
   await page.getByLabel("Bank", { exact: true }).selectOption({ label: bankName });
   await page.getByLabel("Account number").fill(accountNumber);
+  // The bank's name for the account shows, with whether it matches, before saving.
+  await expect(page.getByText("Account name:")).toBeVisible();
+  await expect(page.getByText(/^This matches/)).toBeVisible();
   await page.getByRole("button", { name: "Save bank account" }).click();
 }
 

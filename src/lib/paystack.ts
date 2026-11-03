@@ -1,7 +1,7 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { env, type Env } from "@/lib/env";
-import { ValidationError } from "@/lib/errors";
+import { UnavailableError, ValidationError } from "@/lib/errors";
 
 // Paystack transfer recipients. Shapes checked against Paystack's OpenAPI spec
 // (github.com/PaystackOSS/openapi). Account numbers are sent only inside the request to
@@ -74,8 +74,10 @@ function accountNotFound(): ValidationError {
   return new ValidationError("Bank account not found", "BANK_ACCOUNT_NOT_FOUND");
 }
 
-function unavailable(): Error {
-  return new Error("PAYSTACK_UNAVAILABLE");
+// Down, timed out, or refusing for now (429: Paystack test mode allows only a few account
+// lookups a day). Typed, so the person is told to try again later.
+function unavailable(): UnavailableError {
+  return new UnavailableError("PAYSTACK_UNAVAILABLE");
 }
 
 // Logs only the endpoint path (no query string) and the status or error name.
@@ -164,6 +166,17 @@ const banksResponse = z.object({
   meta: z.object({ next: z.string().nullable().optional() }).passthrough().nullish(),
 });
 
+// Resolved names are remembered briefly, so the live lookup on the bank form and the save
+// that follows cost one Paystack call (test mode allows only a few a day). Keyed by a hash,
+// so the account number itself is not kept. Per server instance; failures are not kept.
+const RESOLVE_CACHE_MS = 10 * 60 * 1000;
+const RESOLVE_CACHE_MAX = 500;
+const resolveCache = new Map<string, { at: number; accountName: string }>();
+
+function resolveKey(input: BankInput): string {
+  return createHash("sha256").update(`${input.bankCode}:${input.accountNumber}`).digest("hex");
+}
+
 export async function resolveAccountWith(
   config: PaystackConfig,
   input: BankInput,
@@ -174,10 +187,17 @@ export async function resolveAccountWith(
     if (!name) throw accountNotFound();
     return { accountName: name };
   }
+  const key = resolveKey(input);
+  const now = Date.now();
+  const cached = resolveCache.get(key);
+  if (cached && now - cached.at < RESOLVE_CACHE_MS) return { accountName: cached.accountName };
   const body = await call(config, "/bank/resolve", {
     query: { account_number: input.accountNumber, bank_code: input.bankCode },
   });
-  return { accountName: parse(resolveResponse, body, "/bank/resolve").data.account_name };
+  const accountName = parse(resolveResponse, body, "/bank/resolve").data.account_name;
+  if (resolveCache.size >= RESOLVE_CACHE_MAX) resolveCache.clear();
+  resolveCache.set(key, { at: now, accountName });
+  return { accountName };
 }
 
 export async function createRecipientWith(
@@ -213,6 +233,7 @@ let bankCache: { at: number; banks: Bank[] } | undefined;
 /** Test-only: forgets the cached bank list. */
 export function resetBankCacheForTests(): void {
   bankCache = undefined;
+  resolveCache.clear();
 }
 
 export async function listBanksWith(

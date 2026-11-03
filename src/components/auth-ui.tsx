@@ -79,13 +79,15 @@ export function SubmitButton({
   pending,
   label,
   pendingLabel,
+  disabled = false,
 }: {
   pending: boolean;
   label: string;
   pendingLabel: string;
+  disabled?: boolean;
 }) {
   return (
-    <button type="submit" disabled={pending} className={`${buttonClass("ink", "lg")} w-full`}>
+    <button type="submit" disabled={pending || disabled} className={`${buttonClass("ink", "lg")} w-full`}>
       {pending ? pendingLabel : label}
     </button>
   );

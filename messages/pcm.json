@@ -165,7 +165,8 @@
         "COOPERATIVE_NOT_FOUND": "",
         "INTERNAL": "",
         "INVALID_CUT": "",
-        "CUT_ABOVE_MAXIMUM": ""
+        "CUT_ABOVE_MAXIMUM": "",
+        "PAYSTACK_UNAVAILABLE": ""
       },
       "bank": {
         "heading": "",
@@ -446,7 +447,8 @@
       "UNFINISHED_ORDERS": "",
       "ILLEGAL_TRANSITION": "",
       "CROP_INACTIVE": "",
-      "INVALID_CROPS": ""
+      "INVALID_CROPS": "",
+      "PAYSTACK_UNAVAILABLE": ""
     },
     "leave": {
       "heading": "",
@@ -959,5 +961,22 @@
     "pickup": "",
     "until": "",
     "soldBy": ""
+  },
+  "bankLookup": {
+    "checking": "",
+    "found": "",
+    "matches": {
+      "farmer": "",
+      "cooperative": ""
+    },
+    "mismatch": {
+      "farmer": "",
+      "cooperative": ""
+    },
+    "errors": {
+      "notFound": "",
+      "unavailable": "",
+      "other": ""
+    }
   }
 }
