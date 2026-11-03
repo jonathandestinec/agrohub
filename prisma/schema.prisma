@@ -272,3 +272,53 @@ model FarmerProfile {
   @@index([cooperativeId])
   @@map("farmer_profile")
 }
+
+// Reference lists kept by board admins. Deactivated, never deleted, because lots and
+// price points reference them. nameKey is the normalized name lower-cased, so names are
+// unique regardless of case and spacing.
+model Crop {
+  id        String   @id @default(cuid())
+  name      String
+  nameKey   String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  prices    PricePoint[]
+
+  @@map("crop")
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  name      String
+  nameKey   String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  prices    PricePoint[]
+
+  @@map("unit")
+}
+
+// One board price per crop, unit, market and week. weekOf is the Monday of the Lagos week.
+// marketKey is the normalized market name lower-cased; market is the latest spelling, for
+// display. recordedByUserId is not a foreign key, like AuditLog.actorId, so deleting a user
+// on request never touches the board.
+model PricePoint {
+  id               String   @id @default(cuid())
+  cropId           String
+  crop             Crop     @relation(fields: [cropId], references: [id], onDelete: Restrict)
+  unitId           String
+  unit             Unit     @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  market           String
+  marketKey        String
+  weekOf           DateTime @db.Date
+  priceKobo        Int
+  recordedByUserId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([cropId, unitId, marketKey, weekOf])
+  @@index([weekOf])
+  @@map("price_point")
+}

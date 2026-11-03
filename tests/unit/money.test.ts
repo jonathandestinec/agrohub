@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import { applyBps, formatNaira, saleBreakdown, splitByWeights, toKobo } from "@/lib/money";
+import { applyBps, formatNaira, formatNairaChange, saleBreakdown, splitByWeights, toKobo } from "@/lib/money";
 
 describe("toKobo", () => {
   it("parses naira strings to integer kobo", () => {
@@ -171,5 +171,13 @@ describe("saleBreakdown", () => {
         },
       ),
     );
+  });
+});
+
+describe("formatNairaChange", () => {
+  it("signs a rise and a fall and leaves no change unsigned", () => {
+    expect(formatNairaChange(48000, 50000)).toBe("+₦20.00");
+    expect(formatNairaChange(5_200_000, 5_100_000)).toBe("-₦1,000.00");
+    expect(formatNairaChange(50000, 50000)).toBe("₦0.00");
   });
 });

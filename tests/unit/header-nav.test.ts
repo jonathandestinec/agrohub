@@ -17,11 +17,22 @@ describe("navLinksFor", () => {
     ]);
   });
 
-  it("gives farmers their farmer page", () => {
-    expect(navLinksFor("FARMER")).toEqual([{ href: "/farmer", labelKey: "farm" }]);
+  it("gives farmers their farmer page and the price board", () => {
+    expect(navLinksFor("FARMER")).toEqual([
+      { href: "/farmer", labelKey: "farm" },
+      { href: "/prices", labelKey: "prices" },
+    ]);
   });
 
-  it.each(["BUYER", "BOARD_ADMIN", null] as const)("gives %s no links yet", (role) => {
+  it("gives board admins price entry, crops and units, and the price board", () => {
+    expect(navLinksFor("BOARD_ADMIN").map((l) => l.href)).toEqual([
+      "/board",
+      "/board/crops",
+      "/prices",
+    ]);
+  });
+
+  it.each(["BUYER", null] as const)("gives %s no links yet", (role) => {
     expect(navLinksFor(role)).toEqual([]);
   });
 });

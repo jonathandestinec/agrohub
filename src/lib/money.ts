@@ -47,6 +47,14 @@ export function formatNaira(kobo: number): string {
   return `${kobo < 0 ? "-" : ""}₦${whole}.${fraction}`;
 }
 
+/** Formats the change from one price to another: "+₦20.00", "-₦1,000.00", or "₦0.00". */
+export function formatNairaChange(fromKobo: number, toKobo: number): string {
+  assertSafeInt(fromKobo, "fromKobo");
+  assertSafeInt(toKobo, "toKobo");
+  const delta = toKobo - fromKobo;
+  return `${delta > 0 ? "+" : ""}${formatNaira(delta)}`;
+}
+
 /** Returns kobo * bps / 10000, rounded down. Negative kobo is rejected. */
 export function applyBps(kobo: number, bps: number): number {
   assertNonNegativeSafeInt(kobo, "kobo");

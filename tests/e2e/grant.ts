@@ -11,23 +11,30 @@ const run = promisify(execFile);
 const SCRIPT = `(async () => {
   const { grantRole } = await import("./scripts/grant-role.ts");
   const { prisma } = await import("./src/lib/db.ts");
-  try { await grantRole({ email: process.env.E2E_GRANT_EMAIL, role: "ADMIN" }); }
+  try { await grantRole({ email: process.env.E2E_GRANT_EMAIL, role: process.env.E2E_GRANT_ROLE }); }
   finally { await prisma.$disconnect(); }
 })().catch((error) => { console.error(error.code ?? error.message); process.exitCode = 1; });`;
 
-export async function grantAdmin(email: string): Promise<void> {
+export async function grantRole(email: string, role: "ADMIN" | "BOARD_ADMIN"): Promise<void> {
   const cli = join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
   await run(process.execPath, [cli, "--eval", SCRIPT], {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      // Same values as the webServer env in playwright.config.ts.
-      DATABASE_URL: "postgresql://agrohub:agrohub@localhost:5432/agrohub_test",
+      // Same values as the webServer env in playwright.config.ts. E2E_DATABASE_URL lets a
+      // local config point a run at a private *_test database.
+      DATABASE_URL:
+        process.env.E2E_DATABASE_URL ?? "postgresql://agrohub:agrohub@localhost:5432/agrohub_test",
       BETTER_AUTH_SECRET: "test-only-secret-not-for-real-use-0123456789",
       BETTER_AUTH_URL: "http://localhost:3100",
       CRON_SECRET: "test-only-cron-secret",
       APP_ENV: "local",
       E2E_GRANT_EMAIL: email,
+      E2E_GRANT_ROLE: role,
     },
   });
+}
+
+export async function grantAdmin(email: string): Promise<void> {
+  await grantRole(email, "ADMIN");
 }
