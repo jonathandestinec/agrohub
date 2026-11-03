@@ -6,6 +6,7 @@ import {
   formatNaira,
   formatNairaChange,
   formatPercent,
+  nairaInput,
   parseBps,
   percentToBps,
   saleBreakdown,
@@ -236,5 +237,14 @@ describe("effectiveCutBps", () => {
     expect(effectiveCutBps(400, 300)).toBe(300);
     expect(effectiveCutBps(200, 500)).toBe(200);
     expect(effectiveCutBps(500, 500)).toBe(500);
+  });
+});
+
+describe("nairaInput", () => {
+  it("writes kobo as a plain naira amount a form field and toKobo accept", () => {
+    expect(nairaInput(6_500_000)).toBe("65000");
+    expect(nairaInput(4_321_987)).toBe("43219.87");
+    expect(nairaInput(50)).toBe("0.50");
+    expect(toKobo(nairaInput(4_321_987))).toBe(4_321_987);
   });
 });

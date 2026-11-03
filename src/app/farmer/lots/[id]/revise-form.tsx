@@ -7,7 +7,7 @@ import { Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { Breakdown } from "@/components/lots/breakdown";
 import { lotErrorKey } from "@/components/lots/error-key";
 import { buttonClass } from "@/components/ui/button";
-import { toKobo } from "@/lib/money";
+import { nairaInput, toKobo } from "@/lib/money";
 import { askDeviation } from "@/modules/board/deviation";
 import type { BoardPrice } from "@/modules/board/service";
 import type { FarmerLot } from "@/modules/catalog/views";
@@ -22,7 +22,6 @@ function kobo(value: string): number | null {
   }
 }
 
-const naira = (k: number) => (k / 100).toFixed(2).replace(/\.00$/, "");
 
 // A live lot's price, quantity or floor change goes to the officer; the live version stays
 // until they approve it. The locked terms apply to the new price too.
@@ -37,7 +36,7 @@ export function ReviseForm({
 }) {
   const t = useTranslations("lots");
   const router = useRouter();
-  const [ask, setAsk] = useState(naira(lot.askKobo));
+  const [ask, setAsk] = useState(nairaInput(lot.askKobo));
   const [quantity, setQuantity] = useState(String(lot.quantity));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +70,7 @@ export function ReviseForm({
         <div className="grid gap-4 md:grid-cols-3">
           <Field id="revise-ask" name="ask" label={t("form.ask")} inputMode="decimal" required value={ask} onChange={(e) => setAsk(e.target.value)} />
           <Field id="revise-quantity" name="quantity" label={t("form.quantity")} inputMode="numeric" required value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-          <Field id="revise-floor" name="floor" label={t("form.floor")} inputMode="decimal" required defaultValue={naira(lot.floorKobo)} />
+          <Field id="revise-floor" name="floor" label={t("form.floor")} inputMode="decimal" required defaultValue={nairaInput(lot.floorKobo)} />
         </div>
         {warned ? (
           <p role="status" className="rounded-inner bg-paper p-4 body-3">

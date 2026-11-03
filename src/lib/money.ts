@@ -71,6 +71,16 @@ export function formatPercent(bps: number): string {
   return `${Math.floor(bps / 100)}${fraction ? `.${fraction}` : ""}%`;
 }
 
+/** Writes non-negative kobo as a plain naira amount for a form field: "65000", "43219.87". */
+export function nairaInput(kobo: number): string {
+  assertNonNegativeSafeInt(kobo, "kobo");
+  const value = BigInt(kobo);
+  const fraction = value % HUNDRED;
+  return fraction === ZERO
+    ? (value / HUNDRED).toString()
+    : `${(value / HUNDRED).toString()}.${fraction.toString().padStart(2, "0")}`;
+}
+
 /** Formats integer kobo as "₦1,500.50" (negatives as "-₦1,500.50"). */
 export function formatNaira(kobo: number): string {
   assertSafeInt(kobo, "kobo");
