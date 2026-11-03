@@ -4,7 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Mark } from "@/components/ui/icons";
-import { centreNavLinks, isCurrent } from "./nav-current";
+import { centreNavLinks, isCurrent, navBreakpoint } from "./nav-current";
+
+const BREAKPOINT_CLASSES = {
+  lg: { block: "hidden lg:block", flex: "hidden lg:flex", narrowOnly: "lg:hidden" },
+  xl: { block: "hidden xl:block", flex: "hidden xl:flex", narrowOnly: "xl:hidden" },
+  menu: { block: "hidden", flex: "hidden", narrowOnly: "" },
+} as const;
 
 export type AppNavLink = { href: string; label: string };
 
@@ -72,13 +78,10 @@ export function AppNav({
   const { scrolled, compact: scrollCompact } = useScrollCompact();
   const compact = scrollCompact && !focused && !open;
   const hasLinks = links.length > 0;
-  // The round menu holds whatever does not fit the bar: the links, and the role switcher too,
-  // which with its label is as wide as the officer's three links. With it, the full bar only
-  // fits from xl (1280px); without it, from lg. Class names stay whole for Tailwind.
+  // The round menu holds whatever does not fit the bar: the links, and the role switcher too.
+  // navBreakpoint says from which width the full bar fits. Class names stay whole for Tailwind.
   const hasMenu = hasLinks || hasSwitcher;
-  const wide = hasSwitcher
-    ? { block: "hidden xl:block", flex: "hidden xl:flex", narrowOnly: "xl:hidden" }
-    : { block: "hidden lg:block", flex: "hidden lg:flex", narrowOnly: "lg:hidden" };
+  const wide = BREAKPOINT_CLASSES[navBreakpoint(links.length, hasSwitcher)];
   const toggle = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
 

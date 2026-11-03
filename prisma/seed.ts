@@ -18,6 +18,7 @@ export const SEED = {
   board: { name: "Seed Board Admin", email: "seed-board@example.com" },
   officer: { name: "Seed Officer", email: "seed-officer@example.com" },
   farmer: { name: "Seed Farmer", email: "seed-farmer@example.com" },
+  buyer: { name: "Seed Buyer", email: "seed-buyer@example.com" },
   phone: "+2348000000000",
   cooperative: {
     name: "Seed Demo Farmers Cooperative",
@@ -167,7 +168,7 @@ export async function seed(): Promise<{ password: string | null; created: string
 
   async function ensureMembership(input: {
     userId: string;
-    role: "ADMIN" | "BOARD_ADMIN" | "OFFICER" | "FARMER";
+    role: "ADMIN" | "BOARD_ADMIN" | "OFFICER" | "FARMER" | "BUYER";
     cooperativeId?: string;
     status: "ACTIVE" | "PENDING";
   }): Promise<void> {
@@ -181,6 +182,7 @@ export async function seed(): Promise<{ password: string | null; created: string
   const boardId = await ensureUser(SEED.board);
   const officerId = await ensureUser(SEED.officer);
   const farmerId = await ensureUser(SEED.farmer);
+  const buyerId = await ensureUser(SEED.buyer);
 
   const now = new Date();
   const cooperative = await prisma.cooperative.upsert({
@@ -216,6 +218,7 @@ export async function seed(): Promise<{ password: string | null; created: string
   });
 
   await ensureMembership({ userId: boardId, role: "BOARD_ADMIN", status: "ACTIVE" });
+  await ensureMembership({ userId: buyerId, role: "BUYER", status: "ACTIVE" });
   // Board data is seeded once, into an empty crop list. After that it belongs to the board
   // admins: a re-run never re-creates a renamed crop, prices a hidden one, or reverts a
   // corrected price.

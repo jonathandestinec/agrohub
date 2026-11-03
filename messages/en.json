@@ -1059,7 +1059,7 @@
     }
   },
   "offers": {
-    "summary": "{quantity} {unit} of {crop}",
+    "summary": "{quantity} × {unit} of {crop}",
     "totalLine": "Total {total}",
     "buyerStatus": {
       "WAITING": "Waiting for the cooperative",
@@ -1163,7 +1163,7 @@
       "agree": "Agree to this offer",
       "decline": "Decline",
       "waitingHeading": "Offers waiting for you",
-      "waitingLine": "{quantity} {unit} of {crop} at {price}",
+      "waitingLine": "{quantity} × {unit} of {crop} at {price}",
       "messageOfficer": "Message your officer about this lot"
     }
   }

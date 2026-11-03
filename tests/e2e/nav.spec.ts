@@ -128,6 +128,8 @@ test("with the role switcher shown, nothing in the header overlaps", async ({ pa
       await toggle.click();
       const menu = page.locator("#app-menu");
       await expect(menu.getByLabel("Acting as")).toBeVisible();
+      // The menu's items slide in one after another; measure them where they come to rest.
+      await menu.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
       expect(collisions(await controlBoxes(menu)), `menu at ${width}px`).toEqual([]);
       await page.getByRole("button", { name: "Close menu" }).click();
     }

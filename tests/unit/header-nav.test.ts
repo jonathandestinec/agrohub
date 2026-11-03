@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
-import { centreNavLinks, isCurrent, showRoleSwitcher } from "@/components/nav-current";
+import { centreNavLinks, isCurrent, navBreakpoint, showRoleSwitcher } from "@/components/nav-current";
 
 describe("navLinksFor", () => {
   it("gives officers onboarding, invites, farmers and lot screening", () => {
@@ -117,5 +117,18 @@ describe("showRoleSwitcher", () => {
     expect(showRoleSwitcher(0)).toBe(false);
     expect(showRoleSwitcher(1)).toBe(false);
     expect(showRoleSwitcher(2)).toBe(true);
+  });
+});
+
+describe("navBreakpoint", () => {
+  it("fits up to five links in the bar from lg, or from xl beside the role switcher", () => {
+    expect(navBreakpoint(5, false)).toBe("lg");
+    expect(navBreakpoint(5, true)).toBe("xl");
+    expect(navBreakpoint(0, false)).toBe("lg");
+  });
+
+  it("fits six links from xl, and never beside the role switcher", () => {
+    expect(navBreakpoint(6, false)).toBe("xl");
+    expect(navBreakpoint(6, true)).toBe("menu");
   });
 });

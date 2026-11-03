@@ -36,8 +36,9 @@ async function counts() {
   };
 }
 
-describe("seed", () => {
-  it("creates a verified admin, a VERIFIED cooperative with an officer, and a PENDING farmer", async () => {
+// Each run hashes five passwords through Better Auth; the first run in a file also loads it cold.
+describe("seed", { timeout: 20_000 }, () => {
+  it("creates a verified admin, a VERIFIED cooperative with an officer, a PENDING farmer and a buyer", async () => {
     const result = await seed();
 
     expect(result.password).toEqual(expect.any(String));
@@ -45,6 +46,7 @@ describe("seed", () => {
     expect(users.map((u) => [u.email, u.emailVerified, u.twoFactorEnabled])).toEqual([
       [SEED.admin.email, true, false],
       [SEED.board.email, true, false],
+      [SEED.buyer.email, true, false],
       [SEED.farmer.email, true, false],
       [SEED.officer.email, true, false],
     ]);
@@ -66,6 +68,7 @@ describe("seed", () => {
     ).toEqual([
       [SEED.admin.email, "ADMIN", "ACTIVE", null],
       [SEED.board.email, "BOARD_ADMIN", "ACTIVE", null],
+      [SEED.buyer.email, "BUYER", "ACTIVE", null],
       [SEED.farmer.email, "FARMER", "PENDING", cooperative.id],
       [SEED.officer.email, "OFFICER", "ACTIVE", cooperative.id],
     ]);
@@ -88,16 +91,28 @@ describe("seed", () => {
 
     expect(await counts()).toEqual(before);
     expect(before).toEqual({
-      users: 4,
-      accounts: 4,
+      users: 5,
+      accounts: 5,
       cooperatives: 1,
-      memberships: 4,
+      memberships: 5,
       profiles: 1,
       crops: 12,
       units: 8,
       prices: 28,
     });
     expect(second.password).toBeNull();
+  });
+
+  it("creates one seed buyer with an ACTIVE buyer membership, once", async () => {
+    await seed();
+    await seed();
+    const buyers = await prisma.user.findMany({
+      where: { email: SEED.buyer.email },
+      include: { memberships: true },
+    });
+    expect(buyers).toHaveLength(1);
+    expect(buyers[0].name).toBe("Seed Buyer");
+    expect(buyers[0].memberships.map((m) => [m.role, m.status, m.cooperativeId])).toEqual([["BUYER", "ACTIVE", null]]);
   });
 
   it("sets the cooperative's cut and links the farmer to two crops, once", async () => {
