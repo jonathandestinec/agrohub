@@ -1,9 +1,10 @@
 // Demo data for local and staging:
 //   npm run db:seed                                   (local Docker database)
 //   APP_ENV=staging DATABASE_URL=<url> npm run db:seed -- --allow-remote   (staging; never production)
-// Creates one admin (two-factor off, so /two-factor enrolment shows), one VERIFIED
-// cooperative with an ACTIVE officer, and one PENDING farmer with a profile. Re-running
-// it adds nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
+// Creates one admin and one board admin (two-factor off, so /two-factor enrolment shows),
+// one VERIFIED cooperative with an ACTIVE officer, one PENDING farmer with a profile, the
+// crop and unit lists, and two fixed past weeks of demo board prices. Re-running it adds
+// nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
 import { randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import type { SignUpEmailBody } from "@/lib/auth";
@@ -14,6 +15,7 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
 export const SEED = {
   admin: { name: "Seed Admin", email: "seed-admin@example.com" },
+  board: { name: "Seed Board Admin", email: "seed-board@example.com" },
   officer: { name: "Seed Officer", email: "seed-officer@example.com" },
   farmer: { name: "Seed Farmer", email: "seed-farmer@example.com" },
   phone: "+2348000000000",
@@ -25,6 +27,17 @@ export const SEED = {
     certificateExpiresAt: new Date("2030-12-31T00:00:00Z"),
   },
   profile: { farmSizeHectares: "2.50", crops: ["Maize", "Sorghum"], state: "Kaduna", lga: "Zaria" },
+  crops: ["Maize", "Sorghum", "Rice", "Cassava", "Yam", "Soybeans"],
+  units: ["kg", "Bag", "Tonne", "Basket"],
+  // Demo prices per bag, in kobo, for two fixed past weeks (so re-running adds nothing).
+  // Illustrative only; staging shows them so a pitch has a board to look at.
+  weeks: ["2026-10-19", "2026-10-26"],
+  markets: ["Dawanau Market, Kano", "Bodija Market, Ibadan"],
+  prices: {
+    Maize: [[4_800_000, 5_000_000], [5_100_000, 5_200_000]],
+    Rice: [[9_500_000, 9_800_000], [10_000_000, 10_200_000]],
+    Sorghum: [[4_200_000, 4_300_000], [4_500_000, 4_450_000]],
+  },
 } as const;
 
 export type SeedTarget = { ok: boolean; host: string; database: string; reason?: string };
@@ -76,11 +89,15 @@ export function checkSeedTarget(input: {
 // App modules are imported lazily: src/lib/env.ts validates on import, and the CLI below
 // sets its variables first. Returns the password when it created any user, else null.
 export async function seed(): Promise<{ password: string | null; created: string[] }> {
-  const [{ prisma }, { auth }, { addMembership }] = await Promise.all([
-    import("@/lib/db"),
-    import("@/lib/auth"),
-    import("@/modules/identity/service"),
-  ]);
+  const [{ prisma }, { auth }, { addMembership }, catalog, { recordPrice }, { nameKeyOf }] =
+    await Promise.all([
+      import("@/lib/db"),
+      import("@/lib/auth"),
+      import("@/modules/identity/service"),
+      import("@/modules/catalog/service"),
+      import("@/modules/board/service"),
+      import("@/modules/catalog/schema"),
+    ]);
   const password = randomBytes(12).toString("base64url");
   const created: string[] = [];
 
@@ -108,7 +125,7 @@ export async function seed(): Promise<{ password: string | null; created: string
 
   async function ensureMembership(input: {
     userId: string;
-    role: "ADMIN" | "OFFICER" | "FARMER";
+    role: "ADMIN" | "BOARD_ADMIN" | "OFFICER" | "FARMER";
     cooperativeId?: string;
     status: "ACTIVE" | "PENDING";
   }): Promise<void> {
@@ -119,6 +136,7 @@ export async function seed(): Promise<{ password: string | null; created: string
   }
 
   const adminId = await ensureUser(SEED.admin);
+  const boardId = await ensureUser(SEED.board);
   const officerId = await ensureUser(SEED.officer);
   const farmerId = await ensureUser(SEED.farmer);
 
@@ -155,6 +173,39 @@ export async function seed(): Promise<{ password: string | null; created: string
     update: {},
   });
 
+  // Crops, units and prices go through the services, as the seeded board admin would.
+  await ensureMembership({ userId: boardId, role: "BOARD_ADMIN", status: "ACTIVE" });
+  const board = { userId: boardId, role: "BOARD_ADMIN", cooperativeId: null, twoFactorEnabled: true } as const;
+  async function ensureItem(kind: "crop" | "unit", name: string): Promise<string> {
+    const where = { nameKey: nameKeyOf(name) };
+    const existing =
+      kind === "crop" ? await prisma.crop.findUnique({ where }) : await prisma.unit.findUnique({ where });
+    if (existing) return existing.id;
+    const item =
+      kind === "crop"
+        ? await catalog.createCrop(board, { name })
+        : await catalog.createUnit(board, { name });
+    return item.id;
+  }
+  const cropIds = new Map<string, string>();
+  for (const name of SEED.crops) cropIds.set(name, await ensureItem("crop", name));
+  for (const name of SEED.units) await ensureItem("unit", name);
+  const bagId = await ensureItem("unit", "Bag");
+  for (const [crop, perMarket] of Object.entries(SEED.prices)) {
+    for (const [m, market] of SEED.markets.entries()) {
+      for (const [w, weekOf] of SEED.weeks.entries()) {
+        // recordPrice upserts and writes no audit row when the price is unchanged.
+        await recordPrice(board, {
+          cropId: cropIds.get(crop)!,
+          unitId: bagId,
+          market,
+          weekOf,
+          priceKobo: perMarket[m][w],
+        });
+      }
+    }
+  }
+
   return { password: created.length > 0 ? password : null, created };
 }
 
@@ -190,8 +241,9 @@ async function main(argv: string[]): Promise<number> {
       console.log("Seed data already present; nothing created and no password changed.");
     }
     console.log(
-      `Admin ${SEED.admin.email} (enrols two-factor on first admin page), officer ` +
-        `${SEED.officer.email}, pending farmer ${SEED.farmer.email}.`,
+      `Admin ${SEED.admin.email} and board admin ${SEED.board.email} (each enrols ` +
+        `two-factor on their first admin page), officer ${SEED.officer.email}, pending ` +
+        `farmer ${SEED.farmer.email}.`,
     );
     return 0;
   } catch (error) {

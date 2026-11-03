@@ -58,10 +58,10 @@ Plan: `2026-10-31-agrohub-phase-0-foundation.md`. **Done when:** staging deploys
 ## Phase 2: Crops, units and the price board
 
 **Depends on:** Phase 1. Spec 6.4.
-- [ ] 2.1 Crop and unit management by board admin.
-- [ ] 2.2 Weekly price entry: `board/service.ts` `recordPrice(actor, { cropId, market, weekOf, priceKobo })`.
-- [ ] 2.3 Public price board page.
-- [ ] 2.4 `priceDeviation(askKobo: number, boardKobo: number, thresholdBps: number): 'OK' | 'HIGH' | 'LOW'`.
+- [x] 2.1 Crop and unit management by board admin.
+- [x] 2.2 Weekly price entry: `board/service.ts` `recordPrice(actor, { cropId, unitId, market, weekOf, priceKobo })` (a board price carries its unit).
+- [x] 2.3 Public price board page (`/prices`).
+- [x] 2.4 `priceDeviation(askKobo: number, boardKobo: number, thresholdBps: number): 'OK' | 'HIGH' | 'LOW'`.
 
 **Done when:** a board admin publishes prices and a farmer can see them.
 
