@@ -155,6 +155,12 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["lot:own", "BUYER", false],
   ["lot:own", "ADMIN", false],
   ["lot:own", "BOARD_ADMIN", false],
+
+  ["lot:screen", "FARMER", false],
+  ["lot:screen", "OFFICER", true],
+  ["lot:screen", "BUYER", false],
+  ["lot:screen", "ADMIN", true],
+  ["lot:screen", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -168,7 +174,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(110);
+    expect(matrix).toHaveLength(115);
   });
 });
 

@@ -36,7 +36,8 @@ export type Action =
   | "catalog:request"
   | "catalog:forward"
   | "lot:submit"
-  | "lot:own";
+  | "lot:own"
+  | "lot:screen";
 
 export type Resource = {
   cooperativeId?: string;
@@ -82,6 +83,9 @@ export function can(
         resource?.ownerUserId !== undefined &&
         resource.ownerUserId === actor.userId
       );
+    case "lot:screen":
+      // Who may see a screening queue; each decision still checks lot:approve on the lot.
+      return actor.role === "ADMIN" || (actor.role === "OFFICER" && isOwnCooperative(actor, resource));
     case "lot:approve":
       if (actor.role === "OFFICER") {
         return (
