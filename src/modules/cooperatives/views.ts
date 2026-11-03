@@ -96,3 +96,23 @@ export function latestPerKind(
   }
   return [...latest.values()];
 }
+
+// What anyone may see of a verified cooperative. Built field by field: no registration number,
+// bank data, officers or documents.
+export type PublicCooperative = {
+  id: string;
+  name: string;
+  state: string;
+  lga: string;
+  verifiedSince: string | null;
+};
+
+export function toPublicCooperative(c: Cooperative): PublicCooperative {
+  return {
+    id: c.id,
+    name: c.name,
+    state: c.state,
+    lga: c.lga,
+    verifiedSince: c.verifiedAt ? c.verifiedAt.toISOString().slice(0, 7) : null,
+  };
+}

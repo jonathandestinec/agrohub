@@ -1002,5 +1002,29 @@
       "lead": "",
       "browse": ""
     }
+  },
+  "publicLot": {
+    "meta": {
+      "title": "",
+      "description": ""
+    },
+    "photoAlt": "",
+    "availableUntil": "",
+    "soldByPrefix": "",
+    "priceNote": "",
+    "offerHeading": "",
+    "held": "",
+    "signUpToOffer": ""
+  },
+  "publicCooperative": {
+    "meta": {
+      "title": "",
+      "description": ""
+    },
+    "location": "",
+    "verified": "",
+    "verifiedSince": "",
+    "lotsHeading": "",
+    "noLots": ""
   }
 }

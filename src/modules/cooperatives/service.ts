@@ -35,10 +35,13 @@ import {
 import {
   latestPerKind,
   toAdminCooperative,
+  toPublicCooperative,
   type AdminCooperative,
+  type PublicCooperative,
 } from "./views";
 
 export type { Cooperative, CooperativeDocument };
+export type { PublicCooperative } from "./views";
 
 const DOCUMENT_URL_TTL_SECONDS = 300;
 
@@ -625,4 +628,12 @@ export async function reinstateCooperative(
     {},
     undefined,
   );
+}
+
+// A verified cooperative's public page (no Actor: browsing is public, spec 11). Any other
+// cooperative looks exactly like a missing one.
+export async function getPublicCooperative(cooperativeId: string): Promise<PublicCooperative> {
+  const cooperative = await prisma.cooperative.findFirst({ where: { id: cooperativeId, status: "VERIFIED" } });
+  if (!cooperative) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
+  return toPublicCooperative(cooperative);
 }

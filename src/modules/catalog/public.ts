@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { NotFoundError } from "@/lib/errors";
 import { lagosDate, lagosDateKey } from "@/lib/lagos-date";
 import { recordAudit } from "@/modules/audit/audit";
 import { LOT_INCLUDE, photoUrlsOf } from "./lots";
@@ -95,4 +96,15 @@ export async function expireLots(now: Date = new Date()): Promise<number> {
     });
   }
   return expired;
+}
+
+// One live lot for its public page (no Actor: browsing is public). A lot that is not publicly
+// visible looks exactly like a missing one.
+export async function getPublicLot(lotId: string, now: Date = new Date()): Promise<PublicLot> {
+  const lot = await prisma.lot.findFirst({
+    where: { id: lotId, ...publiclyVisibleWhere(now) },
+    include: LOT_INCLUDE,
+  });
+  if (!lot) throw new NotFoundError("LOT_NOT_FOUND");
+  return toPublicLot(lot, await photoUrlsOf(lot.id));
 }

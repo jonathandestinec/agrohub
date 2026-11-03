@@ -1002,5 +1002,29 @@
       "lead": "Offers you have made and where each one stands.",
       "browse": "Browse lots"
     }
+  },
+  "publicLot": {
+    "meta": {
+      "title": "{quantity} {unit} of {crop} from {cooperative}",
+      "description": "{price} per {unit}, pickup in {lga}, {state}. Sold by a verified cooperative on AgroHub."
+    },
+    "photoAlt": "{crop}, photo {number}",
+    "availableUntil": "Available until {date}",
+    "soldByPrefix": "Sold by",
+    "priceNote": "The price is per unit at the pickup location.",
+    "offerHeading": "Buy or make an offer",
+    "held": "Your payment is held until delivery is confirmed.",
+    "signUpToOffer": "Sign up as a buyer to make an offer"
+  },
+  "publicCooperative": {
+    "meta": {
+      "title": "{name} on AgroHub",
+      "description": "Harvests from {name}, a verified farmer cooperative in {lga}, {state}."
+    },
+    "location": "{lga}, {state}",
+    "verified": "Verified cooperative",
+    "verifiedSince": "Verified since {date}",
+    "lotsHeading": "Harvests on sale",
+    "noLots": "This cooperative has no lots on sale right now."
   }
 }
