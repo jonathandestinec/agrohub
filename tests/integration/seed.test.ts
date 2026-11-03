@@ -100,6 +100,19 @@ describe("seed", () => {
     expect(second.password).toBeNull();
   });
 
+  it("sets the cooperative's cut and links the farmer to two crops, once", async () => {
+    await seed();
+    await seed();
+    const cooperative = await prisma.cooperative.findUniqueOrThrow({
+      where: { registrationNumber: SEED.cooperative.registrationNumber },
+    });
+    expect(cooperative.cutBps).toBe(500);
+    const profile = await prisma.farmerProfile.findFirstOrThrow({
+      include: { crops: { orderBy: { nameKey: "asc" } } },
+    });
+    expect(profile.crops.map((c) => c.name)).toEqual(["Maize", "Sorghum"]);
+  });
+
   it("seeds crops, units and the October 2026 market prices on the public board", async () => {
     await seed();
     const crops = await prisma.crop.findMany();

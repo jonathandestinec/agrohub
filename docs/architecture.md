@@ -75,21 +75,22 @@ Each module folder holds: `service.ts` (the only public entry), `schema.ts` (zod
 ## 5. Data model (entities and the fields that matter)
 
 - **User** (Better Auth) plus `phone`, `phoneConfirmed`, `consentAcceptedAt`, `locale`.
-- **Cooperative** `{ status: PENDING|VERIFIED|SUSPENDED, certificateExpiresAt, cutBps, recipientCode }`; **CooperativeDocument** `{ storageKey, kind }`; **InviteLink** `{ token, revokedAt }`.
-- **FarmerProfile** `{ farmSize, crops, state, lga, recipientCode, approvedAt }`. Account numbers are never stored; only the Paystack recipient code.
+- **Cooperative** `{ status: PENDING|VERIFIED|SUSPENDED, certificateExpiresAt, cutBps (default 0, at most the admin maximum), recipientCode }`; **CooperativeDocument** `{ storageKey, kind }`; **InviteLink** `{ token, revokedAt }`.
+- **FarmerProfile** `{ farmSize, crops (links to Crop, chosen from the board's list), state, lga, recipientCode, approvedAt }`. Account numbers are never stored; only the Paystack recipient code.
 - **Crop**, **Unit** (kg, bag, tonne, basket, ... maintained by board admin); **PricePoint** `{ cropId, unitId, market, marketKey, weekOf, priceKobo }`, one per crop, unit, market and Lagos week (Monday). Crops and units are deactivated, never deleted.
-- **Lot** `{ cooperativeId, cropId, unitId, quantity, grade, pickupLocation, askKobo, floorKobo (private), note, status, availableUntil, minOrderQty }`; **LotContribution** `{ lotId, farmerUserId, quantity }`; **LotFeeTerms** `{ lotId, cooperativeCutBps, platformFeeBps }` locked at approval.
+- **Lot** `{ cooperativeId, farmerUserId, cropId, unitId, quantity, grade (A|B|C|UNGRADED), pickupState, pickupLga, pickupNote, askKobo, floorKobo (private), note, deviation (OK|HIGH|LOW at submission), quotedCutBps, quotedFeeBps, status, availableUntil (Lagos date), minOrderQty, counterAskKobo, rejectionReason }`; **LotContribution** `{ lotId, farmerUserId, quantity }` (one row per lot in Phase 3: the submitting farmer); **LotPhoto** `{ lotId, storageKey, position }` (private bucket, signed links); **LotFeeTerms** `{ lotId, cooperativeCutBps, platformFeeBps, lockedAt }` locked at approval from the quoted terms; **LotRevision** `{ lotId, askKobo, quantity, floorKobo, status: PENDING|APPROVED|REJECTED|SUPERSEDED }`.
+- **CatalogRequest** `{ kind: CROP|UNIT, name, nameKey, cooperativeId, status: WITH_OFFICER|FORWARDED|DECLINED|APPROVED, resolvedItemId }`: a farmer's request for a missing crop or unit; officers forward it, board admins add it.
 - **Offer** `{ lotId, buyerUserId, quantity, offeredKobo, status, expiresAt }`; **StockReservation** `{ lotId, quantity, expiresAt, orderId? }`.
 - **Order** `{ buyerUserId, cooperativeId, status, totalKobo, deliveryCostKobo, deliveryDate }` with **OrderLine** `{ lotId, quantity, unitPriceKobo, termsSnapshot }`.
 - **Payment** `{ orderId, paystackReference unique, status }`; **PaystackEvent** `{ eventId unique, payload }`; **LedgerEntry** `{ orderId, account, amountKobo, direction }` (append-only); **Payout** `{ orderId, recipientCode, amountKobo, reference unique, status }`; **Refund**.
 - **Thread**, **Message**; **Review**; **Report**; **Dispute**; **Notification**.
 - **InputOrder**, **InputSignup**, **Loan** (tracking only).
-- **AuditLog** (append-only), **JobRun** `{ key unique }`, **Setting** `{ key, value }` (platform fee, max cooperative cut, price-deviation threshold, timeouts).
+- **AuditLog** (append-only), **JobRun** `{ key unique }`, **Setting** `{ key, value }`: `platform_fee_bps` (default "300"), `max_cooperative_cut_bps` ("500"), `price_deviation_bps` ("2000"); later, timeouts. The value is a string of integer basis points, parsed only by `parseBps` in `src/lib/money.ts`; a missing row means the default in `settings/service.ts`.
 
 ## 6. State machines
 
 - **Cooperative:** PENDING -> VERIFIED <-> SUSPENDED. Verification lapses at `certificateExpiresAt`.
-- **Lot:** DRAFT -> PENDING_REVIEW -> (COUNTERED | REJECTED | LIVE); LIVE -> (SOLD_OUT | WITHDRAWN | EXPIRED). Editing a live lot's price or quantity creates a pending revision; the live version stays until approved.
+- **Lot:** PENDING_REVIEW -> (COUNTERED | REJECTED | LIVE); COUNTERED -> (LIVE when the farmer accepts | WITHDRAWN when they decline); PENDING_REVIEW, COUNTERED or LIVE -> (WITHDRAWN | EXPIRED); LIVE -> SOLD_OUT (Phase 5). There is no server-side draft: the unsent form is kept in the browser. Editing a live lot's price, quantity or floor creates a pending revision; the live version stays until approved, and the locked fee terms never change.
 - **Offer:** OPEN -> (ACCEPTED | REJECTED | COUNTERED | EXPIRED | WITHDRAWN). Accepted offers hold stock for 24 hours.
 - **Order:** PENDING_PAYMENT -> PAID_HELD -> PREPARING -> DELIVERED_MARKED -> COMPLETED. Side exits: CANCELLED, REFUNDED, DISPUTED, TIMED_OUT. Payouts are created only on the transition to COMPLETED, by server code.
 
@@ -128,7 +129,9 @@ Scheduled jobs: offer expiry, reservation release, lot expiry, auto-release, del
 
 ## 11. Decisions left open
 
-Paystack's written answer on holding funds and manual settlement; the AgroHub fee percentage and maximum cooperative cut; the price-deviation threshold (starting default 20%, my call; a constant `DEFAULT_DEVIATION_THRESHOLD_BPS` in `board/deviation.ts` until the `Setting` table exists); brand identity; weather alerts (deferred).
+Paystack's written answer on holding funds and manual settlement; brand identity; weather alerts (deferred).
+
+Decided (Phase 3): the AgroHub fee (default 3%) and the maximum cooperative cut (default 5%) live in the `Setting` table as basis-point strings, editable by admins at `/admin/settings`; so does the price-deviation threshold (default 20%, formerly the constant `DEFAULT_DEVIATION_THRESHOLD_BPS`, which remains as the code default). Lot photos are compressed in the browser with `<canvas>` (`src/lib/image-compress.ts`), so no image dependency was added.
 
 ## 12. Dependencies
 

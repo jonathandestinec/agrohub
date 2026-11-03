@@ -68,14 +68,14 @@ Plan: `2026-10-31-agrohub-phase-0-foundation.md`. **Done when:** staging deploys
 ## Phase 3: Harvest lots and officer screening
 
 **Depends on:** Phase 2. Spec 6.3, 13, 14.
-- [ ] 3.1 `computeBreakdown(askKobo, quantity, cutBps, platformFeeBps)` returning cooperative cut, AgroHub fee and farmer take-home.
-- [ ] 3.2 Lot submission with private floor, note, photos compressed on upload, and the neutral price warning.
-- [ ] 3.3 `catalog/views.ts` `toPublicLot(lot): PublicLot` whose type has no floor field.
-- [ ] 3.4 Officer screening: approve, reject with reason, counter; farmer accepts or declines a counter.
-- [ ] 3.5 Self-approval rule and admin fallback (test `officer_cannot_approve_own_lot`).
-- [ ] 3.6 Fee terms locked on approval (`LotFeeTerms`).
-- [ ] 3.7 Edit and withdraw: price or quantity changes create a pending revision; withdraw only with no open orders.
-- [ ] 3.8 Lot expiry job; minimum order quantity; contributions per farmer.
+- [x] 3.1 `computeBreakdown(askKobo, quantity, cutBps, platformFeeBps)` returning cooperative cut, AgroHub fee and farmer take-home (built as `saleBreakdown` in `src/lib/money.ts`).
+- [x] 3.2 Lot submission with private floor, note, photos compressed on upload, and the neutral price warning.
+- [x] 3.3 `catalog/views.ts` `toPublicLot(lot): PublicLot` whose type has no floor field.
+- [x] 3.4 Officer screening: approve, reject with reason, counter; farmer accepts or declines a counter.
+- [x] 3.5 Self-approval rule and admin fallback (test `officer_cannot_approve_own_lot`).
+- [x] 3.6 Fee terms locked on approval (`LotFeeTerms`).
+- [x] 3.7 Edit and withdraw: price or quantity changes create a pending revision; withdraw only with no open orders.
+- [x] 3.8 Lot expiry job; minimum order quantity; contributions per farmer.
 
 **Done when:** a farmer's lot goes live after officer approval, with locked terms and no floor in any public output.
 

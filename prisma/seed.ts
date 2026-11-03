@@ -185,7 +185,8 @@ export async function seed(): Promise<{ password: string | null; created: string
   const now = new Date();
   const cooperative = await prisma.cooperative.upsert({
     where: { registrationNumber: SEED.cooperative.registrationNumber },
-    create: { ...SEED.cooperative, status: "VERIFIED", submittedAt: now, verifiedAt: now },
+    // A 5% cut, the default maximum; created once, so an officer's later change sticks.
+    create: { ...SEED.cooperative, status: "VERIFIED", submittedAt: now, verifiedAt: now, cutBps: 500 },
     update: {},
   });
 
@@ -237,6 +238,11 @@ export async function seed(): Promise<{ password: string | null; created: string
   }
   const cropIds = new Map<string, string>();
   for (const name of SEED.crops) cropIds.set(name, await ensureItem("crop", name));
+  // The seeded farmer grows two of the new crops.
+  await prisma.farmerProfile.update({
+    where: { userId: farmerId },
+    data: { crops: { connect: SEED.profile.crops.map((name) => ({ id: cropIds.get(name)! })) } },
+  });
   const unitIds = new Map<string, string>();
   for (const name of SEED.units) unitIds.set(name, await ensureItem("unit", name));
   for (const { crop, unit, market, weekOf, priceKobo } of SEED.prices) {
