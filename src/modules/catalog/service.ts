@@ -165,4 +165,5 @@ export {
 export { decideRevision, requestRevision, withdrawLot } from "./revisions";
 export type { PendingRevision } from "./views";
 export { expireLots, getPublicLot, listLiveLots, searchLiveLots } from "./public";
+export { isPubliclyVisible, lockLot, lotNegotiationFacts, type NegotiationFacts } from "./negotiation";
 export { parseLotFilters, LOT_SORTS, type LotFilters, type LotSort } from "./search-schema";

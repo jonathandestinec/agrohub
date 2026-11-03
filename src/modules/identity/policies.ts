@@ -37,7 +37,10 @@ export type Action =
   | "catalog:forward"
   | "lot:submit"
   | "lot:own"
-  | "lot:screen";
+  | "lot:screen"
+  | "offer:make"
+  | "offer:own"
+  | "offer:respond";
 
 export type Resource = {
   cooperativeId?: string;
@@ -124,6 +127,17 @@ export function can(
     case "catalog:request":
     case "lot:submit":
       return actor.role === "FARMER" && isOwnCooperative(actor, resource);
+    case "offer:make":
+      return actor.role === "BUYER";
+    case "offer:own":
+      // The buyer who made the offer.
+      return (
+        actor.role === "BUYER" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
+    case "offer:respond":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     case "lot:own":
       // The farmer who submitted the lot, while still in that cooperative.
       return (

@@ -169,3 +169,12 @@ export async function becomeBuyer(user: { userId: string }): Promise<{ membershi
     throw error;
   }
 }
+
+// Whether the user is an ACTIVE farmer or officer of the cooperative. Server-internal, no Actor:
+// the marketplace uses it to stop people making offers on their own cooperative's lots.
+export async function holdsCooperativeRole(userId: string, cooperativeId: string): Promise<boolean> {
+  const count = await prisma.membership.count({
+    where: { userId, cooperativeId, status: "ACTIVE", role: { in: ["FARMER", "OFFICER"] } },
+  });
+  return count > 0;
+}

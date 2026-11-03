@@ -138,6 +138,13 @@ export function saleBreakdown(
   };
 }
 
+/** A whole quantity at a per-unit price, in kobo; RangeError beyond the safe integer range. */
+export function lineTotalKobo(unitKobo: number, quantity: number): number {
+  assertNonNegativeSafeInt(unitKobo, "unitKobo");
+  assertNonNegativeSafeInt(quantity, "quantity");
+  return toSafeNumber(BigInt(unitKobo) * BigInt(quantity), "line total");
+}
+
 /**
  * Splits totalKobo in proportion to weights using the largest-remainder method.
  * The parts always sum exactly to totalKobo; leftover kobo go one each to the

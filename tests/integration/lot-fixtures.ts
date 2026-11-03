@@ -61,6 +61,16 @@ export async function officerMember(userId: string, cooperativeId: string): Prom
   return { userId, role: "OFFICER", cooperativeId, twoFactorEnabled: true };
 }
 
+// An ACTIVE buyer (verified email), named so tests can look for the name in views.
+export async function buyerMember(userId: string): Promise<Actor> {
+  if (!(await prisma.user.findUnique({ where: { id: userId } }))) {
+    await createTestUser({ id: userId, name: `Buyer ${userId}` });
+  }
+  await prisma.user.update({ where: { id: userId }, data: { emailVerified: true } });
+  await prisma.membership.create({ data: { userId, role: "BUYER", status: "ACTIVE" } });
+  return { userId, role: "BUYER", cooperativeId: null, twoFactorEnabled: false };
+}
+
 // A VERIFIED cooperative whose cut is 4%, with an ACTIVE farmer who has a payout account,
 // one officer, a board admin, an admin, and the crop Maize sold by the Bag.
 export async function lotWorld(): Promise<LotWorld> {

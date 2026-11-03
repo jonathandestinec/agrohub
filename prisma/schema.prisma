@@ -23,6 +23,7 @@ model User {
   memberships       Membership[]
   farmerProfile     FarmerProfile?
   lots              Lot[]
+  offers            Offer[]
 
   phoneConfirmed Boolean @default(false)
 
@@ -143,6 +144,7 @@ model Cooperative {
   farmerProfiles       FarmerProfile[]
   catalogRequests      CatalogRequest[]
   lots                 Lot[]
+  offers               Offer[]
 
   @@map("cooperative")
 }
@@ -443,6 +445,7 @@ model Lot {
   photos           LotPhoto[]
   feeTerms         LotFeeTerms?
   revisions        LotRevision[]
+  offers           Offer[]
 
   @@index([cooperativeId, status])
   @@index([status, availableUntil])
@@ -514,4 +517,46 @@ model LotRevision {
 
   @@index([lotId, status])
   @@map("lot_revision")
+}
+
+enum OfferStatus {
+  OPEN
+  AWAITING_FARMER
+  COUNTERED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  WITHDRAWN
+}
+
+// A buyer's offer on a live lot; every kobo value is per unit. Buyers never see the status
+// AWAITING_FARMER (an officer referred a below-floor offer to the farmer): their view reads
+// it as waiting, with the same expiresAt. An accepted offer holds its quantity until payByAt.
+model Offer {
+  id               String      @id @default(cuid())
+  lotId            String
+  lot              Lot         @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  cooperativeId    String
+  cooperative      Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  buyerUserId      String
+  buyer            User        @relation(fields: [buyerUserId], references: [id], onDelete: Restrict)
+  quantity         Int
+  offeredKobo      Int
+  counterKobo      Int?
+  agreedKobo       Int?
+  status           OfferStatus @default(OPEN)
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  payByAt          DateTime?
+  referredByUserId String?
+  decidedByUserId  String?
+  decidedAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([lotId, status])
+  @@index([cooperativeId, status])
+  @@index([buyerUserId, createdAt])
+  @@index([status, expiresAt])
+  @@map("offer")
 }
