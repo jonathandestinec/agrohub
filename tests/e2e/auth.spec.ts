@@ -105,6 +105,8 @@ test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", 
   page,
   request,
 }) => {
+  // Enrolment plus two sign-ins on a cold dev server sits right at the 30s default.
+  test.setTimeout(90_000);
   const email = uniqueEmail();
   await signUpAndVerify(page, request, email);
   await signIn(page, email);
@@ -115,6 +117,10 @@ test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", 
   await expect(page.getByRole("heading", { name: "Set up two-factor authentication" })).toBeVisible();
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Get setup key" }).click();
+  const qr = page.getByRole("img", { name: "QR code to add AgroHub to your authenticator app" });
+  await expect(qr).toBeVisible();
+  // Drawn locally from the setup link, never fetched from a QR service.
+  expect(await qr.getAttribute("src")).toMatch(/^data:image\/svg\+xml/);
   const secret = (await page.getByTestId("totp-secret").textContent())?.trim() ?? "";
   expect(secret).toMatch(/^[A-Z2-7]+$/);
   await page.getByLabel("6-digit code").fill(totp(secret));
