@@ -50,45 +50,74 @@ export async function recordPrice(
 
   const key = { cropId, unitId, marketKey: market.toLowerCase(), weekOf };
   const meta = { cropId, unitId, weekOf: toWeekKey(weekOf) };
-  const existing = await prisma.pricePoint.findUnique({
-    where: { cropId_unitId_marketKey_weekOf: key },
-  });
-  if (!existing) {
-    try {
-      const created = await prisma.pricePoint.create({
+  const write = { actor, key, meta, market, priceKobo };
+  try {
+    return await writePrice(write);
+  } catch (error) {
+    // A concurrent double submit won the insert: once more, which takes the update path.
+    if (!isUniqueViolation(error)) throw error;
+    return writePrice(write);
+  }
+}
+
+// The price and its audit row commit together, so a failed audit never leaves an
+// unaudited change behind. The existing row is locked, so concurrent corrections each
+// audit the price they actually replaced.
+async function writePrice({
+  actor,
+  key,
+  meta,
+  market,
+  priceKobo,
+}: {
+  actor: Actor;
+  key: { cropId: string; unitId: string; marketKey: string; weekOf: Date };
+  meta: { cropId: string; unitId: string; weekOf: string };
+  market: string;
+  priceKobo: number;
+}): Promise<BoardEntry> {
+  return prisma.$transaction(async (tx) => {
+    const where = { cropId_unitId_marketKey_weekOf: key };
+    const found = await tx.pricePoint.findUnique({ where, select: { id: true } });
+    if (!found) {
+      const created = await tx.pricePoint.create({
         data: { ...key, market, priceKobo, recordedByUserId: actor.userId },
         include: WITH_NAMES,
       });
-      await recordAudit({
-        actorId: actor.userId,
-        action: "price.record",
-        entity: "price_point",
-        entityId: created.id,
-        meta: { ...meta, priceKobo },
-      });
+      await recordAudit(
+        {
+          actorId: actor.userId,
+          action: "price.record",
+          entity: "price_point",
+          entityId: created.id,
+          meta: { ...meta, priceKobo },
+        },
+        tx,
+      );
       return toBoardEntry(created);
-    } catch (error) {
-      // A double submit won the insert: run again, which takes the update path.
-      if (!isUniqueViolation(error)) throw error;
-      return recordPrice(actor, input, now);
     }
-  }
 
-  const updated = await prisma.pricePoint.update({
-    where: { id: existing.id },
-    data: { market, priceKobo, recordedByUserId: actor.userId },
-    include: WITH_NAMES,
-  });
-  if (existing.priceKobo !== priceKobo) {
-    await recordAudit({
-      actorId: actor.userId,
-      action: "price.update",
-      entity: "price_point",
-      entityId: existing.id,
-      meta: { ...meta, fromKobo: existing.priceKobo, toKobo: priceKobo },
+    await tx.$queryRaw`SELECT id FROM price_point WHERE id = ${found.id} FOR UPDATE`;
+    const existing = await tx.pricePoint.findUniqueOrThrow({ where: { id: found.id } });
+    const updated = await tx.pricePoint.update({
+      where: { id: existing.id },
+      data: { market, priceKobo, recordedByUserId: actor.userId },
+      include: WITH_NAMES,
     });
-  }
-  return toBoardEntry(updated);
+    if (existing.priceKobo !== priceKobo) {
+      await recordAudit(
+        {
+          actorId: actor.userId,
+          action: "price.update",
+          entity: "price_point",
+          entityId: existing.id,
+          meta: { ...meta, fromKobo: existing.priceKobo, toKobo: priceKobo },
+        },
+        tx,
+      );
+    }
+    return toBoardEntry(updated);
+  });
 }
 
 // The week's entries for the board admin's screen, sorted by crop, unit and market.

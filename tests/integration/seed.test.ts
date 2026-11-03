@@ -108,4 +108,19 @@ describe("seed", () => {
     const weeks = await prisma.pricePoint.findMany({ distinct: ["weekOf"], orderBy: { weekOf: "asc" } });
     expect(weeks.map((w) => w.weekOf.toISOString().slice(0, 10))).toEqual(["2026-10-19", "2026-10-26"]);
   });
+
+  it("re_seed_leaves_board_admin_changes_alone", async () => {
+    await seed();
+    const maize = await prisma.crop.findUniqueOrThrow({ where: { nameKey: "maize" } });
+    await prisma.crop.update({ where: { id: maize.id }, data: { active: false } });
+    await prisma.crop.update({ where: { nameKey: "sorghum" }, data: { name: "Guinea corn", nameKey: "guinea corn" } });
+    const point = await prisma.pricePoint.findFirstOrThrow({ where: { cropId: { not: maize.id } } });
+    await prisma.pricePoint.update({ where: { id: point.id }, data: { priceKobo: 1_234_500 } });
+    const before = await counts();
+
+    await expect(seed()).resolves.toMatchObject({ password: null });
+
+    expect(await counts()).toEqual(before);
+    expect((await prisma.pricePoint.findUniqueOrThrow({ where: { id: point.id } })).priceKobo).toBe(1_234_500);
+  });
 });

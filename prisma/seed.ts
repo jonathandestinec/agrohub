@@ -3,8 +3,8 @@
 //   APP_ENV=staging DATABASE_URL=<url> npm run db:seed -- --allow-remote   (staging; never production)
 // Creates one admin and one board admin (two-factor off, so /two-factor enrolment shows),
 // one VERIFIED cooperative with an ACTIVE officer, one PENDING farmer with a profile, the
-// crop and unit lists, and two fixed past weeks of demo board prices. Re-running it adds
-// nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
+// crop and unit lists, and two fixed past weeks of demo board prices (board data only into
+// an empty crop list). Re-running it adds nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
 import { randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import type { SignUpEmailBody } from "@/lib/auth";
@@ -173,8 +173,15 @@ export async function seed(): Promise<{ password: string | null; created: string
     update: {},
   });
 
-  // Crops, units and prices go through the services, as the seeded board admin would.
   await ensureMembership({ userId: boardId, role: "BOARD_ADMIN", status: "ACTIVE" });
+  // Board data is seeded once, into an empty crop list. After that it belongs to the board
+  // admins: a re-run never re-creates a renamed crop, prices a hidden one, or reverts a
+  // corrected price.
+  if ((await prisma.crop.count()) > 0) {
+    return { password: created.length > 0 ? password : null, created };
+  }
+
+  // Crops, units and prices go through the services, as the seeded board admin would.
   const board = { userId: boardId, role: "BOARD_ADMIN", cooperativeId: null, twoFactorEnabled: true } as const;
   async function ensureItem(kind: "crop" | "unit", name: string): Promise<string> {
     const where = { nameKey: nameKeyOf(name) };

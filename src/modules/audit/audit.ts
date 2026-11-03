@@ -8,19 +8,25 @@ const auditInput = z.object({
   entityId: z.string().min(1),
 });
 
+// The global client, or a transaction client so the audit row commits with the change it records.
+export type AuditClient = Pick<typeof prisma, "auditLog">;
+
 // Infrastructure for services: appends one row to the append-only audit log.
-export async function recordAudit(input: {
-  actorId: string | null;
-  action: string;
-  entity: string;
-  entityId: string;
-  meta?: Record<string, unknown>;
-}): Promise<void> {
+export async function recordAudit(
+  input: {
+    actorId: string | null;
+    action: string;
+    entity: string;
+    entityId: string;
+    meta?: Record<string, unknown>;
+  },
+  client: AuditClient = prisma,
+): Promise<void> {
   const parsed = auditInput.safeParse(input);
   if (!parsed.success) {
     throw new ValidationError("Invalid audit entry", "AUDIT_INVALID");
   }
-  await prisma.auditLog.create({
+  await client.auditLog.create({
     data: {
       actorId: input.actorId,
       action: input.action,
