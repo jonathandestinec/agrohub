@@ -26,6 +26,9 @@ import { BankForm } from "./bank-form";
 import { CreateCooperativeForm } from "./create-cooperative-form";
 import { DocumentUploads } from "./document-uploads";
 import { EditCooperativeForm } from "./edit-cooperative-form";
+import { CutForm } from "./cut-form";
+import { effectiveCutBps, formatPercent } from "@/lib/money";
+import { getPlatformSettings } from "@/modules/settings/service";
 
 export default function OnboardingPage() {
   return (
@@ -112,6 +115,9 @@ async function OnboardingStep() {
             </Card>
           ) : null}
           <Card tone="paper">
+            <CutSection cutBps={view.cutBps} />
+          </Card>
+          <Card tone="paper">
             <section className="flex flex-col gap-4">
               <h2 className="heading-6">{t("documentsHeading")}</h2>
               <p className="body-6 text-ink-soft">{t("documentsIntro")}</p>
@@ -186,6 +192,26 @@ async function BankSection({
           {t("unavailable")}
         </p>
       )}
+    </section>
+  );
+}
+
+async function CutSection({ cutBps }: { cutBps: number }) {
+  const t = await getTranslations("officer.onboarding.cut");
+  const { maxCooperativeCutBps } = await getPlatformSettings();
+  const effective = effectiveCutBps(cutBps, maxCooperativeCutBps);
+  return (
+    <section className="flex flex-col gap-4">
+      <h2 className="heading-6">{t("heading")}</h2>
+      <p className="body-6 text-ink-soft">
+        {t("intro", { max: formatPercent(maxCooperativeCutBps) })}
+      </p>
+      {effective < cutBps ? (
+        <p role="status" className="rounded-inner bg-step p-4 body-6">
+          {t("aboveMaximum", { cut: formatPercent(cutBps), effective: formatPercent(effective) })}
+        </p>
+      ) : null}
+      <CutForm current={formatPercent(cutBps).slice(0, -1)} />
     </section>
   );
 }

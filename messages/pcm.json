@@ -160,7 +160,9 @@
         "CERTIFICATE_EXPIRY_INVALID": "",
         "ILLEGAL_TRANSITION": "",
         "COOPERATIVE_NOT_FOUND": "",
-        "INTERNAL": ""
+        "INTERNAL": "",
+        "INVALID_CUT": "",
+        "CUT_ABOVE_MAXIMUM": ""
       },
       "bank": {
         "heading": "",
@@ -194,6 +196,16 @@
         "waiting": "",
         "changesRequested": "",
         "incomplete": ""
+      },
+      "cut": {
+        "heading": "",
+        "intro": "",
+        "aboveMaximum": "",
+        "label": "",
+        "hint": "",
+        "save": "",
+        "saving": "",
+        "saved": ""
       }
     },
     "invites": {

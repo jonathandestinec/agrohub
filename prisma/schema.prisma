@@ -133,6 +133,8 @@ model Cooperative {
   recipientCode        String?
   accountName          String?
   bankName             String?
+  // The cooperative's share of each sale in basis points, at most the admin maximum.
+  cutBps               Int                   @default(0)
   createdAt            DateTime              @default(now())
   memberships          Membership[]
   documents            CooperativeDocument[]

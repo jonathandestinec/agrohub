@@ -16,6 +16,8 @@ const KNOWN = [
   "CERTIFICATE_EXPIRY_INVALID",
   "ILLEGAL_TRANSITION",
   "COOPERATIVE_NOT_FOUND",
+  "INVALID_CUT",
+  "CUT_ABOVE_MAXIMUM",
 ] as const;
 
 // Maps a server action error code to a key under officer.onboarding.errors.

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import fc from "fast-check";
 import {
   applyBps,
+  effectiveCutBps,
   formatNaira,
   formatNairaChange,
   formatPercent,
@@ -227,5 +228,13 @@ describe("formatNairaChange", () => {
     expect(formatNairaChange(48000, 50000)).toBe("+₦20.00");
     expect(formatNairaChange(5_200_000, 5_100_000)).toBe("-₦1,000.00");
     expect(formatNairaChange(50000, 50000)).toBe("₦0.00");
+  });
+});
+
+describe("effectiveCutBps", () => {
+  it("uses the lower of the cooperative's cut and the current maximum", () => {
+    expect(effectiveCutBps(400, 300)).toBe(300);
+    expect(effectiveCutBps(200, 500)).toBe(200);
+    expect(effectiveCutBps(500, 500)).toBe(500);
   });
 });

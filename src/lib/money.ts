@@ -59,6 +59,11 @@ export function percentToBps(percent: string): number {
   return Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
 }
 
+/** The cut a new lot is quoted: the cooperative's own, unless the admin maximum is now lower. */
+export function effectiveCutBps(cooperativeCutBps: number, maxCooperativeCutBps: number): number {
+  return Math.min(cooperativeCutBps, maxCooperativeCutBps);
+}
+
 /** Formats basis points as a percentage: 300 → "3%", 250 → "2.5%", 1 → "0.01%". */
 export function formatPercent(bps: number): string {
   assertNonNegativeSafeInt(bps, "bps");

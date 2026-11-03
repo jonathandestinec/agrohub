@@ -160,7 +160,9 @@
         "CERTIFICATE_EXPIRY_INVALID": "Enter the expiry date on the certificate. It must be a future date.",
         "ILLEGAL_TRANSITION": "Your cooperative's details can only be changed before it is verified.",
         "COOPERATIVE_NOT_FOUND": "We could not find your cooperative.",
-        "INTERNAL": "Something went wrong. Please try again."
+        "INTERNAL": "Something went wrong. Please try again.",
+        "INVALID_CUT": "Enter the cut as a percentage, with at most two decimals.",
+        "CUT_ABOVE_MAXIMUM": "That is above the maximum cut AgroHub allows."
       },
       "bank": {
         "heading": "Bank account for payouts",
@@ -194,6 +196,16 @@
         "waiting": "Waiting for review",
         "changesRequested": "Changes requested",
         "incomplete": "Not yet submitted"
+      },
+      "cut": {
+        "heading": "Cooperative cut",
+        "intro": "Your cooperative's share of each sale, taken from the sale price. The most AgroHub allows is {max}. Lots already submitted keep the cut their farmer was shown.",
+        "aboveMaximum": "Your cut of {cut} is above the current maximum, so new lots are quoted at {effective}.",
+        "label": "Cut (%)",
+        "hint": "A percentage, up to two decimals.",
+        "save": "Save cut",
+        "saving": "Saving…",
+        "saved": "Cut saved."
       }
     },
     "invites": {
