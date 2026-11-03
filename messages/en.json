@@ -35,7 +35,9 @@
     "priceEntry": "Price entry",
     "cropsUnits": "Crops and units",
     "platformSettings": "Platform settings",
-    "myLots": "My lots"
+    "myLots": "My lots",
+    "screenLots": "Screen lots",
+    "lotQueue": "Lot queue"
   },
   "auth": {
     "fields": {
@@ -890,6 +892,43 @@
       "2FA_REQUIRED": "Set up two-factor authentication to continue.",
       "FORBIDDEN": "You cannot do that.",
       "INTERNAL": "Something went wrong. Try again."
+    },
+    "counter": {
+      "heading": "Your officer suggests {price} per {unit}",
+      "accept": "Accept and go live",
+      "decline": "Decline and withdraw"
+    },
+    "screening": {
+      "title": "Screen lots",
+      "lead": "Lots your farmers submitted. Check each one before buyers can see it.",
+      "adminTitle": "Lot queue",
+      "adminLead": "Lots from cooperatives with no other officer to screen them.",
+      "empty": "No lots are waiting.",
+      "from": "From {name}",
+      "yours": "Your own lot",
+      "ownLot": "You submitted this lot, so another officer or an admin must screen it.",
+      "waitingOnFarmer": "Waiting for the farmer to answer your counter of {price}.",
+      "board": "Board prices",
+      "noBoard": "No board price for this crop and unit.",
+      "decide": "Your decision",
+      "mode": {
+        "approve": "Approve",
+        "counter": "Counter",
+        "reject": "Reject"
+      },
+      "minOrder": "Minimum order ({unit})",
+      "minOrderHint": "A whole number from 1 to {quantity}.",
+      "reason": "Reason (the farmer sees this)",
+      "reasonHint": "Never mention the farmer's lowest price.",
+      "counterAsk": "Suggested price per {unit} (₦)",
+      "counterHint": "At or above the farmer's lowest price. The farmer accepts or declines it.",
+      "message": "Message to the farmer (optional)",
+      "saving": "Saving…",
+      "confirm": {
+        "approve": "Approve and go live",
+        "counter": "Send counter offer",
+        "reject": "Reject lot"
+      }
     }
   }
 }

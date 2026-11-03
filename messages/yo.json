@@ -35,7 +35,9 @@
     "priceEntry": "",
     "cropsUnits": "",
     "platformSettings": "",
-    "myLots": ""
+    "myLots": "",
+    "screenLots": "",
+    "lotQueue": ""
   },
   "auth": {
     "fields": {
@@ -890,6 +892,43 @@
       "2FA_REQUIRED": "",
       "FORBIDDEN": "",
       "INTERNAL": ""
+    },
+    "counter": {
+      "heading": "",
+      "accept": "",
+      "decline": ""
+    },
+    "screening": {
+      "title": "",
+      "lead": "",
+      "adminTitle": "",
+      "adminLead": "",
+      "empty": "",
+      "from": "",
+      "yours": "",
+      "ownLot": "",
+      "waitingOnFarmer": "",
+      "board": "",
+      "noBoard": "",
+      "decide": "",
+      "mode": {
+        "approve": "",
+        "counter": "",
+        "reject": ""
+      },
+      "minOrder": "",
+      "minOrderHint": "",
+      "reason": "",
+      "reasonHint": "",
+      "counterAsk": "",
+      "counterHint": "",
+      "message": "",
+      "saving": "",
+      "confirm": {
+        "approve": "",
+        "counter": "",
+        "reject": ""
+      }
     }
   }
 }

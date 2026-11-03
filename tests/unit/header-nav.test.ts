@@ -3,17 +3,19 @@ import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-l
 import { centreNavLinks, isCurrent, showRoleSwitcher } from "@/components/nav-current";
 
 describe("navLinksFor", () => {
-  it("gives officers onboarding, invites and farmers", () => {
+  it("gives officers onboarding, invites, farmers and lot screening", () => {
     expect(navLinksFor("OFFICER")).toEqual([
       { href: "/officer/onboarding", labelKey: "cooperative" },
       { href: "/officer/invites", labelKey: "invites" },
       { href: "/officer/farmers", labelKey: "farmers" },
+      { href: "/officer/lots", labelKey: "screenLots" },
     ]);
   });
 
-  it("gives admins the cooperatives queue and platform settings", () => {
+  it("gives admins the cooperatives queue, the lot queue and platform settings", () => {
     expect(navLinksFor("ADMIN")).toEqual([
       { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
+      { href: "/admin/lots", labelKey: "lotQueue" },
       { href: "/admin/settings", labelKey: "platformSettings" },
     ]);
   });
