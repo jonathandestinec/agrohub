@@ -691,5 +691,68 @@
       "2FA_REQUIRED": "",
       "FORBIDDEN": ""
     }
+  },
+  "catalogRequests": {
+    "kind": {
+      "CROP": "",
+      "UNIT": ""
+    },
+    "status": {
+      "WITH_OFFICER": "",
+      "FORWARDED": "",
+      "APPROVED": "",
+      "DECLINED": ""
+    },
+    "farmer": {
+      "heading": "",
+      "intro": "",
+      "kind": "",
+      "name": "",
+      "send": "",
+      "sending": "",
+      "sent": "",
+      "yourRequests": ""
+    },
+    "officer": {
+      "heading": "",
+      "intro": "",
+      "empty": "",
+      "askedBy": "",
+      "forward": "",
+      "match": "",
+      "decline": "",
+      "reason": "",
+      "listedAs": "",
+      "choose": "",
+      "confirmDecline": "",
+      "confirmMatch": "",
+      "cancel": ""
+    },
+    "board": {
+      "heading": "",
+      "empty": "",
+      "askedBy": "",
+      "name": "",
+      "approve": "",
+      "decline": "",
+      "reason": "",
+      "confirmDecline": "",
+      "cancel": ""
+    },
+    "errors": {
+      "CROP_EXISTS": "",
+      "UNIT_EXISTS": "",
+      "INVALID_NAME": "",
+      "INVALID_KIND": "",
+      "REQUEST_LIMIT": "",
+      "REQUEST_NOT_FOUND": "",
+      "REQUEST_NOT_OPEN": "",
+      "REASON_REQUIRED": "",
+      "ITEM_NOT_FOUND": "",
+      "UNAUTHENTICATED": "",
+      "2FA_REQUIRED": "",
+      "FORBIDDEN": "",
+      "INTERNAL": ""
+    }
   }
 }

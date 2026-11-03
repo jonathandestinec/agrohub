@@ -691,5 +691,68 @@
       "2FA_REQUIRED": "Confirm your two-factor code again, then save.",
       "FORBIDDEN": "Only board admins can change the price board."
     }
+  },
+  "catalogRequests": {
+    "kind": {
+      "CROP": "Crop",
+      "UNIT": "Unit"
+    },
+    "status": {
+      "WITH_OFFICER": "With your officer",
+      "FORWARDED": "Sent to the price board team",
+      "APPROVED": "Added: you can now choose {name}",
+      "DECLINED": "Not added: {reason}"
+    },
+    "farmer": {
+      "heading": "My crop or unit isn't listed",
+      "intro": "Ask for it here. Your officer checks the request and sends it to the price board team, who add it to the list.",
+      "kind": "What is missing?",
+      "name": "Name",
+      "send": "Send request",
+      "sending": "Sending…",
+      "sent": "Request sent to your officer.",
+      "yourRequests": "Your requests"
+    },
+    "officer": {
+      "heading": "Crop and unit requests",
+      "intro": "Your farmers asked for these. Send each to the price board team, point to an item already listed, or decline it with a reason they will see.",
+      "empty": "No requests are waiting.",
+      "askedBy": "Asked by {name}",
+      "forward": "Send to price board",
+      "match": "Already listed as…",
+      "decline": "Decline",
+      "reason": "Reason (the farmer sees this)",
+      "listedAs": "Already listed as",
+      "choose": "Choose an item",
+      "confirmDecline": "Decline request",
+      "confirmMatch": "Use this item",
+      "cancel": "Cancel"
+    },
+    "board": {
+      "heading": "Requests from cooperatives",
+      "empty": "No requests are waiting.",
+      "askedBy": "Asked by {cooperatives}, since {date}",
+      "name": "Name to add",
+      "approve": "Add to the list",
+      "decline": "Decline",
+      "reason": "Reason (the farmers see this)",
+      "confirmDecline": "Decline request",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "CROP_EXISTS": "That crop is already on the list. Choose it from the list instead.",
+      "UNIT_EXISTS": "That unit is already on the list. Choose it from the list instead.",
+      "INVALID_NAME": "Enter a name of 1 to 60 characters.",
+      "INVALID_KIND": "Choose crop or unit.",
+      "REQUEST_LIMIT": "You already have 5 requests waiting. Wait for an answer before asking for more.",
+      "REQUEST_NOT_FOUND": "That request no longer exists.",
+      "REQUEST_NOT_OPEN": "Someone has already answered this request. Refresh the page.",
+      "REASON_REQUIRED": "Give a reason of 3 to 300 characters.",
+      "ITEM_NOT_FOUND": "Choose an item that is still on the list.",
+      "UNAUTHENTICATED": "Sign in again to continue.",
+      "2FA_REQUIRED": "Set up two-factor authentication to continue.",
+      "FORBIDDEN": "You cannot do that.",
+      "INTERNAL": "Something went wrong. Try again."
+    }
   }
 }

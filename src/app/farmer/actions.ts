@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { UnauthenticatedError } from "@/lib/errors";
 import { setOwnFarmerBankAccount } from "@/modules/banking/service";
+import { requestCatalogItem } from "@/modules/catalog/service";
 import { joinViaLink, leaveCooperative, updateOwnCrops } from "@/modules/farmers/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
 
@@ -82,6 +83,24 @@ export async function updateCropsAction(form: FormData): Promise<ActionResult> {
     const actor = await requireActor();
     await updateOwnCrops(actor, cropIdsOf(form));
     revalidatePath("/farmer");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function requestCatalogItemAction(input: {
+  kind: "CROP" | "UNIT";
+  name: string;
+}): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await requestCatalogItem(actor, {
+      kind: input?.kind === "UNIT" ? "UNIT" : "CROP",
+      name: typeof input?.name === "string" ? input.name : "",
+    });
+    revalidatePath("/farmer");
+    revalidatePath("/officer/farmers");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);

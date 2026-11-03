@@ -9,7 +9,9 @@ import { currentUser } from "@/modules/identity/session";
 import { FarmerBankSection } from "./bank-section";
 import { LeaveSection } from "./leave-section";
 import { CropsForm } from "./crops-form";
-import { listActiveCatalog } from "@/modules/catalog/service";
+import { listActiveCatalog, listOwnCatalogRequests } from "@/modules/catalog/service";
+import { getActor } from "@/modules/identity/session";
+import { CropRequests } from "./crop-requests";
 
 // A PENDING farmer has no Actor yet, so this page works from the signed-in user and the
 // self-scoped farmer overview.
@@ -78,6 +80,7 @@ async function FarmerHome() {
           <Card tone="paper">
             <FarmerBankSection bank={overview.bank} canChange={holding} />
           </Card>
+          {membership.status === "ACTIVE" ? <CropRequestsCard /> : null}
           {membership.status === "ACTIVE" ? (
             <Card tone="paper">
               <LeaveSection />
@@ -86,5 +89,17 @@ async function FarmerHome() {
         </div>
       </div>
     </main>
+  );
+}
+
+// Only an ACTIVE farmer whose active role is FARMER has an Actor for the request service.
+// getActor throws for an admin role still missing two-factor; this card then stays hidden.
+async function CropRequestsCard() {
+  const actor = await getActor().catch(() => null);
+  if (!actor || actor.role !== "FARMER") return null;
+  return (
+    <Card tone="paper">
+      <CropRequests requests={await listOwnCatalogRequests(actor)} />
+    </Card>
   );
 }

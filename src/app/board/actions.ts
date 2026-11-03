@@ -6,6 +6,8 @@ import { ValidationError } from "@/lib/errors";
 import { toKobo } from "@/lib/money";
 import { recordPrice } from "@/modules/board/service";
 import {
+  approveCatalogRequest,
+  declineCatalogRequest,
   createCrop,
   createUnit,
   renameCrop,
@@ -92,4 +94,12 @@ export async function recordPriceAction(input: {
       priceKobo,
     });
   });
+}
+
+export async function approveCatalogRequestAction(input: { id: string; name: string }): Promise<ActionResult> {
+  return run((actor) => approveCatalogRequest(actor, text(input?.id), { name: text(input?.name) }));
+}
+
+export async function declineCatalogRequestAction(input: { id: string; reason: string }): Promise<ActionResult> {
+  return run((actor) => declineCatalogRequest(actor, text(input?.id), { reason: text(input?.reason) }));
 }

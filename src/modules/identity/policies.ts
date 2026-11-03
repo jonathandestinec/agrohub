@@ -32,7 +32,9 @@ export type Action =
   | "invite:manage"
   | "catalog:manage"
   | "setting:write"
-  | "farmer:profile";
+  | "farmer:profile"
+  | "catalog:request"
+  | "catalog:forward";
 
 export type Resource = {
   cooperativeId?: string;
@@ -111,7 +113,10 @@ export function can(
         isOwnCooperative(actor, resource)
       );
     case "invite:manage":
+    case "catalog:forward":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "catalog:request":
+      return actor.role === "FARMER" && isOwnCooperative(actor, resource);
     default:
       return false;
   }

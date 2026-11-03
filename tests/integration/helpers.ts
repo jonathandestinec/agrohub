@@ -36,6 +36,7 @@ export async function createTestUser(
 
 // Children before parents: profiles, documents and memberships, then cooperatives, then users.
 export async function cleanDatabase(): Promise<void> {
+  await prisma.catalogRequest.deleteMany();
   await prisma.bankChangeRequest.deleteMany();
   await prisma.farmerProfile.deleteMany();
   await prisma.inviteLink.deleteMany();

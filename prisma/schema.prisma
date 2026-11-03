@@ -140,6 +140,7 @@ model Cooperative {
   documents            CooperativeDocument[]
   inviteLinks          InviteLink[]
   farmerProfiles       FarmerProfile[]
+  catalogRequests      CatalogRequest[]
 
   @@map("cooperative")
 }
@@ -337,4 +338,41 @@ model Setting {
   updatedAt       DateTime @updatedAt
 
   @@map("setting")
+}
+
+enum CatalogKind {
+  CROP
+  UNIT
+}
+
+enum CatalogRequestStatus {
+  WITH_OFFICER
+  FORWARDED
+  DECLINED
+  APPROVED
+}
+
+// A farmer's request for a crop or unit missing from the board's list. Their officer
+// forwards it (or declines it, or matches it to an item already listed); a board admin then
+// adds the item. resolvedItemId is a crop or unit id, so it has no foreign key.
+model CatalogRequest {
+  id                String               @id @default(cuid())
+  kind              CatalogKind
+  name              String
+  nameKey           String
+  cooperativeId     String
+  cooperative       Cooperative          @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  requestedByUserId String
+  status            CatalogRequestStatus @default(WITH_OFFICER)
+  declineReason     String?
+  declinedBy        String?
+  resolvedItemId    String?
+  forwardedByUserId String?
+  decidedByUserId   String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([cooperativeId, status])
+  @@index([status, kind, nameKey])
+  @@map("catalog_request")
 }
