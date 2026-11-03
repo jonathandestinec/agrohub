@@ -21,6 +21,20 @@ const HOLDING: MembershipStatus[] = ["PENDING", "ACTIVE"];
 
 const REASON_MAX = 500;
 
+// Crops in name order, for every profile read that builds a view.
+const PROFILE_CROPS = {
+  crops: { select: { id: true, name: true, nameKey: true }, orderBy: { nameKey: "asc" } },
+} as const;
+
+// Every id must be an active crop on the board's list. Duplicates collapse.
+async function activeCropIds(cropIds: string[]): Promise<string[]> {
+  const unique = [...new Set(cropIds)];
+  if (unique.length === 0) return [];
+  const found = await prisma.crop.count({ where: { id: { in: unique }, active: true } });
+  if (found !== unique.length) throw new ValidationError("Crop is not active", "CROP_INACTIVE");
+  return unique;
+}
+
 class AlreadyInCooperative extends ConflictError {
   constructor() {
     super("Already a member of a cooperative", "ALREADY_IN_COOPERATIVE");
@@ -55,7 +69,9 @@ export async function joinViaLink(
     }
   }
   const { cooperativeId } = invite;
-  const fields = { cooperativeId, ...parsed.data };
+  const { cropIds, ...rest } = parsed.data;
+  const crops = (await activeCropIds(cropIds)).map((id) => ({ id }));
+  const fields = { cooperativeId, ...rest };
 
   let membershipId: string;
   try {
@@ -106,8 +122,8 @@ export async function joinViaLink(
       // One profile per user: a returning farmer's row moves to this cooperative.
       await tx.farmerProfile.upsert({
         where: { userId: user.userId },
-        create: { userId: user.userId, ...fields },
-        update: fields,
+        create: { userId: user.userId, ...fields, crops: { connect: crops } },
+        update: { ...fields, crops: { set: crops } },
       });
       return id;
     });
@@ -159,7 +175,10 @@ export async function getOwnFarmerOverview(
       include: { cooperative: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
     }));
-  const profile = await prisma.farmerProfile.findUnique({ where: { userId: user.userId } });
+  const profile = await prisma.farmerProfile.findUnique({
+    where: { userId: user.userId },
+    include: PROFILE_CROPS,
+  });
   const bank = await getOwnFarmerBankAccount(user, now);
   return {
     membership:
@@ -379,6 +398,7 @@ async function listFarmersWithStatus(
   });
   const profiles = await prisma.farmerProfile.findMany({
     where: { userId: { in: memberships.map((m) => m.userId) } },
+    include: PROFILE_CROPS,
   });
   const byUser = new Map(profiles.map((p) => [p.userId, p]));
   const rows: OfficerFarmerRow[] = [];
@@ -399,4 +419,28 @@ export function listPendingFarmers(actor: Actor, cooperativeId: string) {
 
 export function listActiveFarmers(actor: Actor, cooperativeId: string) {
   return listFarmersWithStatus(actor, cooperativeId, "ACTIVE");
+}
+
+// The farmer replaces the crops on their own profile, chosen from the board's list.
+export async function updateOwnCrops(actor: Actor, cropIds: string[]): Promise<OwnFarmer> {
+  if (!can(actor, "farmer:profile", { ownerUserId: actor.userId })) throw new ForbiddenError();
+  if (!Array.isArray(cropIds) || cropIds.length > 20 || cropIds.some((id) => typeof id !== "string")) {
+    throw new ValidationError("Choose at most 20 crops", "INVALID_CROPS");
+  }
+  const crops = (await activeCropIds(cropIds)).map((id) => ({ id }));
+  const existing = await prisma.farmerProfile.findUnique({ where: { userId: actor.userId } });
+  if (!existing) throw new NotFoundError("PROFILE_NOT_FOUND");
+  const profile = await prisma.farmerProfile.update({
+    where: { userId: actor.userId },
+    data: { crops: { set: crops } },
+    include: PROFILE_CROPS,
+  });
+  await recordAudit({
+    actorId: actor.userId,
+    action: "farmer.crops",
+    entity: "farmer_profile",
+    entityId: profile.id,
+    meta: { cropIds: crops.map((c) => c.id) },
+  });
+  return toOwnFarmer(profile);
 }

@@ -30,7 +30,14 @@ export type Action =
   | "document:view"
   | "bank:change"
   | "invite:manage"
-  | "catalog:manage";
+  | "catalog:manage"
+  | "setting:write"
+  | "farmer:profile"
+  | "catalog:request"
+  | "catalog:forward"
+  | "lot:submit"
+  | "lot:own"
+  | "lot:screen";
 
 export type Resource = {
   cooperativeId?: string;
@@ -59,6 +66,7 @@ export function can(
     case "cooperative:suspend":
     case "cooperative:queue":
     case "dispute:resolve":
+    case "setting:write":
       return actor.role === "ADMIN";
     case "price:write":
     case "catalog:manage":
@@ -68,12 +76,16 @@ export function can(
     case "farmer:remove":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     case "farmer:leave":
-      // A farmer leaves only their own membership.
+    case "farmer:profile":
+      // A farmer leaves, or edits, only their own membership and profile.
       return (
         actor.role === "FARMER" &&
         resource?.ownerUserId !== undefined &&
         resource.ownerUserId === actor.userId
       );
+    case "lot:screen":
+      // Who may see a screening queue; each decision still checks lot:approve on the lot.
+      return actor.role === "ADMIN" || (actor.role === "OFFICER" && isOwnCooperative(actor, resource));
     case "lot:approve":
       if (actor.role === "OFFICER") {
         return (
@@ -107,7 +119,19 @@ export function can(
         isOwnCooperative(actor, resource)
       );
     case "invite:manage":
+    case "catalog:forward":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "catalog:request":
+    case "lot:submit":
+      return actor.role === "FARMER" && isOwnCooperative(actor, resource);
+    case "lot:own":
+      // The farmer who submitted the lot, while still in that cooperative.
+      return (
+        actor.role === "FARMER" &&
+        isOwnCooperative(actor, resource) &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
     default:
       return false;
   }

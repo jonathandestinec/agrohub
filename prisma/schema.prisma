@@ -22,6 +22,7 @@ model User {
   accounts          Account[]
   memberships       Membership[]
   farmerProfile     FarmerProfile?
+  lots              Lot[]
 
   phoneConfirmed Boolean @default(false)
 
@@ -133,11 +134,15 @@ model Cooperative {
   recipientCode        String?
   accountName          String?
   bankName             String?
+  // The cooperative's share of each sale in basis points, at most the admin maximum.
+  cutBps               Int                   @default(0)
   createdAt            DateTime              @default(now())
   memberships          Membership[]
   documents            CooperativeDocument[]
   inviteLinks          InviteLink[]
   farmerProfiles       FarmerProfile[]
+  catalogRequests      CatalogRequest[]
+  lots                 Lot[]
 
   @@map("cooperative")
 }
@@ -261,7 +266,8 @@ model FarmerProfile {
   cooperativeId    String
   cooperative      Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
   farmSizeHectares Decimal     @db.Decimal(8, 2)
-  crops            String[]
+  // Chosen from the board's crop list (Phase 3); see migration farmer_crop_list.
+  crops            Crop[]      @relation("FarmerCrops")
   state            String
   lga              String
   recipientCode    String?
@@ -284,6 +290,8 @@ model Crop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   prices    PricePoint[]
+  farmers   FarmerProfile[] @relation("FarmerCrops")
+  lots      Lot[]
 
   @@map("crop")
 }
@@ -296,6 +304,7 @@ model Unit {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   prices    PricePoint[]
+  lots      Lot[]
 
   @@map("unit")
 }
@@ -321,4 +330,188 @@ model PricePoint {
   @@unique([cropId, unitId, marketKey, weekOf])
   @@index([weekOf])
   @@map("price_point")
+}
+
+// Platform settings an admin can change (architecture section 5). value is a string holding
+// integer basis points ("300"); src/lib/money.ts parseBps is the only place it becomes a
+// number. A missing row means the default in src/modules/settings/service.ts.
+model Setting {
+  key             String   @id
+  value           String
+  updatedByUserId String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("setting")
+}
+
+enum CatalogKind {
+  CROP
+  UNIT
+}
+
+enum CatalogRequestStatus {
+  WITH_OFFICER
+  FORWARDED
+  DECLINED
+  APPROVED
+}
+
+// A farmer's request for a crop or unit missing from the board's list. Their officer
+// forwards it (or declines it, or matches it to an item already listed); a board admin then
+// adds the item. resolvedItemId is a crop or unit id, so it has no foreign key.
+model CatalogRequest {
+  id                String               @id @default(cuid())
+  kind              CatalogKind
+  name              String
+  nameKey           String
+  cooperativeId     String
+  cooperative       Cooperative          @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  requestedByUserId String
+  status            CatalogRequestStatus @default(WITH_OFFICER)
+  declineReason     String?
+  declinedBy        String?
+  resolvedItemId    String?
+  forwardedByUserId String?
+  decidedByUserId   String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([cooperativeId, status])
+  @@index([status, kind, nameKey])
+  @@map("catalog_request")
+}
+
+enum LotStatus {
+  PENDING_REVIEW
+  COUNTERED
+  REJECTED
+  LIVE
+  WITHDRAWN
+  EXPIRED
+  SOLD_OUT
+}
+
+enum LotGrade {
+  A
+  B
+  C
+  UNGRADED
+}
+
+enum Deviation {
+  OK
+  HIGH
+  LOW
+}
+
+// A farmer's harvest offered through their cooperative. floorKobo is the farmer's private
+// lowest price: it leaves the server only through src/modules/catalog/views.ts mappers that
+// buyers never see. quotedCutBps and quotedFeeBps are the terms the farmer was shown at
+// submission; approval locks exactly those into LotFeeTerms. availableUntil is a Lagos date.
+model Lot {
+  id               String            @id @default(cuid())
+  cooperativeId    String
+  cooperative      Cooperative       @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  farmerUserId     String
+  farmer           User              @relation(fields: [farmerUserId], references: [id], onDelete: Restrict)
+  cropId           String
+  crop             Crop              @relation(fields: [cropId], references: [id], onDelete: Restrict)
+  unitId           String
+  unit             Unit              @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  quantity         Int
+  grade            LotGrade
+  pickupState      String
+  pickupLga        String
+  pickupNote       String?
+  askKobo          Int
+  floorKobo        Int
+  note             String?
+  deviation        Deviation?
+  quotedCutBps     Int
+  quotedFeeBps     Int
+  status           LotStatus         @default(PENDING_REVIEW)
+  availableUntil   DateTime          @db.Date
+  minOrderQty      Int               @default(1)
+  counterAskKobo   Int?
+  counterMessage   String?
+  rejectionReason  String?
+  screenedByUserId String?
+  approvedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  contributions    LotContribution[]
+  photos           LotPhoto[]
+  feeTerms         LotFeeTerms?
+  revisions        LotRevision[]
+
+  @@index([cooperativeId, status])
+  @@index([status, availableUntil])
+  @@index([farmerUserId])
+  @@map("lot")
+}
+
+// Which farmer contributed what quantity to a lot; Phase 5 apportions payouts by it.
+model LotContribution {
+  id           String @id @default(cuid())
+  lotId        String
+  lot          Lot    @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  farmerUserId String
+  quantity     Int
+
+  @@unique([lotId, farmerUserId])
+  @@map("lot_contribution")
+}
+
+// Photos live in the private bucket and are shown only through short-lived signed links.
+model LotPhoto {
+  id          String @id @default(cuid())
+  lotId       String
+  lot         Lot    @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  storageKey  String
+  contentType String
+  sizeBytes   Int
+  position    Int
+
+  @@unique([lotId, position])
+  @@map("lot_photo")
+}
+
+// The cut and fee locked to a lot when it goes live. Later changes apply only to new lots.
+model LotFeeTerms {
+  id                String   @id @default(cuid())
+  lotId             String   @unique
+  lot               Lot      @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  cooperativeCutBps Int
+  platformFeeBps    Int
+  lockedAt          DateTime
+
+  @@map("lot_fee_terms")
+}
+
+enum RevisionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+// A farmer's change to a live lot's price, quantity or floor. The live version stays until
+// an officer approves it (spec 14); the lot's locked fee terms never change.
+model LotRevision {
+  id               String         @id @default(cuid())
+  lotId            String
+  lot              Lot            @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  askKobo          Int
+  quantity         Int
+  floorKobo        Int
+  note             String?
+  deviation        Deviation?
+  status           RevisionStatus @default(PENDING)
+  reason           String?
+  screenedByUserId String?
+  createdAt        DateTime       @default(now())
+  decidedAt        DateTime?
+
+  @@index([lotId, status])
+  @@map("lot_revision")
 }

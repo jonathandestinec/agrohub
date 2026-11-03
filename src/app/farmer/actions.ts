@@ -4,13 +4,17 @@ import { revalidatePath } from "next/cache";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { UnauthenticatedError } from "@/lib/errors";
 import { setOwnFarmerBankAccount } from "@/modules/banking/service";
-import { splitCrops } from "@/modules/farmers/schema";
-import { joinViaLink, leaveCooperative } from "@/modules/farmers/service";
+import { requestCatalogItem } from "@/modules/catalog/service";
+import { joinViaLink, leaveCooperative, updateOwnCrops } from "@/modules/farmers/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
 
 function text(form: FormData, name: string): string {
   const value = form.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function cropIdsOf(form: FormData): string[] {
+  return form.getAll("cropIds").filter((v): v is string => typeof v === "string");
 }
 
 async function signedInUser(): Promise<{ userId: string }> {
@@ -32,7 +36,7 @@ export async function joinCooperativeAction(
       typeof token === "string" ? token : "",
       {
         farmSizeHectares: text(form, "farmSizeHectares"),
-        crops: splitCrops(text(form, "crops")),
+        cropIds: cropIdsOf(form),
         state: text(form, "state"),
         lga: text(form, "lga"),
       },
@@ -68,6 +72,35 @@ export async function leaveCooperativeAction(): Promise<ActionResult> {
     const actor = await requireActor();
     await leaveCooperative(actor);
     revalidatePath("/farmer");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function updateCropsAction(form: FormData): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await updateOwnCrops(actor, cropIdsOf(form));
+    revalidatePath("/farmer");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function requestCatalogItemAction(input: {
+  kind: "CROP" | "UNIT";
+  name: string;
+}): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await requestCatalogItem(actor, {
+      kind: input?.kind === "UNIT" ? "UNIT" : "CROP",
+      name: typeof input?.name === "string" ? input.name : "",
+    });
+    revalidatePath("/farmer");
+    revalidatePath("/officer/farmers");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);

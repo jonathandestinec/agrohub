@@ -16,6 +16,7 @@ export type OfficerCooperative = {
   status: CooperativeStatus;
   certificateExpiresAt: string;
   submittedAt: string | null;
+  cutBps: number;
 };
 
 export type DocumentSummary = {
@@ -45,6 +46,7 @@ export function toOfficerCooperative(c: Cooperative): OfficerCooperative {
     status: c.status,
     certificateExpiresAt: c.certificateExpiresAt.toISOString(),
     submittedAt: c.submittedAt?.toISOString() ?? null,
+    cutBps: c.cutBps,
   };
 }
 

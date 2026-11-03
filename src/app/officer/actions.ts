@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
+import { percentToBps } from "@/lib/money";
 import {
   ForbiddenError,
   UnauthenticatedError,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/errors";
 import {
   createCooperative,
+  setCooperativeCut,
   updateCooperativeDetails,
   uploadDocument,
 } from "@/modules/cooperatives/service";
@@ -17,6 +19,11 @@ import {
   regenerateInviteLink,
 } from "@/modules/cooperatives/invites";
 import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
+import {
+  declineCatalogRequestAsOfficer,
+  forwardCatalogRequest,
+  matchCatalogRequest,
+} from "@/modules/catalog/service";
 import { setCooperativeBankAccount } from "@/modules/banking/service";
 import { approveFarmer, rejectFarmer, removeFarmer } from "@/modules/farmers/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
@@ -203,4 +210,55 @@ export async function removeFarmerAction(input: {
   } catch (error) {
     return toActionResult(error);
   }
+}
+
+// The cut arrives as a typed percentage ("2.5"); a malformed one is INVALID_CUT.
+export async function setCooperativeCutAction(input: { cut: string }): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    let cutBps: number;
+    try {
+      cutBps = percentToBps(String(input?.cut ?? "").trim());
+    } catch {
+      throw new ValidationError("Invalid cut", "INVALID_CUT");
+    }
+    await setCooperativeCut(actor, actor.cooperativeId, cutBps);
+    revalidatePath("/officer/onboarding");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+type RequestDecision = { id: string; reason?: string; itemId?: string };
+
+async function decideRequest(
+  input: RequestDecision,
+  work: (actor: Awaited<ReturnType<typeof requireActor>>, id: string) => Promise<void>,
+): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await work(actor, typeof input?.id === "string" ? input.id : "");
+    revalidatePath("/officer/farmers");
+    revalidatePath("/farmer");
+    revalidatePath("/board/crops");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function forwardCatalogRequestAction(input: RequestDecision): Promise<ActionResult> {
+  return decideRequest(input, (actor, id) => forwardCatalogRequest(actor, id));
+}
+
+export async function declineCatalogRequestAction(input: RequestDecision): Promise<ActionResult> {
+  return decideRequest(input, (actor, id) =>
+    declineCatalogRequestAsOfficer(actor, id, { reason: String(input?.reason ?? "") }),
+  );
+}
+
+export async function matchCatalogRequestAction(input: RequestDecision): Promise<ActionResult> {
+  return decideRequest(input, (actor, id) => matchCatalogRequest(actor, id, String(input?.itemId ?? "")));
 }

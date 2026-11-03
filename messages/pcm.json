@@ -33,7 +33,11 @@
     "home": "",
     "prices": "",
     "priceEntry": "",
-    "cropsUnits": ""
+    "cropsUnits": "",
+    "platformSettings": "",
+    "myLots": "",
+    "screenLots": "",
+    "lotQueue": ""
   },
   "auth": {
     "fields": {
@@ -159,7 +163,9 @@
         "CERTIFICATE_EXPIRY_INVALID": "",
         "ILLEGAL_TRANSITION": "",
         "COOPERATIVE_NOT_FOUND": "",
-        "INTERNAL": ""
+        "INTERNAL": "",
+        "INVALID_CUT": "",
+        "CUT_ABOVE_MAXIMUM": ""
       },
       "bank": {
         "heading": "",
@@ -193,6 +199,16 @@
         "waiting": "",
         "changesRequested": "",
         "incomplete": ""
+      },
+      "cut": {
+        "heading": "",
+        "intro": "",
+        "aboveMaximum": "",
+        "label": "",
+        "hint": "",
+        "save": "",
+        "saving": "",
+        "saved": ""
       }
     },
     "invites": {
@@ -309,6 +325,23 @@
         "FORBIDDEN": "",
         "INTERNAL": ""
       }
+    },
+    "settings": {
+      "title": "",
+      "intro": "",
+      "platformFee": "",
+      "platformFeeHint": "",
+      "maxCooperativeCut": "",
+      "maxCooperativeCutHint": "",
+      "priceDeviation": "",
+      "priceDeviationHint": "",
+      "save": "",
+      "saving": "",
+      "saved": "",
+      "errors": {
+        "INVALID_SETTING": "",
+        "INTERNAL": ""
+      }
     }
   },
   "bank": {
@@ -349,7 +382,8 @@
       "statePlaceholder": "",
       "lga": "",
       "submit": "",
-      "submitting": ""
+      "submitting": "",
+      "cropsEmpty": ""
     },
     "bank": {
       "heading": "",
@@ -387,7 +421,12 @@
         "ACTIVE": "",
         "LEFT": "",
         "REMOVED": ""
-      }
+      },
+      "noCrops": "",
+      "editCrops": "",
+      "saveCrops": "",
+      "savingCrops": "",
+      "cropsSaved": ""
     },
     "errors": {
       "VALIDATION_ERROR": "",
@@ -405,7 +444,9 @@
       "INTERNAL": "",
       "REMOVED_FROM_COOPERATIVE": "",
       "UNFINISHED_ORDERS": "",
-      "ILLEGAL_TRANSITION": ""
+      "ILLEGAL_TRANSITION": "",
+      "CROP_INACTIVE": "",
+      "INVALID_CROPS": ""
     },
     "leave": {
       "heading": "",
@@ -420,7 +461,8 @@
     "about": "",
     "privacy": "",
     "signIn": "",
-    "prices": ""
+    "prices": "",
+    "lots": ""
   },
   "photo": {
     "signUp": "",
@@ -653,5 +695,269 @@
       "2FA_REQUIRED": "",
       "FORBIDDEN": ""
     }
+  },
+  "catalogRequests": {
+    "kind": {
+      "CROP": "",
+      "UNIT": ""
+    },
+    "status": {
+      "WITH_OFFICER": "",
+      "FORWARDED": "",
+      "APPROVED": "",
+      "DECLINED": ""
+    },
+    "farmer": {
+      "heading": "",
+      "intro": "",
+      "kind": "",
+      "name": "",
+      "send": "",
+      "sending": "",
+      "sent": "",
+      "yourRequests": ""
+    },
+    "officer": {
+      "heading": "",
+      "intro": "",
+      "empty": "",
+      "askedBy": "",
+      "forward": "",
+      "match": "",
+      "decline": "",
+      "reason": "",
+      "listedAs": "",
+      "choose": "",
+      "confirmDecline": "",
+      "confirmMatch": "",
+      "cancel": ""
+    },
+    "board": {
+      "heading": "",
+      "empty": "",
+      "askedBy": "",
+      "name": "",
+      "approve": "",
+      "decline": "",
+      "reason": "",
+      "confirmDecline": "",
+      "cancel": ""
+    },
+    "errors": {
+      "CROP_EXISTS": "",
+      "UNIT_EXISTS": "",
+      "INVALID_NAME": "",
+      "INVALID_KIND": "",
+      "REQUEST_LIMIT": "",
+      "REQUEST_NOT_FOUND": "",
+      "REQUEST_NOT_OPEN": "",
+      "REASON_REQUIRED": "",
+      "ITEM_NOT_FOUND": "",
+      "UNAUTHENTICATED": "",
+      "2FA_REQUIRED": "",
+      "FORBIDDEN": "",
+      "INTERNAL": ""
+    }
+  },
+  "lots": {
+    "status": {
+      "PENDING_REVIEW": "",
+      "COUNTERED": "",
+      "REJECTED": "",
+      "LIVE": "",
+      "WITHDRAWN": "",
+      "EXPIRED": "",
+      "SOLD_OUT": ""
+    },
+    "farmerStatus": {
+      "PENDING_REVIEW": "",
+      "COUNTERED": "",
+      "REJECTED": "",
+      "REJECTED_WITH_REASON": "",
+      "LIVE": "",
+      "WITHDRAWN": "",
+      "EXPIRED": "",
+      "SOLD_OUT": ""
+    },
+    "grade": {
+      "A": "",
+      "B": "",
+      "C": "",
+      "UNGRADED": ""
+    },
+    "breakdown": {
+      "sale": "",
+      "cut": "",
+      "fee": "",
+      "perUnit": "",
+      "total": ""
+    },
+    "mine": {
+      "title": "",
+      "lead": "",
+      "new": "",
+      "empty": "",
+      "summary": "",
+      "price": ""
+    },
+    "new": {
+      "title": "",
+      "lead": "",
+      "goToFarm": "",
+      "blocked": {
+        "COOPERATIVE_NOT_VERIFIED": "",
+        "BANK_ACCOUNT_REQUIRED": ""
+      }
+    },
+    "form": {
+      "crop": "",
+      "unit": "",
+      "choose": "",
+      "notListed": "",
+      "quantity": "",
+      "quantityHint": "",
+      "grade": "",
+      "ask": "",
+      "askHint": "",
+      "floor": "",
+      "floorHint": "",
+      "warningHigh": "",
+      "warningLow": "",
+      "boardPrice": "",
+      "warningNote": "",
+      "breakdownHeading": "",
+      "unitFallback": "",
+      "note": "",
+      "noteRequired": "",
+      "pickupState": "",
+      "pickupLga": "",
+      "pickupNote": "",
+      "pickupNoteHint": "",
+      "availableUntil": "",
+      "availableUntilHint": "",
+      "photos": "",
+      "photosHint": "",
+      "addPhotos": "",
+      "photoAlt": "",
+      "removePhoto": "",
+      "compressing": "",
+      "photoFailed": "",
+      "submit": "",
+      "submitting": ""
+    },
+    "details": {
+      "quantity": "",
+      "grade": "",
+      "ask": "",
+      "floor": "",
+      "pickup": "",
+      "availableUntil": "",
+      "minOrder": "",
+      "note": "",
+      "photoAlt": "",
+      "deviation": {
+        "HIGH": "",
+        "LOW": ""
+      },
+      "quotedTerms": "",
+      "lockedTerms": ""
+    },
+    "errors": {
+      "INVALID_LOT": "",
+      "INVALID_PRICE": "",
+      "FLOOR_ABOVE_ASK": "",
+      "INVALID_AVAILABLE_UNTIL": "",
+      "PHOTO_COUNT": "",
+      "PHOTO_TYPE_NOT_ALLOWED": "",
+      "PHOTO_TYPE_MISMATCH": "",
+      "PHOTO_TOO_LARGE": "",
+      "COOPERATIVE_NOT_VERIFIED": "",
+      "BANK_ACCOUNT_REQUIRED": "",
+      "CROP_INACTIVE": "",
+      "UNIT_INACTIVE": "",
+      "NOTE_REQUIRED": "",
+      "LOT_NOT_FOUND": "",
+      "LOT_NOT_PENDING": "",
+      "CANNOT_APPROVE_OWN_LOT": "",
+      "INVALID_MIN_ORDER": "",
+      "REASON_REQUIRED": "",
+      "COUNTER_BELOW_FLOOR": "",
+      "COUNTER_SAME_AS_ASK": "",
+      "LOT_NOT_COUNTERED": "",
+      "LOT_NOT_LIVE": "",
+      "QUANTITY_BELOW_MIN_ORDER": "",
+      "REVISION_NOT_PENDING": "",
+      "LOT_NOT_WITHDRAWABLE": "",
+      "LOT_HAS_OPEN_ORDERS": "",
+      "UNAUTHENTICATED": "",
+      "2FA_REQUIRED": "",
+      "FORBIDDEN": "",
+      "INTERNAL": ""
+    },
+    "counter": {
+      "heading": "",
+      "accept": "",
+      "decline": ""
+    },
+    "screening": {
+      "title": "",
+      "lead": "",
+      "adminTitle": "",
+      "adminLead": "",
+      "empty": "",
+      "from": "",
+      "yours": "",
+      "ownLot": "",
+      "waitingOnFarmer": "",
+      "board": "",
+      "noBoard": "",
+      "decide": "",
+      "mode": {
+        "approve": "",
+        "counter": "",
+        "reject": ""
+      },
+      "minOrder": "",
+      "minOrderHint": "",
+      "reason": "",
+      "reasonHint": "",
+      "counterAsk": "",
+      "counterHint": "",
+      "message": "",
+      "saving": "",
+      "confirm": {
+        "approve": "",
+        "counter": "",
+        "reject": ""
+      }
+    },
+    "revise": {
+      "heading": "",
+      "intro": "",
+      "submit": ""
+    },
+    "withdraw": {
+      "button": "",
+      "confirm": "",
+      "yes": "",
+      "no": ""
+    },
+    "revision": {
+      "heading": "",
+      "pendingFarmer": "",
+      "approve": "",
+      "reject": "",
+      "cancel": ""
+    }
+  },
+  "publicLots": {
+    "title": "",
+    "lead": "",
+    "empty": "",
+    "photoAlt": "",
+    "minOrder": "",
+    "pickup": "",
+    "until": "",
+    "soldBy": ""
   }
 }

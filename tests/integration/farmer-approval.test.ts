@@ -47,7 +47,7 @@ import { cleanDatabase, createTestCooperative, createTestUser } from "./helpers"
 const T = new Date("2031-06-10T12:00:00Z");
 const PROFILE = {
   farmSizeHectares: "2.5",
-  crops: ["Maize"],
+  cropIds: [] as string[],
   state: "Ogun",
   lga: "Abeokuta North",
 };
@@ -428,7 +428,7 @@ describe("listings", () => {
       membershipId: first.membershipId,
       cooperativeId: coopA,
       name: "User u-f1",
-      crops: ["Maize"],
+      crops: [],
       hasBankAccount: false,
     });
     expect(JSON.stringify(list)).not.toMatch(/@example\.com|\+234/);

@@ -4,10 +4,19 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
+import { CropPicker } from "@/components/crop-picker";
 import { joinCooperativeAction } from "@/app/farmer/actions";
 import { errorKey } from "@/app/farmer/error-key";
 
-export function ProfileForm({ token, states }: { token: string; states: string[] }) {
+export function ProfileForm({
+  token,
+  states,
+  crops,
+}: {
+  token: string;
+  states: string[];
+  crops: { id: string; name: string }[];
+}) {
   const t = useTranslations("farmer");
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -38,13 +47,7 @@ export function ProfileForm({ token, states }: { token: string; states: string[]
         pattern="[0-9]+([.][0-9]{1,2})?"
         required
       />
-      <Field
-        id="crops"
-        name="crops"
-        label={t("profile.crops")}
-        hint={t("profile.cropsHint")}
-        required
-      />
+      <CropPicker crops={crops} />
       <div className="flex flex-col gap-1">
         <label htmlFor="state" className="title-4">
           {t("profile.state")}

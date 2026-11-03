@@ -213,7 +213,7 @@ Each step ends with something that runs, so there are working checkpoints.
 
 ## 12. Open items
 
-- The AgroHub fee percentage and the maximum cooperative cut.
+- Decided 3 November 2026: the AgroHub fee (3%) and the maximum cooperative cut (5%) are admin settings, stored in the `Setting` table and changeable later; a change applies only to lots submitted afterwards.
 - Input payments through AgroHub: deferred past launch (section 6.10).
 - Who covers a loss if a dispute is decided after payout (needs legal advice).
 - Paystack, in writing: whether holding funds is allowed, whether manual settlement fits better, and the transfer limits, fees and OTP requirement. Accountant: tax on AgroHub's fees.

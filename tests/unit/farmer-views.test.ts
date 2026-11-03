@@ -11,7 +11,10 @@ const profile = {
   userId: "u-1",
   cooperativeId: "coop-1",
   farmSizeHectares: new Prisma.Decimal("2.50"),
-  crops: ["Maize", "Cassava"],
+  crops: [
+    { id: "c-1", name: "Maize", nameKey: "maize", active: true, createdAt: new Date(), updatedAt: new Date() },
+    { id: "c-2", name: "Cassava", nameKey: "cassava", active: true, createdAt: new Date(), updatedAt: new Date() },
+  ],
   state: "Ogun",
   lga: "Abeokuta North",
   recipientCode: RECIPIENT,
@@ -50,7 +53,10 @@ describe("farmer views", () => {
       name: "Ada Okafor",
       cooperativeId: "coop-1",
       farmSizeHectares: "2.5",
-      crops: ["Maize", "Cassava"],
+      crops: [
+        { id: "c-1", name: "Maize" },
+        { id: "c-2", name: "Cassava" },
+      ],
       state: "Ogun",
       lga: "Abeokuta North",
       hasBankAccount: true,
@@ -62,7 +68,10 @@ describe("farmer views", () => {
     const own = toOwnFarmer(profile);
     expect(own).toEqual({
       farmSizeHectares: "2.5",
-      crops: ["Maize", "Cassava"],
+      crops: [
+        { id: "c-1", name: "Maize" },
+        { id: "c-2", name: "Cassava" },
+      ],
       state: "Ogun",
       lga: "Abeokuta North",
     });

@@ -8,8 +8,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
-    // Verification documents are posted to server actions as FormData (10 MiB file plus
-    // multipart overhead); the default 1 MB limit would reject them before the service runs.
+    // Verification documents (10 MiB) and lot photos (up to four, 1 MB each after browser
+    // compression) are posted to server actions as FormData; the default 1 MB limit would
+    // reject them before the service runs.
     serverActions: { bodySizeLimit: "11mb" },
   },
   turbopack: {

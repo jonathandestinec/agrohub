@@ -367,7 +367,6 @@ describe("farmer bank account", () => {
         userId: user.id,
         cooperativeId,
         farmSizeHectares: "2.5",
-        crops: ["Maize"],
         state: "Ogun",
         lga: "Abeokuta North",
       },

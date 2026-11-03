@@ -133,3 +133,35 @@ export async function listCatalog(
 export async function listActiveCatalog(): Promise<{ crops: CatalogItem[]; units: CatalogItem[] }> {
   return list({ active: true });
 }
+
+export {
+  approveCatalogRequest,
+  declineCatalogRequest,
+  declineCatalogRequestAsOfficer,
+  forwardCatalogRequest,
+  listCooperativeCatalogRequests,
+  listForwardedCatalogRequests,
+  listOwnCatalogRequests,
+  matchCatalogRequest,
+  requestCatalogItem,
+} from "./requests";
+export type {
+  BoardCatalogRequestGroup,
+  CatalogRequestView,
+  OfficerCatalogRequestView,
+} from "./views";
+
+export { getLotFormContext, getOwnLot, listOwnLots, submitLot, type LotFormContext } from "./lots";
+export type { FarmerLot, OfficerLot, PublicLot, LotTerms } from "./views";
+export {
+  approveLot,
+  counterLot,
+  getLotForScreening,
+  listScreeningQueue,
+  rejectLot,
+  respondToCounter,
+  type ScreeningLot,
+} from "./screening";
+export { decideRevision, requestRevision, withdrawLot } from "./revisions";
+export type { PendingRevision } from "./views";
+export { expireLots, listLiveLots } from "./public";

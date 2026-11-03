@@ -14,6 +14,8 @@ const KNOWN = [
   "UNKNOWN_BANK",
   "INVALID_ACCOUNT_NUMBER",
   "INVALID_BANK_CODE",
+  "CROP_INACTIVE",
+  "INVALID_CROPS",
 ] as const;
 
 // Maps a server action error code to a key under farmer.errors.

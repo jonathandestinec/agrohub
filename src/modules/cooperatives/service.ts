@@ -16,6 +16,7 @@ import {
 import { sendEmail } from "@/lib/email";
 import { putPrivate, signedUrl } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
+import { getPlatformSettings } from "@/modules/settings/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import {
   cooperativeStatusEmail,
@@ -288,6 +289,43 @@ export async function updateCooperativeDetails(
     meta: { cooperativeId },
   });
   return loadForReview(cooperativeId);
+}
+
+// The officer sets the cooperative's own cut, in any status, up to the admin maximum. Lots
+// already submitted keep the cut they were quoted.
+export async function setCooperativeCut(
+  actor: Actor,
+  cooperativeId: string,
+  cutBps: number,
+): Promise<{ cutBps: number }> {
+  if (!can(actor, "cooperative:edit", { cooperativeId })) {
+    throw new ForbiddenError();
+  }
+  if (!Number.isSafeInteger(cutBps) || cutBps < 0) {
+    throw new ValidationError("Cut must be whole basis points", "INVALID_CUT");
+  }
+  const { maxCooperativeCutBps } = await getPlatformSettings();
+  if (cutBps > maxCooperativeCutBps) {
+    throw new ValidationError("Cut is above the maximum", "CUT_ABOVE_MAXIMUM");
+  }
+  await prisma.$transaction(async (tx) => {
+    const [row] = await tx.$queryRaw<Array<{ cutBps: number }>>`
+      SELECT "cutBps" FROM cooperative WHERE id = ${cooperativeId} FOR UPDATE`;
+    if (!row) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
+    if (row.cutBps === cutBps) return;
+    await tx.cooperative.update({ where: { id: cooperativeId }, data: { cutBps } });
+    await recordAudit(
+      {
+        actorId: actor.userId,
+        action: "cooperative.cut",
+        entity: "cooperative",
+        entityId: cooperativeId,
+        meta: { cooperativeId, fromBps: row.cutBps, toBps: cutBps },
+      },
+      tx,
+    );
+  });
+  return { cutBps };
 }
 
 function registrationNumberTaken(): ConflictError {

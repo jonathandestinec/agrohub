@@ -21,7 +21,8 @@ const farmSize = z
 
 export const farmerProfileInput = z.object({
   farmSizeHectares: farmSize,
-  crops: z.array(z.string().trim().min(1).max(60)).min(1).max(20),
+  // Ids from the board's crop list; may be empty while the list is.
+  cropIds: z.array(z.string().min(1).max(64)).max(20),
   state: z.enum(STATES),
   lga: z.string().trim().min(1).max(80),
 });
@@ -29,15 +30,7 @@ export const farmerProfileInput = z.object({
 // state is a plain string at the boundary; the schema narrows it to a known state.
 export type FarmerProfileInput = {
   farmSizeHectares: string;
-  crops: string[];
+  cropIds: string[];
   state: string;
   lga: string;
 };
-
-// The join form sends crops as one comma-separated field.
-export function splitCrops(value: string): string[] {
-  return value
-    .split(",")
-    .map((crop) => crop.trim())
-    .filter((crop) => crop.length > 0);
-}

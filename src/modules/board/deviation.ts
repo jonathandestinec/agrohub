@@ -1,5 +1,6 @@
 // How far a farmer's asking price may sit from the board price before the lot form shows
-// its neutral warning. Starting default 20%; a Setting can replace it later.
+// its neutral warning. The live value is the price_deviation_bps Setting
+// (src/modules/settings/service.ts); this is its default.
 export const DEFAULT_DEVIATION_THRESHOLD_BPS = 2000;
 
 export type Deviation = "OK" | "HIGH" | "LOW";
@@ -27,5 +28,18 @@ export function priceDeviation(askKobo: number, boardKobo: number, thresholdBps:
   const denom = BigInt(10000);
   if ((ask - board) * denom > allowed) return "HIGH";
   if ((board - ask) * denom > allowed) return "LOW";
+  return "OK";
+}
+
+/**
+ * The lot form's neutral warning: compares the ask with every market's latest board price
+ * for the crop and unit. HIGH or LOW only when every price agrees, so one odd market never
+ * triggers it; null when there is no board price at all. No averaging, so no division.
+ */
+export function askDeviation(askKobo: number, boardPrices: number[], thresholdBps: number): Deviation | null {
+  if (boardPrices.length === 0) return null;
+  const results = boardPrices.map((board) => priceDeviation(askKobo, board, thresholdBps));
+  if (results.every((r) => r === "HIGH")) return "HIGH";
+  if (results.every((r) => r === "LOW")) return "LOW";
   return "OK";
 }

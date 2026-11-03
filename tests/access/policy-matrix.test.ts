@@ -117,18 +117,64 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["catalog:manage", "BUYER", false],
   ["catalog:manage", "ADMIN", false],
   ["catalog:manage", "BOARD_ADMIN", true],
+
+  ["setting:write", "FARMER", false],
+  ["setting:write", "OFFICER", false],
+  ["setting:write", "BUYER", false],
+  ["setting:write", "ADMIN", true],
+  ["setting:write", "BOARD_ADMIN", false],
+
+  // farmer:profile, like farmer:leave, is checked against a resource the actor owns.
+  ["farmer:profile", "FARMER", true],
+  ["farmer:profile", "OFFICER", false],
+  ["farmer:profile", "BUYER", false],
+  ["farmer:profile", "ADMIN", false],
+  ["farmer:profile", "BOARD_ADMIN", false],
+
+  ["catalog:request", "FARMER", true],
+  ["catalog:request", "OFFICER", false],
+  ["catalog:request", "BUYER", false],
+  ["catalog:request", "ADMIN", false],
+  ["catalog:request", "BOARD_ADMIN", false],
+
+  ["catalog:forward", "FARMER", false],
+  ["catalog:forward", "OFFICER", true],
+  ["catalog:forward", "BUYER", false],
+  ["catalog:forward", "ADMIN", false],
+  ["catalog:forward", "BOARD_ADMIN", false],
+
+  ["lot:submit", "FARMER", true],
+  ["lot:submit", "OFFICER", false],
+  ["lot:submit", "BUYER", false],
+  ["lot:submit", "ADMIN", false],
+  ["lot:submit", "BOARD_ADMIN", false],
+
+  // lot:own is checked against a lot the farmer owns.
+  ["lot:own", "FARMER", true],
+  ["lot:own", "OFFICER", false],
+  ["lot:own", "BUYER", false],
+  ["lot:own", "ADMIN", false],
+  ["lot:own", "BOARD_ADMIN", false],
+
+  ["lot:screen", "FARMER", false],
+  ["lot:screen", "OFFICER", true],
+  ["lot:screen", "BUYER", false],
+  ["lot:screen", "ADMIN", true],
+  ["lot:screen", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
   it.each(matrix)("%s as %s -> %s", (action, role, expected) => {
     const cooperativeId = role === "OFFICER" || role === "FARMER" ? COOP : null;
     const resource =
-      action === "farmer:leave" ? { ...own, ownerUserId: "user-1" } : own;
+      action === "farmer:leave" || action === "farmer:profile" || action === "lot:own"
+        ? { ...own, ownerUserId: "user-1" }
+        : own;
     expect(can(actor(role, cooperativeId), action, resource)).toBe(expected);
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(80);
+    expect(matrix).toHaveLength(115);
   });
 });
 

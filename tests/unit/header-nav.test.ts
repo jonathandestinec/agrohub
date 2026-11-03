@@ -3,23 +3,27 @@ import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-l
 import { centreNavLinks, isCurrent, showRoleSwitcher } from "@/components/nav-current";
 
 describe("navLinksFor", () => {
-  it("gives officers onboarding, invites and farmers", () => {
+  it("gives officers onboarding, invites, farmers and lot screening", () => {
     expect(navLinksFor("OFFICER")).toEqual([
       { href: "/officer/onboarding", labelKey: "cooperative" },
       { href: "/officer/invites", labelKey: "invites" },
       { href: "/officer/farmers", labelKey: "farmers" },
+      { href: "/officer/lots", labelKey: "screenLots" },
     ]);
   });
 
-  it("gives admins the cooperatives queue", () => {
+  it("gives admins the cooperatives queue, the lot queue and platform settings", () => {
     expect(navLinksFor("ADMIN")).toEqual([
       { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
+      { href: "/admin/lots", labelKey: "lotQueue" },
+      { href: "/admin/settings", labelKey: "platformSettings" },
     ]);
   });
 
-  it("gives farmers their farmer page and the price board", () => {
+  it("gives farmers their farmer page, their lots and the price board", () => {
     expect(navLinksFor("FARMER")).toEqual([
       { href: "/farmer", labelKey: "farm" },
+      { href: "/farmer/lots", labelKey: "myLots" },
       { href: "/prices", labelKey: "prices" },
     ]);
   });
