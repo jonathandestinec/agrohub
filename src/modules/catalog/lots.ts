@@ -7,7 +7,7 @@ import { effectiveCutBps } from "@/lib/money";
 import { putPrivate, signedUrl } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
 import { askDeviation } from "@/modules/board/deviation";
-import { boardReference } from "@/modules/board/service";
+import { boardReference, boardReferences, type BoardPrice } from "@/modules/board/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { getPlatformSettings } from "@/modules/settings/service";
 import { MAX_AVAILABLE_DAYS, NOTE_MIN_WHEN_WARNED, submitLotInput, type SubmitLotInput } from "./lot-schema";
@@ -157,4 +157,84 @@ export async function submitLot(
     return created;
   });
   return toFarmerLot(lot, await photoUrlsOf(lot.id));
+}
+
+// ---- The farmer's own lots ----
+
+export async function listOwnLots(actor: Actor): Promise<FarmerLot[]> {
+  const cooperativeId = actor.cooperativeId;
+  if (cooperativeId === null || !can(actor, "lot:own", { cooperativeId, ownerUserId: actor.userId })) {
+    throw new ForbiddenError();
+  }
+  const lots = await prisma.lot.findMany({
+    where: { farmerUserId: actor.userId, cooperativeId },
+    include: LOT_INCLUDE,
+    orderBy: { createdAt: "desc" },
+  });
+  return Promise.all(lots.map(async (lot) => toFarmerLot(lot, await photoUrlsOf(lot.id))));
+}
+
+// Another farmer's lot is "not found", never "forbidden", so lot ids cannot be probed.
+export async function loadOwnLot(actor: Actor, lotId: string): Promise<LotRow> {
+  const lot = await prisma.lot.findUnique({ where: { id: lotId }, include: LOT_INCLUDE });
+  if (!lot || !can(actor, "lot:own", { cooperativeId: lot.cooperativeId, ownerUserId: lot.farmerUserId })) {
+    throw new NotFoundError("LOT_NOT_FOUND");
+  }
+  return lot;
+}
+
+export async function getOwnLot(actor: Actor, lotId: string): Promise<FarmerLot> {
+  const lot = await loadOwnLot(actor, lotId);
+  return toFarmerLot(lot, await photoUrlsOf(lot.id));
+}
+
+export type LotFormContext = {
+  // Why the farmer cannot list yet, or null when they can.
+  blockedBy: "COOPERATIVE_NOT_VERIFIED" | "BANK_ACCOUNT_REQUIRED" | null;
+  quotedCutBps: number;
+  platformFeeBps: number;
+  priceDeviationBps: number;
+  crops: { id: string; name: string }[];
+  units: { id: string; name: string }[];
+  // Each market's latest board price, keyed "cropId:unitId", for the live warning.
+  boardPrices: Record<string, BoardPrice[]>;
+  pickupState: string;
+  pickupLga: string;
+  today: string;
+};
+
+// What the lot form needs: the terms the farmer will be quoted, the lists, and the board.
+export async function getLotFormContext(actor: Actor, now: Date = new Date()): Promise<LotFormContext> {
+  const cooperativeId = actor.cooperativeId;
+  if (cooperativeId === null || !can(actor, "lot:submit", { cooperativeId })) {
+    throw new ForbiddenError();
+  }
+  const [cooperative, profile, settings, crops, units, references] = await Promise.all([
+    prisma.cooperative.findUnique({ where: { id: cooperativeId }, select: { status: true, cutBps: true } }),
+    prisma.farmerProfile.findUnique({
+      where: { userId: actor.userId },
+      select: { recipientCode: true, state: true, lga: true },
+    }),
+    getPlatformSettings(),
+    prisma.crop.findMany({ where: { active: true }, orderBy: { nameKey: "asc" }, select: { id: true, name: true } }),
+    prisma.unit.findMany({ where: { active: true }, orderBy: { nameKey: "asc" }, select: { id: true, name: true } }),
+    boardReferences({}, now),
+  ]);
+  return {
+    blockedBy:
+      cooperative?.status !== "VERIFIED"
+        ? "COOPERATIVE_NOT_VERIFIED"
+        : !profile?.recipientCode
+          ? "BANK_ACCOUNT_REQUIRED"
+          : null,
+    quotedCutBps: effectiveCutBps(cooperative?.cutBps ?? 0, settings.maxCooperativeCutBps),
+    platformFeeBps: settings.platformFeeBps,
+    priceDeviationBps: settings.priceDeviationBps,
+    crops,
+    units,
+    boardPrices: Object.fromEntries(references),
+    pickupState: profile?.state ?? "",
+    pickupLga: profile?.lga ?? "",
+    today: lagosDateKey(now),
+  };
 }

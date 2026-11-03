@@ -151,5 +151,5 @@ export type {
   OfficerCatalogRequestView,
 } from "./views";
 
-export { submitLot } from "./lots";
+export { getLotFormContext, getOwnLot, listOwnLots, submitLot, type LotFormContext } from "./lots";
 export type { FarmerLot, OfficerLot, PublicLot, LotTerms } from "./views";

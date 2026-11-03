@@ -4,7 +4,13 @@ import { ForbiddenError, ValidationError } from "@/lib/errors";
 import { addDays, lagosDateKey } from "@/lib/lagos-date";
 import { fakeStorage } from "@/lib/storage";
 import { recordPrice } from "@/modules/board/service";
-import { setCropActive, submitLot } from "@/modules/catalog/service";
+import {
+  getLotFormContext,
+  getOwnLot,
+  listOwnLots,
+  setCropActive,
+  submitLot,
+} from "@/modules/catalog/service";
 import { cleanDatabase } from "./helpers";
 import { farmerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
 
@@ -131,5 +137,54 @@ describe("submitLot", () => {
     ]) {
       await expect(submitLot(w.farmer, w.input(bad), [PHOTO], NOW)).rejects.toBeInstanceOf(ValidationError);
     }
+  });
+});
+
+describe("a farmer's own lots", () => {
+  it("lists only the caller's lots, newest first", async () => {
+    const other = await farmerMember("u-other", w.cooperativeId);
+    const first = await submitLot(w.farmer, w.input(), [PHOTO], NOW);
+    const second = await submitLot(w.farmer, w.input({ quantity: 5 }), [PHOTO], new Date(NOW.getTime() + 1000));
+    await submitLot(other, w.input(), [PHOTO], NOW);
+    expect((await listOwnLots(w.farmer)).map((l) => l.id)).toEqual([second.id, first.id]);
+  });
+
+  it("hides another farmer's lot as not found", async () => {
+    const other = await farmerMember("u-other", w.cooperativeId);
+    const lot = await submitLot(other, w.input(), [PHOTO], NOW);
+    await expect(getOwnLot(w.farmer, lot.id)).rejects.toMatchObject({ code: "LOT_NOT_FOUND" });
+    await expect(getOwnLot(w.farmer, "no-such-lot")).rejects.toMatchObject({ code: "LOT_NOT_FOUND" });
+    expect((await getOwnLot(other, lot.id)).floorKobo).toBe(6_000_000);
+  });
+});
+
+describe("getLotFormContext", () => {
+  it("gives the quoted terms, the board prices and the farmer's place", async () => {
+    await recordPrice(
+      w.board,
+      { cropId: w.cropId, unitId: w.unitId, market: "Bodija", weekOf: lagosDateKey(NOW), priceKobo: 5_000_000 },
+      NOW,
+    );
+    const context = await getLotFormContext(w.farmer, NOW);
+    expect(context).toMatchObject({
+      blockedBy: null,
+      quotedCutBps: 400,
+      platformFeeBps: 300,
+      priceDeviationBps: 2000,
+      pickupState: "Kaduna",
+      pickupLga: "Zaria",
+      today: lagosDateKey(NOW),
+    });
+    expect(context.crops.map((c) => c.name)).toEqual(["Maize"]);
+    expect(context.boardPrices[`${w.cropId}:${w.unitId}`]).toEqual([
+      { market: "Bodija", weekOf: "2026-11-02", priceKobo: 5_000_000 },
+    ]);
+  });
+
+  it("says why a farmer cannot list yet", async () => {
+    const unbanked = await farmerMember("u-unbanked", w.cooperativeId, false);
+    expect((await getLotFormContext(unbanked, NOW)).blockedBy).toBe("BANK_ACCOUNT_REQUIRED");
+    await prisma.cooperative.update({ where: { id: w.cooperativeId }, data: { status: "SUSPENDED" } });
+    expect((await getLotFormContext(w.farmer, NOW)).blockedBy).toBe("COOPERATIVE_NOT_VERIFIED");
   });
 });

@@ -18,9 +18,10 @@ describe("navLinksFor", () => {
     ]);
   });
 
-  it("gives farmers their farmer page and the price board", () => {
+  it("gives farmers their farmer page, their lots and the price board", () => {
     expect(navLinksFor("FARMER")).toEqual([
       { href: "/farmer", labelKey: "farm" },
+      { href: "/farmer/lots", labelKey: "myLots" },
       { href: "/prices", labelKey: "prices" },
     ]);
   });

@@ -34,7 +34,8 @@
     "prices": "Price board",
     "priceEntry": "Price entry",
     "cropsUnits": "Crops and units",
-    "platformSettings": "Platform settings"
+    "platformSettings": "Platform settings",
+    "myLots": "My lots"
   },
   "auth": {
     "fields": {
@@ -749,6 +750,142 @@
       "REQUEST_NOT_OPEN": "Someone has already answered this request. Refresh the page.",
       "REASON_REQUIRED": "Give a reason of 3 to 300 characters.",
       "ITEM_NOT_FOUND": "Choose an item that is still on the list.",
+      "UNAUTHENTICATED": "Sign in again to continue.",
+      "2FA_REQUIRED": "Set up two-factor authentication to continue.",
+      "FORBIDDEN": "You cannot do that.",
+      "INTERNAL": "Something went wrong. Try again."
+    }
+  },
+  "lots": {
+    "status": {
+      "PENDING_REVIEW": "Waiting for screening",
+      "COUNTERED": "Counter offer",
+      "REJECTED": "Not approved",
+      "LIVE": "Live",
+      "WITHDRAWN": "Withdrawn",
+      "EXPIRED": "Expired",
+      "SOLD_OUT": "Sold out"
+    },
+    "farmerStatus": {
+      "PENDING_REVIEW": "Your officer is checking this lot. Buyers cannot see it yet.",
+      "COUNTERED": "Your officer suggests a different price. Accept it to go live, or decline it.",
+      "REJECTED": "Your officer did not approve this lot.",
+      "REJECTED_WITH_REASON": "Your officer did not approve this lot: {reason}",
+      "LIVE": "Buyers can see this lot at your asking price. Your terms are locked.",
+      "WITHDRAWN": "You withdrew this lot. Buyers cannot see it.",
+      "EXPIRED": "This lot passed its available-until date. Buyers cannot see it.",
+      "SOLD_OUT": "This lot is sold out."
+    },
+    "grade": {
+      "A": "Grade A",
+      "B": "Grade B",
+      "C": "Grade C",
+      "UNGRADED": "Ungraded"
+    },
+    "breakdown": {
+      "sale": "Sale of {quantity} × {unit}",
+      "cut": "Cooperative cut ({percent})",
+      "fee": "AgroHub fee ({percent})",
+      "perUnit": "You take home per {unit}",
+      "total": "You take home in total"
+    },
+    "mine": {
+      "title": "My lots",
+      "lead": "Your harvest lots and where each one stands.",
+      "new": "List a lot",
+      "empty": "You have not listed a lot yet.",
+      "summary": "{quantity} × {unit} of {crop}",
+      "price": "{price} per {unit}"
+    },
+    "new": {
+      "title": "List a lot",
+      "lead": "Your officer checks the lot before buyers can see it. Buyers only ever see your asking price.",
+      "goToFarm": "Go to your farm page",
+      "blocked": {
+        "COOPERATIVE_NOT_VERIFIED": "Your cooperative must be verified before you can list lots.",
+        "BANK_ACCOUNT_REQUIRED": "Add a bank account for payouts before you list a lot."
+      }
+    },
+    "form": {
+      "crop": "Crop",
+      "unit": "Unit",
+      "choose": "Choose…",
+      "notListed": "My crop or unit isn't listed",
+      "quantity": "Quantity",
+      "quantityHint": "How many units, as a whole number.",
+      "grade": "Grade",
+      "ask": "Asking price per unit (₦)",
+      "askHint": "Buyers see this price.",
+      "floor": "Your lowest price per unit (₦)",
+      "floorHint": "Private. Buyers never see it. It cannot be above your asking price.",
+      "warningHigh": "Your asking price is well above the board prices for this crop.",
+      "warningLow": "Your asking price is well below the board prices for this crop.",
+      "boardPrice": "{market}: {price} (week of {week})",
+      "warningNote": "You can still submit. Add a note to explain your price to your officer.",
+      "breakdownHeading": "What you take home",
+      "unitFallback": "unit",
+      "note": "Note for your officer (optional)",
+      "noteRequired": "Note for your officer (needed, at least 10 characters)",
+      "pickupState": "Pickup state",
+      "pickupLga": "Pickup local government area",
+      "pickupNote": "Pickup details (optional)",
+      "pickupNoteHint": "For example the market or landmark. Up to 120 characters.",
+      "availableUntil": "Available until",
+      "availableUntilHint": "Buyers stop seeing the lot after this day. Up to 90 days ahead.",
+      "photos": "Photos",
+      "photosHint": "One to four photos. They are made smaller on your phone before upload.",
+      "addPhotos": "Add photos",
+      "photoAlt": "Photo {n}",
+      "removePhoto": "Remove",
+      "compressing": "Preparing photos…",
+      "photoFailed": "That photo could not be read. Try another one.",
+      "submit": "Send to my officer",
+      "submitting": "Sending…"
+    },
+    "details": {
+      "quantity": "Quantity",
+      "grade": "Grade",
+      "ask": "Asking price",
+      "floor": "Lowest price (private)",
+      "pickup": "Pickup",
+      "availableUntil": "Available until",
+      "minOrder": "Minimum order",
+      "note": "Note:",
+      "photoAlt": "{crop}, photo {n}",
+      "deviation": {
+        "HIGH": "This asking price was well above the board prices when it was submitted.",
+        "LOW": "This asking price was well below the board prices when it was submitted."
+      },
+      "quotedTerms": "Terms quoted to you",
+      "lockedTerms": "Terms locked to this lot"
+    },
+    "errors": {
+      "INVALID_LOT": "Check the details: quantity and prices must be whole positive amounts, and every field filled.",
+      "INVALID_PRICE": "Enter prices in naira, for example 65000 or 65000.50.",
+      "FLOOR_ABOVE_ASK": "Your lowest price cannot be above your asking price.",
+      "INVALID_AVAILABLE_UNTIL": "Choose a date from today up to 90 days ahead.",
+      "PHOTO_COUNT": "Add one to four photos.",
+      "PHOTO_TYPE_NOT_ALLOWED": "Photos must be JPEG or WebP images.",
+      "PHOTO_TYPE_MISMATCH": "One of the photos is not a real image. Try another one.",
+      "PHOTO_TOO_LARGE": "One of the photos is too large. Try another one.",
+      "COOPERATIVE_NOT_VERIFIED": "Your cooperative must be verified before you can list lots.",
+      "BANK_ACCOUNT_REQUIRED": "Add a bank account for payouts before you list a lot.",
+      "CROP_INACTIVE": "That crop is no longer on the list. Choose another.",
+      "UNIT_INACTIVE": "That unit is no longer on the list. Choose another.",
+      "NOTE_REQUIRED": "Your price is far from the board prices. Add a note of at least 10 characters for your officer.",
+      "LOT_NOT_FOUND": "That lot no longer exists.",
+      "LOT_NOT_PENDING": "Someone has already screened this lot. Refresh the page.",
+      "CANNOT_APPROVE_OWN_LOT": "You submitted this lot, so another officer or an admin must screen it.",
+      "INVALID_MIN_ORDER": "The minimum order must be a whole number from 1 to the lot's quantity.",
+      "REASON_REQUIRED": "Give a reason of 3 to 500 characters.",
+      "COUNTER_BELOW_FLOOR": "That counter price is below the farmer's lowest price. Reject the lot with a reason instead.",
+      "COUNTER_SAME_AS_ASK": "The counter price must differ from the asking price.",
+      "LOT_NOT_COUNTERED": "This counter offer has already been answered.",
+      "LOT_NOT_LIVE": "Only a live lot can be edited.",
+      "QUANTITY_BELOW_MIN_ORDER": "The quantity cannot be below the lot's minimum order.",
+      "REVISION_NOT_PENDING": "This change has already been answered.",
+      "LOT_NOT_WITHDRAWABLE": "This lot can no longer be withdrawn.",
+      "LOT_HAS_OPEN_ORDERS": "This lot has open orders, so it cannot be withdrawn yet.",
       "UNAUTHENTICATED": "Sign in again to continue.",
       "2FA_REQUIRED": "Set up two-factor authentication to continue.",
       "FORBIDDEN": "You cannot do that.",
