@@ -3,6 +3,7 @@ import {
   ForbiddenError,
   NotFoundError,
   UnauthenticatedError,
+  UnavailableError,
   ValidationError,
 } from "@/lib/errors";
 
@@ -19,7 +20,8 @@ export function toActionResult(error: unknown): { ok: false; code: string } {
     error instanceof ConflictError ||
     error instanceof ForbiddenError ||
     error instanceof UnauthenticatedError ||
-    error instanceof NotFoundError
+    error instanceof NotFoundError ||
+    error instanceof UnavailableError
   ) {
     return { ok: false, code: error.code };
   }

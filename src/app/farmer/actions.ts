@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { UnauthenticatedError } from "@/lib/errors";
-import { setOwnFarmerBankAccount } from "@/modules/banking/service";
+import {
+  previewOwnFarmerBankAccount,
+  setOwnFarmerBankAccount,
+  type AccountPreview,
+} from "@/modules/banking/service";
 import { requestCatalogItem } from "@/modules/catalog/service";
 import { joinViaLink, leaveCooperative, updateOwnCrops } from "@/modules/farmers/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
@@ -102,6 +106,23 @@ export async function requestCatalogItemAction(input: {
     revalidatePath("/farmer");
     revalidatePath("/officer/farmers");
     return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+// Live lookup while typing: the name the bank holds and whether it matches. Stores nothing.
+export async function previewFarmerBankAccountAction(input: {
+  bankCode: string;
+  accountNumber: string;
+}): Promise<ActionResult<AccountPreview>> {
+  try {
+    const user = await signedInUser();
+    const preview = await previewOwnFarmerBankAccount(user, {
+      accountNumber: String(input?.accountNumber ?? "").replace(/\s/g, ""),
+      bankCode: String(input?.bankCode ?? ""),
+    });
+    return { ok: true, data: preview };
   } catch (error) {
     return toActionResult(error);
   }

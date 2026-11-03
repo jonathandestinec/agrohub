@@ -12,6 +12,8 @@ import {
   effectiveRecipientCode,
   getCooperativeBankAccount,
   getOwnFarmerBankAccount,
+  previewCooperativeBankAccount,
+  previewOwnFarmerBankAccount,
   setCooperativeBankAccount,
   setOwnFarmerBankAccount,
 } from "@/modules/banking/service";
@@ -79,6 +81,29 @@ beforeEach(async () => {
 afterAll(async () => {
   await cleanDatabase();
   await prisma.$disconnect();
+});
+
+describe("previewCooperativeBankAccount", () => {
+  it("shows the bank's name for the account and whether it matches, storing nothing", async () => {
+    fakePaystack.accounts.set("057:3333333333", "LAGOS TRADERS LTD");
+    await expect(
+      previewCooperativeBankAccount(officer, cooperativeId, { accountNumber: OLD_ACCOUNT, bankCode: "058" }),
+    ).resolves.toEqual({ accountName: "OGUN FARMERS COOP SOC", matches: true, registeredName: COOP_NAME });
+    await expect(
+      previewCooperativeBankAccount(officer, cooperativeId, { accountNumber: "3333333333", bankCode: "057" }),
+    ).resolves.toEqual({ accountName: "LAGOS TRADERS LTD", matches: false, registeredName: COOP_NAME });
+    expect(fakePaystack.recipients).toEqual([]);
+    expect(await prisma.bankChangeRequest.count()).toBe(0);
+  });
+
+  it("needs the same permission as changing the account", async () => {
+    await expect(
+      previewCooperativeBankAccount({ ...officer, twoFactorEnabled: false }, cooperativeId, {
+        accountNumber: OLD_ACCOUNT,
+        bankCode: "058",
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
 });
 
 describe("setCooperativeBankAccount", () => {
@@ -390,6 +415,32 @@ describe("farmer bank account", () => {
     const newCode = fakePaystack.recipients[fakePaystack.recipients.length - 1];
     return { oldCode, newCode, second, request };
   }
+
+  it("previews the bank's name for the farmer's own account, storing nothing", async () => {
+    fakePaystack.accounts.set("057:1111111111", "MUSA BELLO");
+    await expect(
+      previewOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }),
+    ).resolves.toEqual({ accountName: "OKAFOR ADA", matches: true, registeredName: FARMER_NAME });
+    await expect(
+      previewOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: "1111111111", bankCode: "057" }),
+    ).resolves.toEqual({ accountName: "MUSA BELLO", matches: false, registeredName: FARMER_NAME });
+    await expect(
+      previewOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: "2222222222", bankCode: "058" }),
+    ).rejects.toMatchObject({ code: "BANK_ACCOUNT_NOT_FOUND" });
+    await expect(
+      previewOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: "12345", bankCode: "058" }),
+    ).rejects.toMatchObject({ code: "INVALID_ACCOUNT_NUMBER" });
+    expect(fakePaystack.recipients).toEqual([]);
+    const profile = await prisma.farmerProfile.findUniqueOrThrow({ where: { id: profileId } });
+    expect(profile.recipientCode).toBeNull();
+  });
+
+  it("refuses a preview for someone with no farmer profile", async () => {
+    await createTestUser({ id: "u-nobody" });
+    await expect(
+      previewOwnFarmerBankAccount({ userId: "u-nobody" }, { accountNumber: FARMER_OLD, bankCode: "058" }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
 
   it("sets the first account immediately on the profile", async () => {
     const result = await setOwnFarmerBankAccount(

@@ -49,3 +49,15 @@ export class NotFoundError extends Error {
     this.code = code;
   }
 }
+
+// An outside service (Paystack) is down, slow or refusing requests for now. The person can
+// try again later; the code lets the screen say so instead of "something went wrong".
+export class UnavailableError extends Error {
+  readonly code: string;
+
+  constructor(code = "UNAVAILABLE", message = code) {
+    super(message);
+    this.name = "UnavailableError";
+    this.code = code;
+  }
+}

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ValidationError } from "@/lib/errors";
+import { UnavailableError, ValidationError } from "@/lib/errors";
 import {
   createRecipient,
   createRecipientWith,
@@ -73,6 +73,31 @@ describe("selectPaystack", () => {
 });
 
 describe("resolveAccountWith", () => {
+  it("remembers a resolved name for a few minutes, so a lookup then a save call Paystack once", async () => {
+    fetchMock.mockImplementation(async () =>
+      json(200, { status: true, data: { account_number: ACCOUNT, account_name: "ADA OBI" } }),
+    );
+    const input = { accountNumber: ACCOUNT, bankCode: "058" };
+    await resolveAccountWith(live, input);
+    await resolveAccountWith(live, input);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await resolveAccountWith(live, { ...input, bankCode: "044" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    resetBankCacheForTests();
+    await resolveAccountWith(live, input);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not remember a failed lookup", async () => {
+    fetchMock.mockResolvedValueOnce(json(429, { status: false }));
+    fetchMock.mockResolvedValueOnce(
+      json(200, { status: true, data: { account_number: ACCOUNT, account_name: "ADA OBI" } }),
+    );
+    const input = { accountNumber: ACCOUNT, bankCode: "058" };
+    await expect(resolveAccountWith(live, input)).rejects.toThrow("PAYSTACK_UNAVAILABLE");
+    await expect(resolveAccountWith(live, input)).resolves.toEqual({ accountName: "ADA OBI" });
+  });
+
   it("sends the secret key as a Bearer token and returns the account name", async () => {
     fetchMock.mockResolvedValue(
       json(200, {
@@ -108,6 +133,14 @@ describe("resolveAccountWith", () => {
     expect(error.message).toBe("PAYSTACK_UNAVAILABLE");
     expect(error.message).not.toContain(ACCOUNT);
     expect(JSON.stringify(error)).not.toContain(ACCOUNT);
+    expect(loggedText()).not.toContain(ACCOUNT);
+  });
+
+  it("maps a 429 (too many requests) to a typed UnavailableError the screen can explain", async () => {
+    fetchMock.mockResolvedValue(json(429, { status: false, message: "Too many requests" }));
+    const error = await caught(resolveAccountWith(live, { accountNumber: ACCOUNT, bankCode: "058" }));
+    expect(error).toBeInstanceOf(UnavailableError);
+    expect((error as UnavailableError).code).toBe("PAYSTACK_UNAVAILABLE");
     expect(loggedText()).not.toContain(ACCOUNT);
   });
 
