@@ -5,6 +5,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { isPubliclyVisible, lotNegotiationFacts, type NegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { holdsCooperativeRole } from "@/modules/identity/service";
+import { assertMessageAllowed, postToBuyerThread } from "@/modules/messaging/service";
 import {
   HOUR_MS,
   OFFER_TTL_HOURS,
@@ -75,13 +76,15 @@ export async function makeOffer(
   if (!can(actor, "offer:make")) throw new ForbiddenError();
   const parsed = makeOfferInput.safeParse(input);
   if (!parsed.success) throw invalid(parsed.error.issues);
-  const { lotId, quantity, offeredKobo } = parsed.data;
+  const { lotId, quantity, offeredKobo, message } = parsed.data;
   const lot = await availableLot(lotId, now);
   if (await holdsCooperativeRole(actor.userId, lot.cooperativeId)) {
     throw new ForbiddenError("OWN_COOPERATIVE_LOT");
   }
   if (offeredKobo > lot.askKobo) throw new ValidationError("Offer is above the asking price", "OFFER_ABOVE_ASK");
   if (quantity < lot.minOrderQty) throw new ValidationError("Below the minimum order", "BELOW_MIN_ORDER");
+  const note = message?.trim() ? message : null;
+  if (note) assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo: lot.floorKobo }, note);
 
   const offer = await prisma.$transaction(async (tx) => {
     await lockUser(tx, actor.userId);
@@ -140,6 +143,7 @@ export async function makeOffer(
     );
     return created;
   });
+  if (note) await postToBuyerThread(actor, lotId, actor.userId, note, now);
   return buyerViewOf(offer, now);
 }
 

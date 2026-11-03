@@ -1,11 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 
-// Offer and message limits (spec 6.5 "rate limits on offers to stop spam"; spec 13 timings).
+// Offer limits (spec 6.5 "rate limits on offers to stop spam"; spec 13 timings).
 export const OFFERS_PER_HOUR = 10;
 export const OFFERS_PER_LOT_PER_DAY = 5;
 export const OFFER_TTL_HOURS = 48;
 export const ACCEPT_HOLD_HOURS = 24;
-export const MESSAGES_PER_HOUR = 30;
 
 export const HOUR_MS = 3_600_000;
 

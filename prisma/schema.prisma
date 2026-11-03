@@ -24,6 +24,8 @@ model User {
   farmerProfile     FarmerProfile?
   lots              Lot[]
   offers            Offer[]
+  threads           Thread[]
+  messages          Message[]
 
   phoneConfirmed Boolean @default(false)
 
@@ -145,6 +147,7 @@ model Cooperative {
   catalogRequests      CatalogRequest[]
   lots                 Lot[]
   offers               Offer[]
+  threads              Thread[]
 
   @@map("cooperative")
 }
@@ -446,6 +449,7 @@ model Lot {
   feeTerms         LotFeeTerms?
   revisions        LotRevision[]
   offers           Offer[]
+  threads          Thread[]
 
   @@index([cooperativeId, status])
   @@index([status, availableUntil])
@@ -559,4 +563,54 @@ model Offer {
   @@index([buyerUserId, createdAt])
   @@index([status, expiresAt])
   @@map("offer")
+}
+
+enum ThreadKind {
+  BUYER_COOPERATIVE
+  FARMER_COOPERATIVE
+}
+
+enum MessageSide {
+  BUYER
+  COOPERATIVE
+  FARMER
+  ADMIN
+}
+
+// A message thread tied to a lot: a buyer and the cooperative (one per lot and buyer), or the
+// lot's farmer and the cooperative's officers (one per lot). counterpartUserId is the buyer or
+// the farmer; admins may read and write in any thread. Orders get threads in Phase 5.
+model Thread {
+  id                String      @id @default(cuid())
+  kind              ThreadKind
+  lotId             String
+  lot               Lot         @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  cooperativeId     String
+  cooperative       Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  counterpartUserId String
+  counterpart       User        @relation(fields: [counterpartUserId], references: [id], onDelete: Restrict)
+  createdAt         DateTime    @default(now())
+  lastMessageAt     DateTime    @default(now())
+  messages          Message[]
+
+  @@unique([lotId, kind, counterpartUserId])
+  @@index([cooperativeId, lastMessageAt])
+  @@index([counterpartUserId, lastMessageAt])
+  @@map("thread")
+}
+
+// Plain text, 1 to 2000 characters, never holding a phone number or email address.
+model Message {
+  id           String      @id @default(cuid())
+  threadId     String
+  thread       Thread      @relation(fields: [threadId], references: [id], onDelete: Restrict)
+  authorUserId String
+  author       User        @relation(fields: [authorUserId], references: [id], onDelete: Restrict)
+  side         MessageSide
+  body         String
+  createdAt    DateTime    @default(now())
+
+  @@index([threadId, createdAt])
+  @@index([authorUserId, createdAt])
+  @@map("message")
 }

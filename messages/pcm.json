@@ -40,7 +40,8 @@
     "lotQueue": "",
     "browseLots": "",
     "myOffers": "",
-    "buyProduce": ""
+    "buyProduce": "",
+    "messages": ""
   },
   "auth": {
     "fields": {
@@ -1026,5 +1027,31 @@
     "verifiedSince": "",
     "lotsHeading": "",
     "noLots": ""
+  },
+  "messages": {
+    "title": "",
+    "lead": "",
+    "empty": "",
+    "threadLabel": "",
+    "emptyThread": "",
+    "you": "",
+    "reply": "",
+    "send": "",
+    "back": "",
+    "noContact": "",
+    "kind": {
+      "BUYER_COOPERATIVE": "",
+      "FARMER_COOPERATIVE": ""
+    },
+    "errors": {
+      "hasContact": "",
+      "mentionsFloor": "",
+      "length": "",
+      "rateLimit": "",
+      "notFound": "",
+      "lotNotAvailable": "",
+      "ownCooperative": "",
+      "generic": ""
+    }
   }
 }

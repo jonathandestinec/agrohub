@@ -40,7 +40,8 @@
     "lotQueue": "Lot queue",
     "browseLots": "Browse lots",
     "myOffers": "My offers",
-    "buyProduce": "Buy produce"
+    "buyProduce": "Buy produce",
+    "messages": "Messages"
   },
   "auth": {
     "fields": {
@@ -1026,5 +1027,31 @@
     "verifiedSince": "Verified since {date}",
     "lotsHeading": "Harvests on sale",
     "noLots": "This cooperative has no lots on sale right now."
+  },
+  "messages": {
+    "title": "Messages",
+    "lead": "Conversations about lots. Messages are kept on AgroHub.",
+    "empty": "No conversations yet.",
+    "threadLabel": "Conversation",
+    "emptyThread": "No messages yet. Write the first one.",
+    "you": "You",
+    "reply": "Your message",
+    "send": "Send",
+    "back": "All messages",
+    "noContact": "Phone numbers and email addresses can't be shared in messages.",
+    "kind": {
+      "BUYER_COOPERATIVE": "About the {crop} lot",
+      "FARMER_COOPERATIVE": "Farmer and officers, about the {crop} lot"
+    },
+    "errors": {
+      "hasContact": "Phone numbers and email addresses can't be shared in messages. Keep the conversation on AgroHub.",
+      "mentionsFloor": "This message names the farmer's private lowest price. Buyers must never see it.",
+      "length": "Write a message of up to 2,000 characters.",
+      "rateLimit": "You have sent a lot of messages in the last hour. Please wait a little.",
+      "notFound": "This conversation is not available.",
+      "lotNotAvailable": "This lot is no longer on sale.",
+      "ownCooperative": "You can't buy from your own cooperative.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

@@ -5,6 +5,7 @@ import { saleBreakdown } from "@/lib/money";
 import { recordAudit } from "@/modules/audit/audit";
 import { isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
+import { assertMessageAllowed, postToBuyerThread } from "@/modules/messaging/service";
 import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, heldQuantity, hoursAfter } from "./limits";
 import { LIVE_OFFER, buyerViewOf, loadOwnOffer } from "./offers";
 import { respondToOfferInput, type RespondToOfferInput } from "./schema";
@@ -151,7 +152,7 @@ export async function respondToOffer(
   if (!parsed.success || (parsed.data.decision === "COUNTER" && parsed.data.counterKobo === undefined)) {
     throw new ValidationError("Invalid response", "INVALID_OFFER");
   }
-  const { decision, counterKobo } = parsed.data;
+  const { decision, counterKobo, message } = parsed.data;
   if (row.status !== "OPEN") throw new ConflictError("Offer was already answered", "OFFER_NOT_OPEN");
   assertNotExpired(row.expiresAt, now);
   if (!isPubliclyVisible(row.lot, now)) throw notAvailable();
@@ -163,6 +164,9 @@ export async function respondToOffer(
     if (counter > askKobo) throw new ValidationError("Counter is above the asking price", "COUNTER_ABOVE_ASK");
     if (counter < floorKobo) throw new ValidationError("Counter is below the floor", "COUNTER_BELOW_FLOOR");
   }
+  // A note goes to the buyer's thread; it is checked first, so a refused note refuses the answer.
+  const note = message?.trim() ? message : null;
+  if (note) assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo }, note);
 
   await prisma.$transaction(async (tx) => {
     if (decision === "ACCEPT" && row.offeredKobo >= floorKobo) {
@@ -196,6 +200,7 @@ export async function respondToOffer(
       );
     }
   });
+  if (note) await postToBuyerThread(actor, row.lotId, row.buyerUserId, note, now);
   return officerViewOf((await loadCooperativeOffer(row.id)) as CooperativeOfferRow, now);
 }
 

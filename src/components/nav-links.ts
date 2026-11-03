@@ -18,7 +18,8 @@ export type NavLabelKey =
   | "lotQueue"
   | "browseLots"
   | "myOffers"
-  | "buyProduce";
+  | "buyProduce"
+  | "messages";
 export type NavLink = { href: string; labelKey: NavLabelKey };
 
 const LINKS: Partial<Record<Role, NavLink[]>> = {
@@ -27,6 +28,7 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
     { href: "/officer/invites", labelKey: "invites" },
     { href: "/officer/farmers", labelKey: "farmers" },
     { href: "/officer/lots", labelKey: "screenLots" },
+    { href: "/messages", labelKey: "messages" },
   ],
   ADMIN: [
     { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
@@ -36,11 +38,13 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
   FARMER: [
     { href: "/farmer", labelKey: "farm" },
     { href: "/farmer/lots", labelKey: "myLots" },
+    { href: "/messages", labelKey: "messages" },
     { href: "/prices", labelKey: "prices" },
   ],
   BUYER: [
     { href: "/lots", labelKey: "browseLots" },
     { href: "/buyer", labelKey: "myOffers" },
+    { href: "/messages", labelKey: "messages" },
   ],
   BOARD_ADMIN: [
     { href: "/board", labelKey: "priceEntry" },

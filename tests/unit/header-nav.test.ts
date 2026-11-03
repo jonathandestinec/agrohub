@@ -9,6 +9,7 @@ describe("navLinksFor", () => {
       { href: "/officer/invites", labelKey: "invites" },
       { href: "/officer/farmers", labelKey: "farmers" },
       { href: "/officer/lots", labelKey: "screenLots" },
+      { href: "/messages", labelKey: "messages" },
     ]);
   });
 
@@ -24,6 +25,7 @@ describe("navLinksFor", () => {
     expect(navLinksFor("FARMER")).toEqual([
       { href: "/farmer", labelKey: "farm" },
       { href: "/farmer/lots", labelKey: "myLots" },
+      { href: "/messages", labelKey: "messages" },
       { href: "/prices", labelKey: "prices" },
     ]);
   });
@@ -40,6 +42,7 @@ describe("navLinksFor", () => {
     expect(navLinksFor("BUYER")).toEqual([
       { href: "/lots", labelKey: "browseLots" },
       { href: "/buyer", labelKey: "myOffers" },
+      { href: "/messages", labelKey: "messages" },
     ]);
   });
 

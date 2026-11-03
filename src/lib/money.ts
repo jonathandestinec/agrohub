@@ -138,6 +138,25 @@ export function saleBreakdown(
   };
 }
 
+/**
+ * Every number in free text read as an amount, in kobo: each as naira ("₦43,219.87",
+ * "N550", "550.00") and each whole number also as plain kobo ("4321987"). Commas are ignored.
+ * Used only to stop a message from naming a private price.
+ */
+export function amountsIn(text: string): number[] {
+  const found = new Set<number>();
+  for (const token of text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []) {
+    const plain = token.replace(/,/g, "");
+    try {
+      found.add(toKobo(plain));
+    } catch {
+      // More than two decimals, or too large: not a naira amount.
+    }
+    if (/^\d+$/.test(plain) && Number.isSafeInteger(Number(plain))) found.add(Number(plain));
+  }
+  return [...found];
+}
+
 /** A whole quantity at a per-unit price, in kobo; RangeError beyond the safe integer range. */
 export function lineTotalKobo(unitKobo: number, quantity: number): number {
   assertNonNegativeSafeInt(unitKobo, "unitKobo");
