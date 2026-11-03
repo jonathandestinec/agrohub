@@ -31,7 +31,9 @@
     "closeMenu": "",
     "skip": "",
     "home": "",
-    "prices": ""
+    "prices": "",
+    "priceEntry": "",
+    "cropsUnits": ""
   },
   "auth": {
     "fields": {
@@ -586,5 +588,59 @@
     "weekOf": "",
     "noEarlier": "",
     "noChange": ""
+  },
+  "board": {
+    "entry": {
+      "title": "",
+      "lead": "",
+      "needCatalog": "",
+      "crop": "",
+      "unit": "",
+      "market": "",
+      "marketHint": "",
+      "week": "",
+      "weekHint": "",
+      "price": "",
+      "priceHint": "",
+      "choose": "",
+      "save": "",
+      "saving": "",
+      "saved": "",
+      "weekHeading": "",
+      "weekEmpty": "",
+      "showWeek": "",
+      "needCatalogLink": ""
+    },
+    "crops": {
+      "title": "",
+      "lead": "",
+      "cropsHeading": "",
+      "unitsHeading": "",
+      "newCrop": "",
+      "newUnit": "",
+      "addCrop": "",
+      "addUnit": "",
+      "adding": "",
+      "rename": "",
+      "renameLabel": "",
+      "saveName": "",
+      "cancel": "",
+      "hide": "",
+      "show": "",
+      "hidden": "",
+      "emptyCrops": "",
+      "emptyUnits": ""
+    },
+    "errors": {
+      "CROP_EXISTS": "",
+      "UNIT_EXISTS": "",
+      "INVALID_NAME": "",
+      "FUTURE_WEEK": "",
+      "CROP_INACTIVE": "",
+      "UNIT_INACTIVE": "",
+      "INVALID_PRICE": "",
+      "INVALID_PRICE_ENTRY": "",
+      "INTERNAL": ""
+    }
   }
 }

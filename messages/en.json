@@ -31,7 +31,9 @@
     "closeMenu": "Close menu",
     "skip": "Skip to content",
     "home": "AgroHub home",
-    "prices": "Price board"
+    "prices": "Price board",
+    "priceEntry": "Price entry",
+    "cropsUnits": "Crops and units"
   },
   "auth": {
     "fields": {
@@ -586,5 +588,59 @@
     "weekOf": "Week of {date}",
     "noEarlier": "No earlier price",
     "noChange": "No change"
+  },
+  "board": {
+    "entry": {
+      "title": "Price entry",
+      "lead": "Record this week's price for a crop at a market. Saving publishes it on the price board straight away; saving the same crop, unit, market and week again corrects it.",
+      "needCatalog": "Add at least one crop and one unit before recording prices.",
+      "crop": "Crop",
+      "unit": "Unit",
+      "market": "Market",
+      "marketHint": "For example Bodija Market, Ibadan.",
+      "week": "Week",
+      "weekHint": "Any day in the week; it is saved as that week's Monday.",
+      "price": "Price (₦)",
+      "priceHint": "Price per unit, in naira.",
+      "choose": "Choose…",
+      "save": "Save price",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "weekHeading": "Prices for the week of {date}",
+      "weekEmpty": "No prices recorded for this week yet.",
+      "showWeek": "Show week",
+      "needCatalogLink": "Crops and units"
+    },
+    "crops": {
+      "title": "Crops and units",
+      "lead": "Farmers and the price board choose from these lists. Hide an item instead of deleting it, so past prices keep their names.",
+      "cropsHeading": "Crops",
+      "unitsHeading": "Units",
+      "newCrop": "New crop",
+      "newUnit": "New unit",
+      "addCrop": "Add crop",
+      "addUnit": "Add unit",
+      "adding": "Adding…",
+      "rename": "Rename",
+      "renameLabel": "New name for {name}",
+      "saveName": "Save name",
+      "cancel": "Cancel",
+      "hide": "Hide",
+      "show": "Show again",
+      "hidden": "Hidden",
+      "emptyCrops": "No crops yet.",
+      "emptyUnits": "No units yet."
+    },
+    "errors": {
+      "CROP_EXISTS": "A crop with this name already exists.",
+      "UNIT_EXISTS": "A unit with this name already exists.",
+      "INVALID_NAME": "Enter a name of 1 to 60 characters.",
+      "FUTURE_WEEK": "That week has not started yet. Choose this week or an earlier one.",
+      "CROP_INACTIVE": "That crop is hidden. Show it again on Crops and units first.",
+      "UNIT_INACTIVE": "That unit is hidden. Show it again on Crops and units first.",
+      "INVALID_PRICE": "Enter a price in naira, for example 52000 or 52000.50.",
+      "INVALID_PRICE_ENTRY": "Check the market name (up to 80 characters), the week and the price.",
+      "INTERNAL": "Something went wrong. Please try again."
+    }
   }
 }

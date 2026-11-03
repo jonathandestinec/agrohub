@@ -9,7 +9,9 @@ export type NavLabelKey =
   | "farm"
   | "registerCooperative"
   | "yourFarm"
-  | "prices";
+  | "prices"
+  | "priceEntry"
+  | "cropsUnits";
 export type NavLink = { href: string; labelKey: NavLabelKey };
 
 const LINKS: Partial<Record<Role, NavLink[]>> = {
@@ -21,6 +23,11 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
   ADMIN: [{ href: "/admin/cooperatives", labelKey: "reviewCooperatives" }],
   FARMER: [
     { href: "/farmer", labelKey: "farm" },
+    { href: "/prices", labelKey: "prices" },
+  ],
+  BOARD_ADMIN: [
+    { href: "/board", labelKey: "priceEntry" },
+    { href: "/board/crops", labelKey: "cropsUnits" },
     { href: "/prices", labelKey: "prices" },
   ],
 };
