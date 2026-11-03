@@ -272,3 +272,28 @@ model FarmerProfile {
   @@index([cooperativeId])
   @@map("farmer_profile")
 }
+
+// Reference lists kept by board admins. Deactivated, never deleted, because lots and
+// price points reference them. nameKey is the normalized name lower-cased, so names are
+// unique regardless of case and spacing.
+model Crop {
+  id        String   @id @default(cuid())
+  name      String
+  nameKey   String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("crop")
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  name      String
+  nameKey   String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("unit")
+}
