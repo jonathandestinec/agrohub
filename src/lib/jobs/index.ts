@@ -3,3 +3,4 @@
 import "@/modules/banking/job";
 import "@/modules/cooperatives/job";
 import "@/modules/catalog/job";
+import "@/modules/marketplace/job";

@@ -2,7 +2,12 @@ import type { Offer, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { recordAudit } from "@/modules/audit/audit";
-import { isPubliclyVisible, lotNegotiationFacts, type NegotiationFacts } from "@/modules/catalog/service";
+import {
+  isPubliclyVisible,
+  lotNegotiationFacts,
+  publiclyVisibleWhere,
+  type NegotiationFacts,
+} from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { holdsCooperativeRole } from "@/modules/identity/service";
 import { assertMessageAllowed, postToBuyerThread } from "@/modules/messaging/service";
@@ -169,6 +174,45 @@ export async function loadOwnOffer(actor: Actor, offerId: string): Promise<Offer
 
 export async function getOwnOffer(actor: Actor, offerId: string, now: Date = new Date()): Promise<BuyerOffer> {
   return buyerViewOf(await loadOwnOffer(actor, offerId), now);
+}
+
+// The daily offer-expiry job: offers still waiting for an answer after 48 hours or on a lot no
+// longer on sale, and accepted offers whose 24 hours to pay have passed, become EXPIRED. Every
+// action already refuses such offers before this runs. Safe to run twice: each update is
+// conditional on the status it read. Returns how many offers it expired.
+export async function expireOffers(now: Date = new Date()): Promise<number> {
+  const due = await prisma.offer.findMany({
+    where: {
+      OR: [
+        { status: { in: [...LIVE_OFFER] }, expiresAt: { lte: now } },
+        { status: { in: [...LIVE_OFFER] }, lot: { NOT: publiclyVisibleWhere(now) } },
+        { status: "ACCEPTED", payByAt: { lte: now } },
+      ],
+    },
+    select: { id: true, status: true },
+  });
+  let expired = 0;
+  for (const offer of due) {
+    await prisma.$transaction(async (tx) => {
+      const { count } = await tx.offer.updateMany({
+        where: { id: offer.id, status: offer.status },
+        data: { status: "EXPIRED", decidedAt: now },
+      });
+      if (count === 0) return;
+      expired += 1;
+      await recordAudit(
+        {
+          actorId: null,
+          action: "offer.expire",
+          entity: "offer",
+          entityId: offer.id,
+          meta: { offerId: offer.id, fromStatus: offer.status },
+        },
+        tx,
+      );
+    });
+  }
+  return expired;
 }
 
 export type { Offer };
