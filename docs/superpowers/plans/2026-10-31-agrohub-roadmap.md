@@ -44,24 +44,24 @@ Plan: `2026-10-31-agrohub-phase-0-foundation.md`. **Done when:** staging deploys
 ## Phase 1: Cooperatives, verification and farmers
 
 **Depends on:** Phase 0. Spec 6.1, 6.2, 14.
-- [ ] 1.1 Private storage adapter: `src/lib/storage.ts` with `putPrivate(key: string, body: Buffer, contentType: string): Promise<void>` and `signedUrl(key: string, ttlSeconds: number): Promise<string>`.
-- [ ] 1.2 Cooperative sign-up and document upload: `cooperatives/service.ts` `createCooperative(actor, input)`, `uploadDocument(actor, cooperativeId, file)`.
-- [ ] 1.3 Admin verification queue: `verifyCooperative`, `rejectCooperative`, `suspendCooperative`, `reinstateCooperative`; status emails; waiting-time display.
-- [ ] 1.4 Bank recipient: `src/lib/paystack.ts` `createRecipient(input): Promise<{ recipientCode: string; accountName: string }>`; registered-name check; 48-hour `BankChangeRequest` with email confirmation and admin alert.
-- [ ] 1.5 Invite links: `createInviteLink`, `regenerateInviteLink` (revokes the old one), `joinViaLink`.
-- [ ] 1.6 Farmer registration: email, phone, consent, profile (farm size, crops, state, LGA), bank; phone confirmation falling back silently to email.
-- [ ] 1.7 Officer approval queue, direct invite, removal and leaving rules (blocked while orders are unfinished).
-- [ ] 1.8 Certificate-expiry job and annual re-verification reminders.
+- [x] 1.1 Private storage adapter: `src/lib/storage.ts` with `putPrivate(key: string, body: Buffer, contentType: string): Promise<void>` and `signedUrl(key: string, ttlSeconds: number): Promise<string>`.
+- [x] 1.2 Cooperative sign-up and document upload: `cooperatives/service.ts` `createCooperative(actor, input)`, `uploadDocument(actor, cooperativeId, file)`.
+- [x] 1.3 Admin verification queue: `verifyCooperative`, `rejectCooperative`, `suspendCooperative`, `reinstateCooperative`; status emails; waiting-time display.
+- [x] 1.4 Bank recipient: `src/lib/paystack.ts` `createRecipient(input): Promise<{ recipientCode: string; accountName: string }>`; registered-name check; 48-hour `BankChangeRequest` with email confirmation and admin alert.
+- [x] 1.5 Invite links: `createInviteLink`, `regenerateInviteLink` (revokes the old one), `joinViaLink`.
+- [x] 1.6 Farmer registration: email, phone, consent, profile (farm size, crops, state, LGA), bank; phone confirmation falling back silently to email.
+- [x] 1.7 Officer approval queue, direct invite, removal and leaving rules (blocked while orders are unfinished).
+- [x] 1.8 Certificate-expiry job and annual re-verification reminders.
 
 **Done when:** on staging, a cooperative is verified, a farmer joins by link and is approved, and every new action has rows in the policy matrix.
 
 ## Phase 2: Crops, units and the price board
 
 **Depends on:** Phase 1. Spec 6.4.
-- [ ] 2.1 Crop and unit management by board admin.
-- [ ] 2.2 Weekly price entry: `board/service.ts` `recordPrice(actor, { cropId, market, weekOf, priceKobo })`.
-- [ ] 2.3 Public price board page.
-- [ ] 2.4 `priceDeviation(askKobo: number, boardKobo: number, thresholdBps: number): 'OK' | 'HIGH' | 'LOW'`.
+- [x] 2.1 Crop and unit management by board admin.
+- [x] 2.2 Weekly price entry: `board/service.ts` `recordPrice(actor, { cropId, unitId, market, weekOf, priceKobo })` (a board price carries its unit).
+- [x] 2.3 Public price board page (`/prices`).
+- [x] 2.4 `priceDeviation(askKobo: number, boardKobo: number, thresholdBps: number): 'OK' | 'HIGH' | 'LOW'`.
 
 **Done when:** a board admin publishes prices and a farmer can see them.
 

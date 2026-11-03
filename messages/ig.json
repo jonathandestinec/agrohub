@@ -30,7 +30,10 @@
     "openMenu": "",
     "closeMenu": "",
     "skip": "",
-    "home": ""
+    "home": "",
+    "prices": "",
+    "priceEntry": "",
+    "cropsUnits": ""
   },
   "auth": {
     "fields": {
@@ -79,6 +82,8 @@
       "starting": "",
       "wrongPassword": "",
       "setupInstructions": "",
+      "qrAlt": "",
+      "manualIntro": "",
       "secretLabel": "",
       "uriLabel": "",
       "copy": "",
@@ -414,7 +419,8 @@
   "footer": {
     "about": "",
     "privacy": "",
-    "signIn": ""
+    "signIn": "",
+    "prices": ""
   },
   "photo": {
     "signUp": "",
@@ -565,5 +571,87 @@
       "button": ""
     },
     "photos": ""
+  },
+  "prices": {
+    "title": "",
+    "lead": "",
+    "filterLabel": "",
+    "allCrops": "",
+    "filter": "",
+    "empty": "",
+    "emptyCrop": "",
+    "crop": "",
+    "unit": "",
+    "market": "",
+    "week": "",
+    "price": "",
+    "change": "",
+    "perUnit": "",
+    "weekOf": "",
+    "noEarlier": "",
+    "noChange": "",
+    "since": ""
+  },
+  "board": {
+    "entry": {
+      "title": "",
+      "lead": "",
+      "needCatalog": "",
+      "crop": "",
+      "unit": "",
+      "market": "",
+      "marketHint": "",
+      "week": "",
+      "weekHint": "",
+      "price": "",
+      "priceHint": "",
+      "choose": "",
+      "save": "",
+      "saving": "",
+      "saved": "",
+      "weekHeading": "",
+      "weekEmpty": "",
+      "showWeek": "",
+      "needCatalogLink": "",
+      "savesTo": "",
+      "marketsLabel": ""
+    },
+    "crops": {
+      "title": "",
+      "lead": "",
+      "cropsHeading": "",
+      "unitsHeading": "",
+      "newCrop": "",
+      "newUnit": "",
+      "addCrop": "",
+      "addUnit": "",
+      "adding": "",
+      "rename": "",
+      "renameLabel": "",
+      "saveName": "",
+      "cancel": "",
+      "hide": "",
+      "show": "",
+      "hidden": "",
+      "emptyCrops": "",
+      "emptyUnits": ""
+    },
+    "errors": {
+      "CROP_EXISTS": "",
+      "UNIT_EXISTS": "",
+      "INVALID_NAME": "",
+      "FUTURE_WEEK": "",
+      "CROP_INACTIVE": "",
+      "UNIT_INACTIVE": "",
+      "INVALID_PRICE": "",
+      "INVALID_PRICE_ENTRY": "",
+      "INTERNAL": "",
+      "INVALID_WEEK": "",
+      "CROP_NOT_FOUND": "",
+      "UNIT_NOT_FOUND": "",
+      "UNAUTHENTICATED": "",
+      "2FA_REQUIRED": "",
+      "FORBIDDEN": ""
+    }
   }
 }

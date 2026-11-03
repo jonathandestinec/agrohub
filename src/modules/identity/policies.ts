@@ -29,7 +29,8 @@ export type Action =
   | "cooperative:edit"
   | "document:view"
   | "bank:change"
-  | "invite:manage";
+  | "invite:manage"
+  | "catalog:manage";
 
 export type Resource = {
   cooperativeId?: string;
@@ -60,6 +61,7 @@ export function can(
     case "dispute:resolve":
       return actor.role === "ADMIN";
     case "price:write":
+    case "catalog:manage":
       return actor.role === "BOARD_ADMIN";
     case "farmer:approve":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);

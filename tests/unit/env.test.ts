@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEnv } from "@/lib/env";
+import { parseEnv, vercelTrustedOrigins } from "@/lib/env";
 
 const validRaw = {
   DATABASE_URL: "postgresql://u:p@localhost:5432/db",
@@ -120,5 +120,48 @@ describe("parseEnv", () => {
     it("still requires BETTER_AUTH_URL off Vercel", () => {
       expect(() => parseEnv(withoutAuthUrl)).toThrow(/BETTER_AUTH_URL/);
     });
+  });
+});
+
+describe("vercelTrustedOrigins", () => {
+  it("trusts nothing off Vercel", () => {
+    expect(vercelTrustedOrigins({})).toEqual([]);
+  });
+
+  it("trusts the deployment URL and the branch URL on a preview", () => {
+    expect(
+      vercelTrustedOrigins({
+        VERCEL_ENV: "preview",
+        VERCEL_URL: "agrohub-abc123.vercel.app",
+        VERCEL_BRANCH_URL: "agrohub-git-x.vercel.app",
+        VERCEL_PROJECT_PRODUCTION_URL: "agrohub-theta.vercel.app",
+      }),
+    ).toEqual(["https://agrohub-abc123.vercel.app", "https://agrohub-git-x.vercel.app"]);
+  });
+
+  it("also trusts the production URL in production", () => {
+    expect(
+      vercelTrustedOrigins({
+        VERCEL_ENV: "production",
+        VERCEL_URL: "agrohub-abc123.vercel.app",
+        VERCEL_BRANCH_URL: "agrohub-git-main.vercel.app",
+        VERCEL_PROJECT_PRODUCTION_URL: "agrohub-theta.vercel.app",
+      }),
+    ).toEqual([
+      "https://agrohub-abc123.vercel.app",
+      "https://agrohub-git-main.vercel.app",
+      "https://agrohub-theta.vercel.app",
+    ]);
+  });
+
+  it("skips empty values and repeats", () => {
+    expect(
+      vercelTrustedOrigins({
+        VERCEL_ENV: "production",
+        VERCEL_URL: "agrohub-theta.vercel.app",
+        VERCEL_BRANCH_URL: "",
+        VERCEL_PROJECT_PRODUCTION_URL: "agrohub-theta.vercel.app",
+      }),
+    ).toEqual(["https://agrohub-theta.vercel.app"]);
   });
 });

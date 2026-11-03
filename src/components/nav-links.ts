@@ -8,7 +8,10 @@ export type NavLabelKey =
   | "reviewCooperatives"
   | "farm"
   | "registerCooperative"
-  | "yourFarm";
+  | "yourFarm"
+  | "prices"
+  | "priceEntry"
+  | "cropsUnits";
 export type NavLink = { href: string; labelKey: NavLabelKey };
 
 const LINKS: Partial<Record<Role, NavLink[]>> = {
@@ -18,7 +21,15 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
     { href: "/officer/farmers", labelKey: "farmers" },
   ],
   ADMIN: [{ href: "/admin/cooperatives", labelKey: "reviewCooperatives" }],
-  FARMER: [{ href: "/farmer", labelKey: "farm" }],
+  FARMER: [
+    { href: "/farmer", labelKey: "farm" },
+    { href: "/prices", labelKey: "prices" },
+  ],
+  BOARD_ADMIN: [
+    { href: "/board", labelKey: "priceEntry" },
+    { href: "/board/crops", labelKey: "cropsUnits" },
+    { href: "/prices", labelKey: "prices" },
+  ],
 };
 
 // Pure: the header links for the active role. Convenience only: every page checks access itself.

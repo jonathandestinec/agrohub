@@ -77,7 +77,7 @@ Each module folder holds: `service.ts` (the only public entry), `schema.ts` (zod
 - **User** (Better Auth) plus `phone`, `phoneConfirmed`, `consentAcceptedAt`, `locale`.
 - **Cooperative** `{ status: PENDING|VERIFIED|SUSPENDED, certificateExpiresAt, cutBps, recipientCode }`; **CooperativeDocument** `{ storageKey, kind }`; **InviteLink** `{ token, revokedAt }`.
 - **FarmerProfile** `{ farmSize, crops, state, lga, recipientCode, approvedAt }`. Account numbers are never stored; only the Paystack recipient code.
-- **Crop**, **Unit** (kg, bag, tonne, basket, ... maintained by board admin); **PricePoint** `{ cropId, market, weekOf, priceKobo }`.
+- **Crop**, **Unit** (kg, bag, tonne, basket, ... maintained by board admin); **PricePoint** `{ cropId, unitId, market, marketKey, weekOf, priceKobo }`, one per crop, unit, market and Lagos week (Monday). Crops and units are deactivated, never deleted.
 - **Lot** `{ cooperativeId, cropId, unitId, quantity, grade, pickupLocation, askKobo, floorKobo (private), note, status, availableUntil, minOrderQty }`; **LotContribution** `{ lotId, farmerUserId, quantity }`; **LotFeeTerms** `{ lotId, cooperativeCutBps, platformFeeBps }` locked at approval.
 - **Offer** `{ lotId, buyerUserId, quantity, offeredKobo, status, expiresAt }`; **StockReservation** `{ lotId, quantity, expiresAt, orderId? }`.
 - **Order** `{ buyerUserId, cooperativeId, status, totalKobo, deliveryCostKobo, deliveryDate }` with **OrderLine** `{ lotId, quantity, unitPriceKobo, termsSnapshot }`.
@@ -128,7 +128,7 @@ Scheduled jobs: offer expiry, reservation release, lot expiry, auto-release, del
 
 ## 11. Decisions left open
 
-Paystack's written answer on holding funds and manual settlement; the AgroHub fee percentage and maximum cooperative cut; the price-deviation threshold (starting default 20%, my call); brand identity; weather alerts (deferred).
+Paystack's written answer on holding funds and manual settlement; the AgroHub fee percentage and maximum cooperative cut; the price-deviation threshold (starting default 20%, my call; a constant `DEFAULT_DEVIATION_THRESHOLD_BPS` in `board/deviation.ts` until the `Setting` table exists); brand identity; weather alerts (deferred).
 
 ## 12. Dependencies
 
@@ -146,4 +146,5 @@ Paystack's written answer on holding funds and manual settlement; the AgroHub fe
 - @tailwindcss/turbopack (dev): the Tailwind CSS v4 integration for Next.js Turbopack builds.
 - auth (dev): the Better Auth CLI; `auth generate` writes Better Auth's models into `prisma/schema.prisma`. Run it only through `npm run auth:generate`, which uses an empty temp cwd so the CLI never loads `.env`.
 - next-intl: message loading and translations for the App Router; locale comes from a `locale` cookie (no locale-prefixed routing), and only locales listed in `enabledLocales` are ever served.
+- qrcode (+ @types/qrcode, dev): draws the two-factor setup QR code as an SVG in the browser, so the TOTP secret is never sent to a QR service.
 - tsx (dev): runs TypeScript scripts with the `@/` alias, for `npm run admin:grant` (`scripts/grant-role.ts`). It never loads `.env`.

@@ -264,6 +264,22 @@ p {
   50% { transform: rotate(14deg); }
 }
 
+/* One-time-code slots (src/components/otp-input.tsx): a digit settles in, the caret
+   blinks in the active slot, and a refused code shakes the row once. */
+@keyframes otp-pop {
+  from { opacity: 0; transform: translateY(6px) scale(0.85); }
+}
+@keyframes otp-caret {
+  50% { opacity: 0; }
+}
+@keyframes otp-shake {
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.otp-pop { animation: otp-pop 200ms var(--ease-out); }
+.otp-caret { animation: otp-caret 1s steps(1) infinite; }
+.otp-shake { animation: otp-shake 320ms ease-in-out; }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
