@@ -3,7 +3,7 @@
 //   APP_ENV=staging DATABASE_URL=<url> npm run db:seed -- --allow-remote   (staging; never production)
 // Creates one admin and one board admin (two-factor off, so /two-factor enrolment shows),
 // one VERIFIED cooperative with an ACTIVE officer, one PENDING farmer with a profile, the
-// crop and unit lists, and two fixed past weeks of demo board prices (board data only into
+// crop and unit lists, and real October 2026 market prices on the board (board data only into
 // an empty crop list). Re-running it adds nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
 import { randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
@@ -27,17 +27,59 @@ export const SEED = {
     certificateExpiresAt: new Date("2030-12-31T00:00:00Z"),
   },
   profile: { farmSizeHectares: "2.50", crops: ["Maize", "Sorghum"], state: "Kaduna", lga: "Zaria" },
-  crops: ["Maize", "Sorghum", "Rice", "Cassava", "Yam", "Soybeans"],
-  units: ["kg", "Bag", "Tonne", "Basket"],
-  // Demo prices per bag, in kobo, for two fixed past weeks (so re-running adds nothing).
-  // Illustrative only; staging shows them so a pitch has a board to look at.
-  weeks: ["2026-10-19", "2026-10-26"],
-  markets: ["Dawanau Market, Kano", "Bodija Market, Ibadan"],
-  prices: {
-    Maize: [[4_800_000, 5_000_000], [5_100_000, 5_200_000]],
-    Rice: [[9_500_000, 9_800_000], [10_000_000, 10_200_000]],
-    Sorghum: [[4_200_000, 4_300_000], [4_500_000, 4_450_000]],
+  crops: [
+    "Maize", "Sorghum", "Rice", "Paddy rice", "Soybeans", "Beans",
+    "Cassava", "Garri", "Yam", "Tomatoes", "Pepper", "Onions",
+  ],
+  units: ["kg", "Bag", "Tonne", "Tuber", "50kg bag", "100kg bag", "25kg basket", "50kg basket"],
+  markets: {
+    exchange: "Commodity exchange, national spot",
+    lagos: "Lagos markets (Mile 12, Mushin, Daleko, Oyingbo)",
+    lagosTracker: "Lagos State price tracker",
+    northCentral: "North-Central markets",
+    northWest: "North-West markets",
+    southWest: "South-West markets",
   },
+  // Real October 2026 prices, in kobo, each in the week it was observed (fixed past weeks,
+  // so re-running adds nothing). Where a source gave a range, the midpoint. Sources:
+  //   exchange: Mansa Markets daily exchange spot, NGN/kg averaged over the week, x100 for
+  //     a 100kg bag (mansamarkets.com/blog/<crop>-price-in-nigeria-today). Rice is paddy.
+  //   lagos: Nairametrics survey of 67 staples for October, published 1 Nov 2026.
+  //   lagosTracker: Lagos State Ministry of Agriculture price tracker, 4th week of October.
+  //   zones: ColdHubs weekly fresh produce report, 12-17 and 19-24 Oct 2026.
+  prices: [
+    { crop: "Maize", unit: "100kg bag", market: "exchange", weekOf: "2026-10-19", priceKobo: 3_187_900 },
+    { crop: "Maize", unit: "100kg bag", market: "exchange", weekOf: "2026-10-26", priceKobo: 3_263_500 },
+    { crop: "Paddy rice", unit: "100kg bag", market: "exchange", weekOf: "2026-10-19", priceKobo: 4_508_900 },
+    { crop: "Paddy rice", unit: "100kg bag", market: "exchange", weekOf: "2026-10-26", priceKobo: 4_084_200 },
+    { crop: "Sorghum", unit: "100kg bag", market: "exchange", weekOf: "2026-10-19", priceKobo: 3_664_400 },
+    { crop: "Sorghum", unit: "100kg bag", market: "exchange", weekOf: "2026-10-26", priceKobo: 3_839_600 },
+    { crop: "Soybeans", unit: "100kg bag", market: "exchange", weekOf: "2026-10-19", priceKobo: 5_100_800 },
+    { crop: "Soybeans", unit: "100kg bag", market: "exchange", weekOf: "2026-10-26", priceKobo: 5_085_200 },
+    // Yellow and white maize, white garri, brown beans, short-grain rice, dry onions.
+    { crop: "Maize", unit: "50kg bag", market: "lagos", weekOf: "2026-10-26", priceKobo: 5_500_000 },
+    { crop: "Garri", unit: "50kg bag", market: "lagos", weekOf: "2026-10-26", priceKobo: 2_100_000 },
+    { crop: "Beans", unit: "50kg bag", market: "lagos", weekOf: "2026-10-26", priceKobo: 11_000_000 },
+    { crop: "Rice", unit: "50kg bag", market: "lagos", weekOf: "2026-10-26", priceKobo: 4_800_000 },
+    { crop: "Onions", unit: "Bag", market: "lagos", weekOf: "2026-10-26", priceKobo: 22_000_000 },
+    // Long-grain rice, medium yam tuber, tomatoes, rodo pepper and onions by the kg.
+    { crop: "Rice", unit: "50kg bag", market: "lagosTracker", weekOf: "2026-10-26", priceKobo: 5_300_000 },
+    { crop: "Yam", unit: "Tuber", market: "lagosTracker", weekOf: "2026-10-26", priceKobo: 250_000 },
+    { crop: "Tomatoes", unit: "kg", market: "lagosTracker", weekOf: "2026-10-26", priceKobo: 180_000 },
+    { crop: "Pepper", unit: "kg", market: "lagosTracker", weekOf: "2026-10-26", priceKobo: 200_000 },
+    { crop: "Onions", unit: "kg", market: "lagosTracker", weekOf: "2026-10-26", priceKobo: 130_000 },
+    // The report gave no earlier week for North-West and South-West tomatoes.
+    { crop: "Tomatoes", unit: "50kg basket", market: "northCentral", weekOf: "2026-10-12", priceKobo: 1_250_000 },
+    { crop: "Tomatoes", unit: "50kg basket", market: "northCentral", weekOf: "2026-10-19", priceKobo: 3_250_000 },
+    { crop: "Tomatoes", unit: "50kg basket", market: "northWest", weekOf: "2026-10-19", priceKobo: 3_750_000 },
+    { crop: "Tomatoes", unit: "50kg basket", market: "southWest", weekOf: "2026-10-19", priceKobo: 5_750_000 },
+    { crop: "Pepper", unit: "25kg basket", market: "northCentral", weekOf: "2026-10-12", priceKobo: 2_250_000 },
+    { crop: "Pepper", unit: "25kg basket", market: "northCentral", weekOf: "2026-10-19", priceKobo: 2_250_000 },
+    { crop: "Pepper", unit: "25kg basket", market: "northWest", weekOf: "2026-10-12", priceKobo: 1_650_000 },
+    { crop: "Pepper", unit: "25kg basket", market: "northWest", weekOf: "2026-10-19", priceKobo: 2_400_000 },
+    { crop: "Pepper", unit: "25kg basket", market: "southWest", weekOf: "2026-10-12", priceKobo: 3_500_000 },
+    { crop: "Pepper", unit: "25kg basket", market: "southWest", weekOf: "2026-10-19", priceKobo: 4_250_000 },
+  ],
 } as const;
 
 export type SeedTarget = { ok: boolean; host: string; database: string; reason?: string };
@@ -196,21 +238,17 @@ export async function seed(): Promise<{ password: string | null; created: string
   }
   const cropIds = new Map<string, string>();
   for (const name of SEED.crops) cropIds.set(name, await ensureItem("crop", name));
-  for (const name of SEED.units) await ensureItem("unit", name);
-  const bagId = await ensureItem("unit", "Bag");
-  for (const [crop, perMarket] of Object.entries(SEED.prices)) {
-    for (const [m, market] of SEED.markets.entries()) {
-      for (const [w, weekOf] of SEED.weeks.entries()) {
-        // recordPrice upserts and writes no audit row when the price is unchanged.
-        await recordPrice(board, {
-          cropId: cropIds.get(crop)!,
-          unitId: bagId,
-          market,
-          weekOf,
-          priceKobo: perMarket[m][w],
-        });
-      }
-    }
+  const unitIds = new Map<string, string>();
+  for (const name of SEED.units) unitIds.set(name, await ensureItem("unit", name));
+  for (const { crop, unit, market, weekOf, priceKobo } of SEED.prices) {
+    // recordPrice upserts and writes no audit row when the price is unchanged.
+    await recordPrice(board, {
+      cropId: cropIds.get(crop)!,
+      unitId: unitIds.get(unit)!,
+      market: SEED.markets[market],
+      weekOf,
+      priceKobo,
+    });
   }
 
   return { password: created.length > 0 ? password : null, created };

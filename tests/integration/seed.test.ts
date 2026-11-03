@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fakeOutbox } from "@/lib/email";
+import { listPublicBoard } from "@/modules/board/service";
 import { SEED, seed } from "../../prisma/seed";
 import { cleanDatabase } from "./helpers";
 
@@ -92,21 +93,53 @@ describe("seed", () => {
       cooperatives: 1,
       memberships: 4,
       profiles: 1,
-      crops: 6,
-      units: 4,
-      prices: 12,
+      crops: 12,
+      units: 8,
+      prices: 28,
     });
     expect(second.password).toBeNull();
   });
 
-  it("seeds crops, units and two weeks of demo prices on the public board", async () => {
+  it("seeds crops, units and the October 2026 market prices on the public board", async () => {
     await seed();
-    const crops = await prisma.crop.findMany({ orderBy: { nameKey: "asc" } });
-    expect(crops.map((c) => c.name)).toEqual(["Cassava", "Maize", "Rice", "Sorghum", "Soybeans", "Yam"]);
-    const units = await prisma.unit.findMany({ orderBy: { nameKey: "asc" } });
-    expect(units.map((u) => u.name)).toEqual(["Bag", "Basket", "kg", "Tonne"]);
+    const crops = await prisma.crop.findMany();
+    expect(crops.map((c) => c.name).sort()).toEqual([
+      "Beans", "Cassava", "Garri", "Maize", "Onions", "Paddy rice",
+      "Pepper", "Rice", "Sorghum", "Soybeans", "Tomatoes", "Yam",
+    ]);
+    const units = await prisma.unit.findMany();
+    expect(units.map((u) => u.name).sort()).toEqual([
+      "100kg bag", "25kg basket", "50kg bag", "50kg basket", "Bag", "Tonne", "Tuber", "kg",
+    ]);
     const weeks = await prisma.pricePoint.findMany({ distinct: ["weekOf"], orderBy: { weekOf: "asc" } });
-    expect(weeks.map((w) => w.weekOf.toISOString().slice(0, 10))).toEqual(["2026-10-19", "2026-10-26"]);
+    expect(weeks.map((w) => w.weekOf.toISOString().slice(0, 10))).toEqual(["2026-10-12", "2026-10-19", "2026-10-26"]);
+  });
+
+  it("puts each observation in the week it was taken, with the week before where there was one", async () => {
+    await seed();
+    const board = await listPublicBoard({}, new Date("2026-11-03T12:00:00Z"));
+    expect(board).toHaveLength(20);
+    expect(board).toContainEqual(
+      expect.objectContaining({
+        crop: "Maize",
+        unit: "100kg bag",
+        market: SEED.markets.exchange,
+        weekOf: "2026-10-26",
+        priceKobo: 3_263_500,
+        previousKobo: 3_187_900,
+        previousWeekOf: "2026-10-19",
+      }),
+    );
+    expect(board).toContainEqual(
+      expect.objectContaining({
+        crop: "Maize",
+        unit: "50kg bag",
+        market: SEED.markets.lagos,
+        weekOf: "2026-10-26",
+        priceKobo: 5_500_000,
+        previousKobo: null,
+      }),
+    );
   });
 
   it("re_seed_leaves_board_admin_changes_alone", async () => {
