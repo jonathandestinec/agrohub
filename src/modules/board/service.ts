@@ -80,8 +80,9 @@ async function writePrice({
     const where = { cropId_unitId_marketKey_weekOf: key };
     const found = await tx.pricePoint.findUnique({ where, select: { id: true } });
     if (!found) {
+      const spelling = await boardSpelling(tx, key.marketKey, market);
       const created = await tx.pricePoint.create({
-        data: { ...key, market, priceKobo, recordedByUserId: actor.userId },
+        data: { ...key, market: spelling, priceKobo, recordedByUserId: actor.userId },
         include: WITH_NAMES,
       });
       await recordAudit(
@@ -98,26 +99,54 @@ async function writePrice({
     }
 
     await tx.$queryRaw`SELECT id FROM price_point WHERE id = ${found.id} FOR UPDATE`;
-    const existing = await tx.pricePoint.findUniqueOrThrow({ where: { id: found.id } });
-    const updated = await tx.pricePoint.update({
-      where: { id: existing.id },
-      data: { market, priceKobo, recordedByUserId: actor.userId },
+    const existing = await tx.pricePoint.findUniqueOrThrow({
+      where: { id: found.id },
       include: WITH_NAMES,
     });
-    if (existing.priceKobo !== priceKobo) {
-      await recordAudit(
-        {
-          actorId: actor.userId,
-          action: "price.update",
-          entity: "price_point",
-          entityId: existing.id,
-          meta: { ...meta, fromKobo: existing.priceKobo, toKobo: priceKobo },
-        },
-        tx,
-      );
-    }
+    // An identical resubmit changes nothing, not even who recorded it.
+    if (existing.priceKobo === priceKobo) return toBoardEntry(existing);
+    // A correction changes the price only; the market keeps the spelling on the board.
+    const updated = await tx.pricePoint.update({
+      where: { id: existing.id },
+      data: { priceKobo, recordedByUserId: actor.userId },
+      include: WITH_NAMES,
+    });
+    await recordAudit(
+      {
+        actorId: actor.userId,
+        action: "price.update",
+        entity: "price_point",
+        entityId: existing.id,
+        meta: { ...meta, fromKobo: existing.priceKobo, toKobo: priceKobo },
+      },
+      tx,
+    );
     return toBoardEntry(updated);
   });
+}
+
+// The spelling a market already has on the board (any crop, any week), so one market
+// never shows two ways. A market new to the board keeps the spelling typed.
+async function boardSpelling(client: MarketClient, marketKey: string, typed: string): Promise<string> {
+  const known = await client.pricePoint.findFirst({
+    where: { marketKey },
+    orderBy: { createdAt: "asc" },
+    select: { market: true },
+  });
+  return known?.market ?? typed;
+}
+
+type MarketClient = Pick<typeof prisma, "pricePoint">;
+
+// Market names already on the board, for the price form to suggest.
+export async function listMarkets(actor: Actor): Promise<string[]> {
+  if (!can(actor, "price:write")) throw new ForbiddenError();
+  const rows = await prisma.pricePoint.findMany({
+    distinct: ["marketKey"],
+    orderBy: [{ marketKey: "asc" }, { createdAt: "asc" }],
+    select: { market: true },
+  });
+  return rows.map((r) => r.market);
 }
 
 // The week's entries for the board admin's screen, sorted by crop, unit and market.
@@ -141,26 +170,35 @@ type BoardRow = {
   weekOf: Date;
   priceKobo: number;
   previousKobo: number | null;
+  previousWeekOf: Date | null;
 };
 
+// How far back the public board looks. A price older than a year is no longer market
+// information, and the bound keeps each visit to an index range on weekOf.
+export const BOARD_WINDOW_WEEKS = 52;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 // The public price board: no Actor, because farmers, buyers and signed-out visitors all
-// read it and it holds no private fields. One row per active crop, active unit and market:
-// the latest week's price and the most recent earlier week's.
+// read it and it holds no private fields. One row per active crop, active unit and market
+// priced in the last 52 weeks: the latest week's price and the most recent earlier one's.
 export async function listPublicBoard(
   filter: { cropId?: string } = {},
+  now: Date = new Date(),
 ): Promise<PublicBoardRow[]> {
   const cropFilter = filter.cropId ? Prisma.sql`AND p."cropId" = ${filter.cropId}` : Prisma.empty;
+  const since = new Date(weekStart(now).getTime() - BOARD_WINDOW_WEEKS * WEEK_MS);
   const rows = await prisma.$queryRaw<BoardRow[]>`
-    SELECT crop, unit, market, "weekOf", "priceKobo", "previousKobo"
+    SELECT crop, unit, market, "weekOf", "priceKobo", "previousKobo", "previousWeekOf"
     FROM (
       SELECT c.name AS crop, u.name AS unit, p.market, p."weekOf", p."priceKobo",
              c."nameKey" AS crop_key, u."nameKey" AS unit_key, p."marketKey",
              LEAD(p."priceKobo") OVER w AS "previousKobo",
+             LEAD(p."weekOf") OVER w AS "previousWeekOf",
              ROW_NUMBER() OVER w AS rank
       FROM price_point p
       JOIN crop c ON c.id = p."cropId" AND c.active
       JOIN unit u ON u.id = p."unitId" AND u.active
-      WHERE TRUE ${cropFilter}
+      WHERE p."weekOf" >= ${since}::date ${cropFilter}
       WINDOW w AS (PARTITION BY p."cropId", p."unitId", p."marketKey" ORDER BY p."weekOf" DESC)
     ) ranked
     WHERE rank = 1

@@ -587,7 +587,8 @@
     "perUnit": "",
     "weekOf": "",
     "noEarlier": "",
-    "noChange": ""
+    "noChange": "",
+    "since": ""
   },
   "board": {
     "entry": {
@@ -609,7 +610,9 @@
       "weekHeading": "",
       "weekEmpty": "",
       "showWeek": "",
-      "needCatalogLink": ""
+      "needCatalogLink": "",
+      "savesTo": "",
+      "marketsLabel": ""
     },
     "crops": {
       "title": "",
@@ -640,7 +643,13 @@
       "UNIT_INACTIVE": "",
       "INVALID_PRICE": "",
       "INVALID_PRICE_ENTRY": "",
-      "INTERNAL": ""
+      "INTERNAL": "",
+      "INVALID_WEEK": "",
+      "CROP_NOT_FOUND": "",
+      "UNIT_NOT_FOUND": "",
+      "UNAUTHENTICATED": "",
+      "2FA_REQUIRED": "",
+      "FORBIDDEN": ""
     }
   }
 }

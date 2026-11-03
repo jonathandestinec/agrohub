@@ -97,3 +97,22 @@ describe("crops and units", () => {
     expect(crops.map((c) => c.name)).toEqual(["cassava", "Maize", "Yam"]);
   });
 });
+
+describe("catalog audit rows", () => {
+  it("rename_audit_records_old_and_new_names", async () => {
+    const crop = await createCrop(board, { name: "Maize" });
+    await renameCrop(board, crop.id, { name: "Corn" });
+    const [row] = await prisma.auditLog.findMany({ where: { action: "crop.rename", entityId: crop.id } });
+    expect(row.meta).toEqual({ from: "Maize", to: "Corn" });
+  });
+
+  it("no_op_changes_write_no_audit_row", async () => {
+    const crop = await createCrop(board, { name: "Maize" });
+    await renameCrop(board, crop.id, { name: " Maize " });
+    await setCropActive(board, crop.id, true);
+    const rows = await prisma.auditLog.findMany({
+      where: { entityId: crop.id, action: { in: ["crop.rename", "crop.activate"] } },
+    });
+    expect(rows).toEqual([]);
+  });
+});

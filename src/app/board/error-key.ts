@@ -7,6 +7,12 @@ const KNOWN_ERRORS = [
   "UNIT_INACTIVE",
   "INVALID_PRICE",
   "INVALID_PRICE_ENTRY",
+  "INVALID_WEEK",
+  "CROP_NOT_FOUND",
+  "UNIT_NOT_FOUND",
+  "UNAUTHENTICATED",
+  "2FA_REQUIRED",
+  "FORBIDDEN",
 ] as const;
 
 // Pure: the board.errors message key for an action result code.

@@ -47,19 +47,32 @@ async function create(actor: Actor, kind: Kind, input: NameInput): Promise<Catal
   }
 }
 
+// Applies one change and its audit row together. A change that alters nothing writes
+// nothing, so the audit log holds only real changes.
 async function update(
   actor: Actor,
   kind: Kind,
   id: string,
-  data: { name: string; nameKey: string } | { active: boolean },
-  action: string,
+  change: (existing: CatalogItem) => {
+    data: { name: string; nameKey: string } | { active: boolean };
+    action: string;
+    meta?: Record<string, unknown>;
+  } | null,
 ): Promise<CatalogItem> {
   const existing = await delegate(kind).findUnique({ where: { id } });
   if (!existing) throw new NotFoundError(NOT_FOUND_CODE[kind]);
+  const planned = change(toCatalogItem(existing));
+  if (!planned) return toCatalogItem(existing);
   try {
-    const row = await delegate(kind).update({ where: { id }, data });
-    await recordAudit({ actorId: actor.userId, action, entity: kind, entityId: id });
-    return toCatalogItem(row);
+    return await prisma.$transaction(async (tx) => {
+      const client = (kind === "crop" ? tx.crop : tx.unit) as unknown as typeof tx.crop;
+      const row = await client.update({ where: { id }, data: planned.data });
+      await recordAudit(
+        { actorId: actor.userId, action: planned.action, entity: kind, entityId: id, meta: planned.meta },
+        tx,
+      );
+      return toCatalogItem(row);
+    });
   } catch (error) {
     if (isUniqueViolation(error)) throw new ConflictError(`${kind} exists`, EXISTS_CODE[kind]);
     throw error;
@@ -69,12 +82,25 @@ async function update(
 async function rename(actor: Actor, kind: Kind, id: string, input: NameInput): Promise<CatalogItem> {
   assertCanManage(actor);
   const name = parseName(input);
-  return update(actor, kind, id, { name, nameKey: nameKeyOf(name) }, `${kind}.rename`);
+  // Names are not personal data, so the audit row keeps both.
+  return update(actor, kind, id, (existing) =>
+    existing.name === name
+      ? null
+      : {
+          data: { name, nameKey: nameKeyOf(name) },
+          action: `${kind}.rename`,
+          meta: { from: existing.name, to: name },
+        },
+  );
 }
 
 async function setActive(actor: Actor, kind: Kind, id: string, active: boolean): Promise<CatalogItem> {
   assertCanManage(actor);
-  return update(actor, kind, id, { active }, `${kind}.${active ? "activate" : "deactivate"}`);
+  return update(actor, kind, id, (existing) =>
+    existing.active === active
+      ? null
+      : { data: { active }, action: `${kind}.${active ? "activate" : "deactivate"}` },
+  );
 }
 
 export const createCrop = (actor: Actor, input: NameInput) => create(actor, "crop", input);

@@ -6,7 +6,7 @@ import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { buttonClass, Card, PageHeading } from "@/components/ui";
 import { formatNaira } from "@/lib/money";
 import { weekInput } from "@/modules/board/schema";
-import { listWeek } from "@/modules/board/service";
+import { listMarkets, listWeek } from "@/modules/board/service";
 import { toWeekKey, weekStart } from "@/modules/board/week";
 import { listActiveCatalog } from "@/modules/catalog/service";
 import { PriceForm } from "./price-form";
@@ -35,9 +35,10 @@ async function Board({ searchParams }: { searchParams: Promise<{ week?: string |
     typeof week === "string" && weekInput.safeParse(week).success
       ? toWeekKey(weekStart(new Date(`${week}T12:00:00Z`)))
       : thisWeek;
-  const [{ crops, units }, entries] = await Promise.all([
+  const [{ crops, units }, entries, markets] = await Promise.all([
     listActiveCatalog(),
     listWeek(actor, shown),
+    listMarkets(actor),
   ]);
   const weekLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
     new Date(`${shown}T00:00:00Z`),
@@ -57,7 +58,7 @@ async function Board({ searchParams }: { searchParams: Promise<{ week?: string |
               </Link>
             </p>
           ) : (
-            <PriceForm crops={crops} units={units} weekOf={thisWeek} />
+            <PriceForm crops={crops} units={units} markets={markets} weekOf={thisWeek} />
           )}
         </Card>
         <Card tone="paper" className="flex flex-col gap-4 md:col-span-7">

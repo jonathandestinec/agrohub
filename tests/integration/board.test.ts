@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, ValidationError } from "@/lib/errors";
-import { listPublicBoard, listWeek, recordPrice } from "@/modules/board/service";
+import { listMarkets, listPublicBoard, listWeek, recordPrice } from "@/modules/board/service";
 import { createCrop, createUnit, setCropActive, setUnitActive } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { cleanDatabase, createTestUser } from "./helpers";
@@ -49,12 +49,25 @@ describe("recordPrice", () => {
     expect(updates[0].meta).toMatchObject({ fromKobo: 50000, toKobo: 52000 });
   });
 
-  it("market_names_are_normalized", async () => {
+  it("market_names_are_normalized and keep their first spelling", async () => {
     await recordPrice(board, entry({ market: "Bodija Market" }), NOW);
-    await recordPrice(board, entry({ market: " bodija  market" }), NOW);
+    await recordPrice(board, entry({ market: " bodija  market", priceKobo: 51000 }), NOW);
+    // Another week and another crop reuse the spelling already on the board.
+    await recordPrice(board, entry({ market: "BODIJA MARKET", weekOf: "2026-10-26" }), NOW);
     const rows = await prisma.pricePoint.findMany();
-    expect(rows).toHaveLength(1);
-    expect(rows[0].market).toBe("bodija market");
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.market)).toEqual(["Bodija Market", "Bodija Market"]);
+    expect(await listMarkets(board)).toEqual(["Bodija Market"]);
+  });
+
+  it("identical_resubmit_changes_nothing", async () => {
+    await recordPrice(board, entry(), NOW);
+    const before = await prisma.pricePoint.findFirstOrThrow();
+    const other: Actor = { ...board, userId: (await createTestUser({ id: "u-board-2" })).id };
+    await recordPrice(other, entry(), NOW);
+    const after = await prisma.pricePoint.findFirstOrThrow();
+    expect(after.recordedByUserId).toBe(before.recordedByUserId);
+    expect(after.updatedAt).toEqual(before.updatedAt);
   });
 
   it("week_of_uses_lagos_time and future_week_is_refused", async () => {
@@ -112,7 +125,15 @@ describe("listPublicBoard", () => {
     await recordPrice(board, entry({ weekOf: "2026-10-19", priceKobo: 48000 }), NOW);
     await recordPrice(board, entry({ weekOf: "2026-10-26", priceKobo: 50000 }), NOW);
     expect(await listPublicBoard()).toEqual([
-      { crop: "Maize", unit: "Bag", market: "Bodija Market", weekOf: "2026-10-26", priceKobo: 50000, previousKobo: 48000 },
+      {
+        crop: "Maize",
+        unit: "Bag",
+        market: "Bodija Market",
+        weekOf: "2026-10-26",
+        priceKobo: 50000,
+        previousKobo: 48000,
+        previousWeekOf: "2026-10-19",
+      },
     ]);
   });
 
@@ -147,5 +168,17 @@ describe("listPublicBoard", () => {
   it("never carries the recording user", async () => {
     await recordPrice(board, entry(), NOW);
     expect(JSON.stringify(await listPublicBoard())).not.toContain(board.userId);
+  });
+});
+
+describe("listPublicBoard window", () => {
+  it("public_board_ignores_prices_older_than_a_year", async () => {
+    await recordPrice(board, entry({ weekOf: "2025-10-27", priceKobo: 30000 }), NOW);
+    await recordPrice(board, entry({ weekOf: "2025-11-03", priceKobo: 40000 }), NOW);
+    await recordPrice(board, entry({ market: "Mile 12", weekOf: "2025-10-27" }), NOW);
+    // 2025-11-03 is 52 weeks before the week of 2026-11-02; 2025-10-27 is 53.
+    expect(await listPublicBoard({}, NOW)).toEqual([
+      expect.objectContaining({ market: "Bodija Market", weekOf: "2025-11-03", previousKobo: null, previousWeekOf: null }),
+    ]);
   });
 });

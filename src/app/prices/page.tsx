@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { buttonClass, Card, PageHeading } from "@/components/ui";
@@ -27,21 +28,24 @@ async function Prices({
   const t = await getTranslations("prices");
   const locale = await getLocale();
   const { crop } = await searchParams;
+  // Rendered per request: the board's 52-week window is measured from now.
+  await connection();
   const cropId = typeof crop === "string" && crop !== "" ? crop : undefined;
   const [{ crops }, rows] = await Promise.all([
     listActiveCatalog(),
     listPublicBoard({ cropId }),
   ]);
-  const formatWeek = (iso: string) =>
-    t("weekOf", {
-      date: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
-        new Date(`${iso}T00:00:00Z`),
-      ),
-    });
+  const formatDate = (iso: string) =>
+    new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
+      new Date(`${iso}T00:00:00Z`),
+    );
+  const formatWeek = (iso: string) => t("weekOf", { date: formatDate(iso) });
+  // The earlier price may be weeks old, so the change always names its week.
   const change = (row: PublicBoardRow) => {
-    if (row.previousKobo === null) return t("noEarlier");
-    if (row.previousKobo === row.priceKobo) return t("noChange");
-    return formatNairaChange(row.previousKobo, row.priceKobo);
+    if (row.previousKobo === null || row.previousWeekOf === null) return t("noEarlier");
+    const since = t("since", { date: formatDate(row.previousWeekOf) });
+    if (row.previousKobo === row.priceKobo) return `${t("noChange")} ${since}`;
+    return `${formatNairaChange(row.previousKobo, row.priceKobo)} ${since}`;
   };
 
   return (

@@ -15,3 +15,8 @@ export function weekStart(at: Date): Date {
 export function toWeekKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
+
+/** "YYYY-MM-DD" of the Monday of the Lagos week containing `now`. */
+export function currentWeekKey(now: Date): string {
+  return toWeekKey(weekStart(now));
+}

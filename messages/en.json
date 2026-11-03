@@ -587,7 +587,8 @@
     "perUnit": "per {unit}",
     "weekOf": "Week of {date}",
     "noEarlier": "No earlier price",
-    "noChange": "No change"
+    "noChange": "No change",
+    "since": "since {date}"
   },
   "board": {
     "entry": {
@@ -609,7 +610,9 @@
       "weekHeading": "Prices for the week of {date}",
       "weekEmpty": "No prices recorded for this week yet.",
       "showWeek": "Show week",
-      "needCatalogLink": "Crops and units"
+      "needCatalogLink": "Crops and units",
+      "savesTo": "Saves to the week of {date}.",
+      "marketsLabel": "Markets already on the board"
     },
     "crops": {
       "title": "Crops and units",
@@ -640,7 +643,13 @@
       "UNIT_INACTIVE": "That unit is hidden. Show it again on Crops and units first.",
       "INVALID_PRICE": "Enter a price in naira, for example 52000 or 52000.50.",
       "INVALID_PRICE_ENTRY": "Check the market name (up to 80 characters), the week and the price.",
-      "INTERNAL": "Something went wrong. Please try again."
+      "INTERNAL": "Something went wrong. Please try again.",
+      "INVALID_WEEK": "Choose a week from the calendar.",
+      "CROP_NOT_FOUND": "That crop no longer exists. Reload the page and try again.",
+      "UNIT_NOT_FOUND": "That unit no longer exists. Reload the page and try again.",
+      "UNAUTHENTICATED": "Your session has ended. Sign in again, then save.",
+      "2FA_REQUIRED": "Confirm your two-factor code again, then save.",
+      "FORBIDDEN": "Only board admins can change the price board."
     }
   }
 }

@@ -28,10 +28,11 @@ export type PublicBoardRow = {
   weekOf: string;
   priceKobo: number;
   previousKobo: number | null;
+  previousWeekOf: string | null;
 };
 
-// The latest price for one crop, unit and market, with the most recent earlier week's.
-// Only names and prices: never who recorded it.
+// The latest price for one crop, unit and market, with the most recent earlier week's
+// price and which week that was. Only names and prices: never who recorded it.
 export function toPublicBoardRow(row: {
   crop: string;
   unit: string;
@@ -39,6 +40,7 @@ export function toPublicBoardRow(row: {
   weekOf: Date;
   priceKobo: number;
   previousKobo: number | null;
+  previousWeekOf: Date | null;
 }): PublicBoardRow {
   return {
     crop: row.crop,
@@ -47,5 +49,6 @@ export function toPublicBoardRow(row: {
     weekOf: toWeekKey(row.weekOf),
     priceKobo: row.priceKobo,
     previousKobo: row.previousKobo,
+    previousWeekOf: row.previousWeekOf ? toWeekKey(row.previousWeekOf) : null,
   };
 }
