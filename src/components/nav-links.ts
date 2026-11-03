@@ -15,7 +15,10 @@ export type NavLabelKey =
   | "platformSettings"
   | "myLots"
   | "screenLots"
-  | "lotQueue";
+  | "lotQueue"
+  | "browseLots"
+  | "myOffers"
+  | "buyProduce";
 export type NavLink = { href: string; labelKey: NavLabelKey };
 
 const LINKS: Partial<Record<Role, NavLink[]>> = {
@@ -35,6 +38,10 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
     { href: "/farmer/lots", labelKey: "myLots" },
     { href: "/prices", labelKey: "prices" },
   ],
+  BUYER: [
+    { href: "/lots", labelKey: "browseLots" },
+    { href: "/buyer", labelKey: "myOffers" },
+  ],
   BOARD_ADMIN: [
     { href: "/board", labelKey: "priceEntry" },
     { href: "/board/crops", labelKey: "cropsUnits" },
@@ -49,7 +56,7 @@ export function navLinksFor(role: Role | null): NavLink[] {
 
 // Pure: the header links for a signed-in user with no ACTIVE membership. A farmer waiting
 // for approval gets their farm page; a user with no officer or farmer membership at all
-// (in any status) is offered to register a cooperative.
+// (in any status) is offered to register a cooperative or to start buying.
 export function navLinksWithoutActiveMembership(
   memberships: Array<{ role: Role; status: MembershipStatus }>,
 ): NavLink[] {
@@ -57,7 +64,10 @@ export function navLinksWithoutActiveMembership(
     return [{ href: "/farmer", labelKey: "yourFarm" }];
   }
   if (!memberships.some((m) => m.role === "OFFICER" || m.role === "FARMER")) {
-    return [{ href: "/officer/onboarding", labelKey: "registerCooperative" }];
+    return [
+      { href: "/officer/onboarding", labelKey: "registerCooperative" },
+      { href: "/buyer/join", labelKey: "buyProduce" },
+    ];
   }
   return [];
 }

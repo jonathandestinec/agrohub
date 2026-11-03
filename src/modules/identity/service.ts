@@ -125,3 +125,47 @@ export async function getOwnedMembership(
   }
   return membership;
 }
+
+// Buyer sign-up: self-onboarding with no Actor (the caller has no buyer membership yet), scoped
+// to the caller's own userId, like joinViaLink. Better Auth requires a verified email before
+// sign-in; this checks it again. There is no SMS, so phone confirmation falls back silently to
+// the email check and phoneConfirmed stays false for admins to see (spec 6.2).
+export async function becomeBuyer(user: { userId: string }): Promise<{ membershipId: string }> {
+  const account = await prisma.user.findUnique({
+    where: { id: user.userId },
+    select: { emailVerified: true },
+  });
+  if (!account?.emailVerified) throw new ForbiddenError("EMAIL_NOT_VERIFIED");
+  const existing = await prisma.membership.findFirst({
+    where: { userId: user.userId, role: "BUYER", cooperativeId: null },
+  });
+  if (existing?.status === "ACTIVE") return { membershipId: existing.id };
+  try {
+    const membership = await prisma.$transaction(async (tx) => {
+      const row = existing
+        ? await tx.membership.update({ where: { id: existing.id }, data: { status: "ACTIVE" } })
+        : await tx.membership.create({ data: { userId: user.userId, role: "BUYER", status: "ACTIVE" } });
+      await recordAudit(
+        {
+          actorId: user.userId,
+          action: "buyer.join",
+          entity: "membership",
+          entityId: row.id,
+          meta: { membershipId: row.id },
+        },
+        tx,
+      );
+      return row;
+    });
+    return { membershipId: membership.id };
+  } catch (error) {
+    // A concurrent call created it first: return that one.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const row = await prisma.membership.findFirstOrThrow({
+        where: { userId: user.userId, role: "BUYER", cooperativeId: null },
+      });
+      return { membershipId: row.id };
+    }
+    throw error;
+  }
+}

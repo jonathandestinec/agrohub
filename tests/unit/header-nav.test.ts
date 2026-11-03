@@ -36,16 +36,26 @@ describe("navLinksFor", () => {
     ]);
   });
 
-  it.each(["BUYER", null] as const)("gives %s no links yet", (role) => {
-    expect(navLinksFor(role)).toEqual([]);
+  it("gives buyers the lot list and their offers", () => {
+    expect(navLinksFor("BUYER")).toEqual([
+      { href: "/lots", labelKey: "browseLots" },
+      { href: "/buyer", labelKey: "myOffers" },
+    ]);
+  });
+
+  it("gives no links without a role", () => {
+    expect(navLinksFor(null)).toEqual([]);
   });
 });
 
 describe("navLinksWithoutActiveMembership", () => {
-  const register = [{ href: "/officer/onboarding", labelKey: "registerCooperative" }];
+  const register = [
+    { href: "/officer/onboarding", labelKey: "registerCooperative" },
+    { href: "/buyer/join", labelKey: "buyProduce" },
+  ];
   const yourFarm = [{ href: "/farmer", labelKey: "yourFarm" }];
 
-  it("offers to register a cooperative to a user with no officer or farmer membership", () => {
+  it("offers to register a cooperative or buy produce to a user with no officer or farmer membership", () => {
     expect(navLinksWithoutActiveMembership([])).toEqual(register);
     expect(navLinksWithoutActiveMembership([{ role: "BUYER", status: "PENDING" }])).toEqual(
       register,

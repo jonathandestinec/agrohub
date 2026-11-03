@@ -37,7 +37,10 @@
     "platformSettings": "",
     "myLots": "",
     "screenLots": "",
-    "lotQueue": ""
+    "lotQueue": "",
+    "browseLots": "",
+    "myOffers": "",
+    "buyProduce": ""
   },
   "auth": {
     "fields": {
@@ -959,5 +962,24 @@
     "pickup": "",
     "until": "",
     "soldBy": ""
+  },
+  "buyer": {
+    "join": {
+      "title": "",
+      "lead": "",
+      "pointCooperatives": "",
+      "pointOffers": "",
+      "pointHeld": "",
+      "createAccount": "",
+      "signIn": "",
+      "start": "",
+      "emailNotVerified": "",
+      "error": ""
+    },
+    "home": {
+      "title": "",
+      "lead": "",
+      "browse": ""
+    }
   }
 }

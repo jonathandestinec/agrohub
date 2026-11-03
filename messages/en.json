@@ -37,7 +37,10 @@
     "platformSettings": "Platform settings",
     "myLots": "My lots",
     "screenLots": "Screen lots",
-    "lotQueue": "Lot queue"
+    "lotQueue": "Lot queue",
+    "browseLots": "Browse lots",
+    "myOffers": "My offers",
+    "buyProduce": "Buy produce"
   },
   "auth": {
     "fields": {
@@ -959,5 +962,24 @@
     "pickup": "Pickup in {lga}, {state}",
     "until": "until {date}",
     "soldBy": "Sold by {cooperative}"
+  },
+  "buyer": {
+    "join": {
+      "title": "Buy from verified cooperatives",
+      "lead": "Buy harvests in bulk from farmer cooperatives that AgroHub has verified.",
+      "pointCooperatives": "You deal with the cooperative, which sells its members' harvests as one catalogue.",
+      "pointOffers": "Buy at the asking price or make an offer. This is not an auction.",
+      "pointHeld": "Your payment is held until delivery is confirmed.",
+      "createAccount": "Create a buyer account",
+      "signIn": "I already have an account",
+      "start": "Start buying",
+      "emailNotVerified": "Confirm your email address first, using the link we sent you.",
+      "error": "Something went wrong. Please try again."
+    },
+    "home": {
+      "title": "My offers",
+      "lead": "Offers you have made and where each one stands.",
+      "browse": "Browse lots"
+    }
   }
 }
