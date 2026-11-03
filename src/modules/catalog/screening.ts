@@ -32,7 +32,7 @@ async function mayScreen(actor: Actor, lot: LotRow): Promise<boolean> {
 
 // The self-approval rule (spec 3): an officer never screens their own lot; an admin only
 // when no other officer can. The owner gets a code of their own so the screen can say why.
-async function assertMayScreen(actor: Actor, lot: LotRow): Promise<void> {
+export async function assertMayScreen(actor: Actor, lot: LotRow): Promise<void> {
   if (actor.userId === lot.farmerUserId) throw new ForbiddenError("CANNOT_APPROVE_OWN_LOT");
   if (!(await mayScreen(actor, lot))) throw new ForbiddenError();
 }
@@ -222,13 +222,24 @@ export async function listScreeningQueue(actor: Actor): Promise<ScreeningLot[]> 
   let lots: LotRow[];
   if (actor.role === "OFFICER") {
     lots = await prisma.lot.findMany({
-      where: { cooperativeId: actor.cooperativeId as string, status: { in: ["PENDING_REVIEW", "COUNTERED"] } },
+      where: {
+        cooperativeId: actor.cooperativeId as string,
+        OR: [
+          { status: { in: ["PENDING_REVIEW", "COUNTERED"] } },
+          { status: "LIVE", revisions: { some: { status: "PENDING" } } },
+        ],
+      },
       include: LOT_INCLUDE,
       orderBy: { createdAt: "asc" },
     });
   } else {
     const pending = await prisma.lot.findMany({
-      where: { status: "PENDING_REVIEW" },
+      where: {
+        OR: [
+          { status: "PENDING_REVIEW" },
+          { status: "LIVE", revisions: { some: { status: "PENDING" } } },
+        ],
+      },
       include: LOT_INCLUDE,
       orderBy: { createdAt: "asc" },
     });

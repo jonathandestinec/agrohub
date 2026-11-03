@@ -929,6 +929,24 @@
         "counter": "",
         "reject": ""
       }
+    },
+    "revise": {
+      "heading": "",
+      "intro": "",
+      "submit": ""
+    },
+    "withdraw": {
+      "button": "",
+      "confirm": "",
+      "yes": "",
+      "no": ""
+    },
+    "revision": {
+      "heading": "",
+      "pendingFarmer": "",
+      "approve": "",
+      "reject": "",
+      "cancel": ""
     }
   }
 }

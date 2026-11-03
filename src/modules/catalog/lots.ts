@@ -23,6 +23,7 @@ export const LOT_INCLUDE = {
   feeTerms: true,
   cooperative: { select: { name: true } },
   farmer: { select: { name: true } },
+  revisions: { where: { status: "PENDING" }, orderBy: { createdAt: "desc" }, take: 1 },
 } as const;
 
 export async function photoUrlsOf(lotId: string): Promise<string[]> {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { LotDetails } from "@/components/lots/lot-details";
+import { RevisionDecision } from "@/components/lots/revision-decision";
 import { ScreeningActions } from "@/components/lots/screening-actions";
 import { LOT_STATUS_TONE } from "@/components/lots/status";
 import { ArrowUpRight, Card, Chip, PageHeading } from "@/components/ui";
@@ -97,6 +98,33 @@ export async function ScreeningLotPage({ actor, lotId }: { actor: Actor; lotId: 
               )}
             </section>
           </Card>
+          {lot.pendingRevision ? (
+            <Card tone="paper">
+              <section className="flex flex-col gap-3">
+                <h2 className="heading-6">{t("revision.heading")}</h2>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 body-3">
+                  <dt className="text-ink-soft">{t("details.ask")}</dt>
+                  <dd>
+                    {formatNaira(lot.askKobo)} → {formatNaira(lot.pendingRevision.askKobo)}
+                  </dd>
+                  <dt className="text-ink-soft">{t("details.quantity")}</dt>
+                  <dd>
+                    {lot.quantity} → {lot.pendingRevision.quantity}
+                  </dd>
+                  <dt className="text-ink-soft">{t("details.floor")}</dt>
+                  <dd>
+                    {formatNaira(lot.floorKobo)} → {formatNaira(lot.pendingRevision.floorKobo)}
+                  </dd>
+                </dl>
+                {lot.pendingRevision.note ? <p className="body-3">{lot.pendingRevision.note}</p> : null}
+                {lot.canApprove ? (
+                  <RevisionDecision lotId={lot.id} revisionId={lot.pendingRevision.id} />
+                ) : (
+                  <p className="body-6 text-ink-soft">{t("screening.ownLot")}</p>
+                )}
+              </section>
+            </Card>
+          ) : null}
           <Card tone="paper">
             {lot.status === "PENDING_REVIEW" && lot.canApprove ? (
               <ScreeningActions lotId={lot.id} quantity={lot.quantity} unit={lot.unit.name} />

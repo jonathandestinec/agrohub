@@ -442,6 +442,7 @@ model Lot {
   contributions    LotContribution[]
   photos           LotPhoto[]
   feeTerms         LotFeeTerms?
+  revisions        LotRevision[]
 
   @@index([cooperativeId, status])
   @@index([status, availableUntil])
@@ -485,4 +486,32 @@ model LotFeeTerms {
   lockedAt          DateTime
 
   @@map("lot_fee_terms")
+}
+
+enum RevisionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+// A farmer's change to a live lot's price, quantity or floor. The live version stays until
+// an officer approves it (spec 14); the lot's locked fee terms never change.
+model LotRevision {
+  id               String         @id @default(cuid())
+  lotId            String
+  lot              Lot            @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  askKobo          Int
+  quantity         Int
+  floorKobo        Int
+  note             String?
+  deviation        Deviation?
+  status           RevisionStatus @default(PENDING)
+  reason           String?
+  screenedByUserId String?
+  createdAt        DateTime       @default(now())
+  decidedAt        DateTime?
+
+  @@index([lotId, status])
+  @@map("lot_revision")
 }

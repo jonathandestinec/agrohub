@@ -42,6 +42,7 @@ const row: LotRow = {
   },
   cooperative: { name: "Zaria Growers" },
   farmer: { name: "Ada Okafor" },
+  revisions: [],
 };
 
 describe("lot views", () => {

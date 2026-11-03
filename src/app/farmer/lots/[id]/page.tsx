@@ -6,6 +6,9 @@ import { Breakdown } from "@/components/lots/breakdown";
 import { LotDetails } from "@/components/lots/lot-details";
 import { formatNaira } from "@/lib/money";
 import { CounterResponse } from "./counter-response";
+import { ReviseForm, WithdrawButton } from "./revise-form";
+import { boardReference } from "@/modules/board/service";
+import { getPlatformSettings } from "@/modules/settings/service";
 import { LOT_STATUS_TONE } from "@/components/lots/status";
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
@@ -60,9 +63,32 @@ async function FarmerLotView({ params }: { params: Promise<{ id: string }> }) {
           </section>
         </Card>
       ) : null}
+      {lot.pendingRevision ? (
+        <p role="status" className="rounded-inner bg-paper p-4 body-3 md:p-6">
+          {t("revision.pendingFarmer", {
+            price: formatNaira(lot.pendingRevision.askKobo),
+            quantity: lot.pendingRevision.quantity,
+            unit: lot.unit.name,
+          })}
+        </p>
+      ) : null}
       <Card tone="paper">
         <LotDetails lot={lot} />
       </Card>
+      {lot.status === "LIVE" ? (
+        <Card tone="paper">
+          <ReviseForm
+            lot={lot}
+            boardPrices={await boardReference(lot.crop.id, lot.unit.id)}
+            priceDeviationBps={(await getPlatformSettings()).priceDeviationBps}
+          />
+        </Card>
+      ) : null}
+      {lot.status === "PENDING_REVIEW" || lot.status === "COUNTERED" || lot.status === "LIVE" ? (
+        <Card tone="paper">
+          <WithdrawButton lotId={lot.id} />
+        </Card>
+      ) : null}
     </main>
   );
 }

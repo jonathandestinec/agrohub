@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { ValidationError } from "@/lib/errors";
 import { toKobo } from "@/lib/money";
-import { respondToCounter, submitLot } from "@/modules/catalog/service";
+import { requestRevision, respondToCounter, submitLot, withdrawLot } from "@/modules/catalog/service";
 import { requireActor } from "@/modules/identity/session";
 
 function text(form: FormData, name: string): string {
@@ -69,6 +69,37 @@ export async function respondToCounterAction(input: { lotId: string; accept: boo
     const actor = await requireActor();
     const lotId = typeof input?.lotId === "string" ? input.lotId : "";
     await respondToCounter(actor, lotId, input?.accept === true);
+    revalidateLots();
+    revalidatePath(`/farmer/lots/${lotId}`);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function requestRevisionAction(form: FormData): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    const lotId = text(form, "lotId");
+    await requestRevision(actor, lotId, {
+      askKobo: naira(form, "ask"),
+      quantity: whole(form, "quantity"),
+      floorKobo: naira(form, "floor"),
+      note: text(form, "note"),
+    });
+    revalidateLots();
+    revalidatePath(`/farmer/lots/${lotId}`);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function withdrawLotAction(input: { lotId: string }): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    const lotId = typeof input?.lotId === "string" ? input.lotId : "";
+    await withdrawLot(actor, lotId);
     revalidateLots();
     revalidatePath(`/farmer/lots/${lotId}`);
     return { ok: true, data: undefined };

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { ValidationError } from "@/lib/errors";
 import { toKobo } from "@/lib/money";
-import { approveLot, counterLot, rejectLot } from "@/modules/catalog/service";
+import { approveLot, counterLot, decideRevision, rejectLot } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { requireActor } from "@/modules/identity/session";
 
@@ -48,4 +48,15 @@ export async function counterLotAction(input: ScreeningInput): Promise<ActionRes
     }
     return counterLot(actor, lotId, { counterAskKobo, message: text(input?.message) });
   });
+}
+
+export async function decideRevisionAction(input: {
+  lotId: string;
+  revisionId: string;
+  approve: boolean;
+  reason?: string;
+}): Promise<ActionResult> {
+  return run({ lotId: input?.lotId }, (actor) =>
+    decideRevision(actor, text(input?.revisionId), { approve: input?.approve === true, reason: text(input?.reason) }),
+  );
 }

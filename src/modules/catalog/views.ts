@@ -7,6 +7,7 @@ import type {
   Lot,
   LotFeeTerms,
   LotGrade,
+  LotRevision,
   LotStatus,
   Unit,
 } from "@/generated/prisma/client";
@@ -64,6 +65,18 @@ export type LotRow = Lot & {
   feeTerms: LotFeeTerms | null;
   cooperative: { name: string };
   farmer: { name: string };
+  // The pending revision, if any (LOT_INCLUDE loads at most one).
+  revisions: LotRevision[];
+};
+
+export type PendingRevision = {
+  id: string;
+  askKobo: number;
+  quantity: number;
+  floorKobo: number;
+  note: string | null;
+  deviation: Deviation | null;
+  createdAt: string;
 };
 
 export type LotTerms = { cooperativeCutBps: number; platformFeeBps: number };
@@ -93,6 +106,7 @@ export type FarmerLot = {
   photoUrls: string[];
   createdAt: string;
   approvedAt: string | null;
+  pendingRevision: PendingRevision | null;
 };
 
 // The screening view: the officer sees the floor (they negotiate for the cooperative) and
@@ -148,6 +162,20 @@ export function toFarmerLot(lot: LotRow, photoUrls: string[]): FarmerLot {
     photoUrls,
     createdAt: lot.createdAt.toISOString(),
     approvedAt: lot.approvedAt?.toISOString() ?? null,
+    pendingRevision: toPendingRevision(lot.revisions.find((r) => r.status === "PENDING")),
+  };
+}
+
+function toPendingRevision(revision: LotRevision | undefined): PendingRevision | null {
+  if (!revision) return null;
+  return {
+    id: revision.id,
+    askKobo: revision.askKobo,
+    quantity: revision.quantity,
+    floorKobo: revision.floorKobo,
+    note: revision.note,
+    deviation: revision.deviation,
+    createdAt: revision.createdAt.toISOString(),
   };
 }
 

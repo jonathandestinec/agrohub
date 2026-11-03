@@ -929,6 +929,24 @@
         "counter": "Send counter offer",
         "reject": "Reject lot"
       }
+    },
+    "revise": {
+      "heading": "Change price or quantity",
+      "intro": "Your officer checks the change. Buyers keep seeing the current version until it is approved. Your locked terms stay the same.",
+      "submit": "Send change to my officer"
+    },
+    "withdraw": {
+      "button": "Withdraw this lot",
+      "confirm": "Buyers will stop seeing this lot. You can list it again later as a new lot.",
+      "yes": "Yes, withdraw",
+      "no": "Keep it"
+    },
+    "revision": {
+      "heading": "Change requested by the farmer",
+      "pendingFarmer": "Your change to {price} for {quantity} × {unit} is waiting for your officer.",
+      "approve": "Approve change",
+      "reject": "Reject change",
+      "cancel": "Cancel"
     }
   }
 }
