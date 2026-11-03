@@ -164,4 +164,5 @@ export {
 } from "./screening";
 export { decideRevision, requestRevision, withdrawLot } from "./revisions";
 export type { PendingRevision } from "./views";
-export { expireLots, listLiveLots } from "./public";
+export { expireLots, listLiveLots, searchLiveLots } from "./public";
+export { parseLotFilters, LOT_SORTS, type LotFilters, type LotSort } from "./search-schema";

@@ -1,67 +1,71 @@
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getLocale, getTranslations } from "next-intl/server";
-import { Chip, PageHeading } from "@/components/ui";
-import { formatNaira } from "@/lib/money";
-import { listLiveLots } from "@/modules/catalog/service";
+import { getTranslations } from "next-intl/server";
+import { PublicLotCard } from "@/components/lots/public-lot-card";
+import { PageHeading, buttonClass } from "@/components/ui";
+import { listActiveCatalog, parseLotFilters, searchLiveLots } from "@/modules/catalog/service";
+import { LotFiltersForm } from "./filters";
 
-// Public: buyers and signed-out visitors see live lots at the asking price. Only PublicLot
-// reaches this page, so no floor, farmer or screening detail can appear here. Offers and
-// filters arrive in Phase 4.
-export default function LotsPage() {
+// Public: buyers and signed-out visitors search live lots at the asking price. Only PublicLot
+// reaches this page, so no floor, farmer or screening detail can appear here.
+export default function LotsPage({ searchParams }: PageProps<"/lots">) {
   return (
     <Suspense fallback={null}>
-      <Lots />
+      <Lots searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function Lots() {
+function pageHref(params: Record<string, string | string[] | undefined>, page: number): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    const one = Array.isArray(value) ? value[0] : value;
+    if (one && key !== "page") query.set(key, one);
+  }
+  if (page > 1) query.set("page", String(page));
+  const text = query.toString();
+  return text ? `/lots?${text}` : "/lots";
+}
+
+async function Lots({ searchParams }: { searchParams: PageProps<"/lots">["searchParams"] }) {
   const t = await getTranslations("publicLots");
-  const tl = await getTranslations("lots");
-  const locale = await getLocale();
   // Rendered per request: a lot hides itself once its available-until day has passed.
   await connection();
-  const lots = await listLiveLots();
-  const date = (key: string) =>
-    new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(`${key}T00:00:00Z`));
+  const params = await searchParams;
+  const filters = parseLotFilters(params);
+  const [{ lots, page, hasMore }, { crops }] = await Promise.all([searchLiveLots(filters), listActiveCatalog()]);
+  const filtered = Object.keys(filters).some((key) => key !== "sort" && key !== "page");
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
       <PageHeading title={t("title")} lead={t("lead")} />
+      <LotFiltersForm filters={filters} crops={crops} />
       {lots.length === 0 ? (
-        <p className="body-3 text-ink-soft">{t("empty")}</p>
+        <p className="body-3 text-ink-soft">{filtered ? t("emptyFiltered") : t("empty")}</p>
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {lots.map((lot) => (
-            <li key={lot.id} className="flex flex-col overflow-hidden rounded-inner bg-paper">
-              {lot.photoUrls[0] ? (
-                // eslint-disable-next-line @next/next/no-img-element -- short-lived signed link to a private photo
-                <img
-                  src={lot.photoUrls[0]}
-                  alt={t("photoAlt", { crop: lot.crop })}
-                  loading="lazy"
-                  className="aspect-[4/3] w-full object-cover"
-                />
-              ) : null}
-              <div className="flex flex-col gap-2 p-4 md:p-6">
-                <h2 className="title-2 break-words">
-                  {tl("mine.summary", { quantity: lot.quantity, unit: lot.unit, crop: lot.crop })}
-                </h2>
-                <p className="heading-6 tabular-nums">{tl("mine.price", { price: formatNaira(lot.askKobo), unit: lot.unit })}</p>
-                <div className="flex flex-wrap gap-2">
-                  <Chip tone="lime">{tl(`grade.${lot.grade}`)}</Chip>
-                  <Chip>{t("minOrder", { quantity: lot.minOrderQty, unit: lot.unit })}</Chip>
-                </div>
-                <p className="body-6 text-ink-soft">
-                  {t("pickup", { lga: lot.pickupLga, state: lot.pickupState })} · {t("until", { date: date(lot.availableUntil) })}
-                </p>
-                <p className="body-6">{t("soldBy", { cooperative: lot.cooperativeName })}</p>
-              </div>
+            <li key={lot.id}>
+              <PublicLotCard lot={lot} />
             </li>
           ))}
         </ul>
       )}
+      {page > 1 || hasMore ? (
+        <nav aria-label={t("pagesLabel")} className="flex flex-wrap gap-2">
+          {page > 1 ? (
+            <Link href={pageHref(params, page - 1)} className={buttonClass("paper")}>
+              {t("previous")}
+            </Link>
+          ) : null}
+          {hasMore ? (
+            <Link href={pageHref(params, page + 1)} className={buttonClass("paper")}>
+              {t("next")}
+            </Link>
+          ) : null}
+        </nav>
+      ) : null}
     </main>
   );
 }

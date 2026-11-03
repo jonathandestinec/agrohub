@@ -961,7 +961,28 @@
     "minOrder": "",
     "pickup": "",
     "until": "",
-    "soldBy": ""
+    "soldBy": "",
+    "emptyFiltered": "",
+    "pagesLabel": "",
+    "previous": "",
+    "next": "",
+    "filters": {
+      "crop": "",
+      "state": "",
+      "grade": "",
+      "sort": "",
+      "any": "",
+      "minPrice": "",
+      "maxPrice": "",
+      "minQuantity": "",
+      "apply": "",
+      "clear": "",
+      "sorts": {
+        "newest": "",
+        "price_asc": "",
+        "price_desc": ""
+      }
+    }
   },
   "buyer": {
     "join": {

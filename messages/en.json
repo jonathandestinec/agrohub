@@ -961,7 +961,28 @@
     "minOrder": "Minimum {quantity} × {unit}",
     "pickup": "Pickup in {lga}, {state}",
     "until": "until {date}",
-    "soldBy": "Sold by {cooperative}"
+    "soldBy": "Sold by {cooperative}",
+    "emptyFiltered": "No live lots match these filters. Try fewer filters.",
+    "pagesLabel": "More lots",
+    "previous": "Previous page",
+    "next": "Next page",
+    "filters": {
+      "crop": "Crop",
+      "state": "Pickup state",
+      "grade": "Grade",
+      "sort": "Sort by",
+      "any": "Any",
+      "minPrice": "Lowest price per unit (₦)",
+      "maxPrice": "Highest price per unit (₦)",
+      "minQuantity": "At least this many units",
+      "apply": "Show lots",
+      "clear": "Clear",
+      "sorts": {
+        "newest": "Newest",
+        "price_asc": "Price: low to high",
+        "price_desc": "Price: high to low"
+      }
+    }
   },
   "buyer": {
     "join": {

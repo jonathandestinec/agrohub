@@ -117,6 +117,7 @@ export type OfficerLot = FarmerLot & { farmerUserId: string; farmerName: string 
 // note to the officer and no screening fields: build it field by field, never by spreading.
 export type PublicLot = {
   id: string;
+  cooperativeId: string;
   cooperativeName: string;
   crop: string;
   unit: string;
@@ -186,6 +187,7 @@ export function toOfficerLot(lot: LotRow, photoUrls: string[]): OfficerLot {
 export function toPublicLot(lot: LotRow, photoUrls: string[]): PublicLot {
   return {
     id: lot.id,
+    cooperativeId: lot.cooperativeId,
     cooperativeName: lot.cooperative.name,
     crop: lot.crop.name,
     unit: lot.unit.name,
