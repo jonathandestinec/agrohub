@@ -4,10 +4,15 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
+import { OpenThreadButton } from "@/components/messages/open-thread-button";
 import { ButtonLink, Card, Chip, PageHeading } from "@/components/ui";
-import { NotFoundError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { formatNaira } from "@/lib/money";
 import { getPublicLot, type PublicLot } from "@/modules/catalog/service";
+import type { Actor } from "@/modules/identity/policies";
+import { listMemberships } from "@/modules/identity/service";
+import { currentUser, getActor } from "@/modules/identity/session";
+import { OfferForm } from "./offer-form";
 
 // Public: one live lot at the asking price. Only PublicLot reaches this page, so no floor,
 // farmer or screening detail can appear. A lot that is not live is a 404.
@@ -18,6 +23,21 @@ async function findLot(id: string): Promise<PublicLot | null> {
     if (error instanceof NotFoundError) return null;
     throw error;
   }
+}
+
+// Who is looking: an active buyer gets the offer form; a signed-in user holding a buyer
+// membership under another active role is told to switch; anyone else is pointed to sign-up.
+async function viewer(): Promise<{ actor: Actor | null; hasBuyerRole: boolean }> {
+  let actor: Actor | null = null;
+  try {
+    actor = await getActor();
+  } catch (error) {
+    if (!(error instanceof ForbiddenError)) throw error;
+  }
+  if (actor?.role === "BUYER") return { actor, hasBuyerRole: true };
+  const user = await currentUser();
+  const memberships = user ? await listMemberships(user.userId) : [];
+  return { actor, hasBuyerRole: memberships.some((m) => m.role === "BUYER") };
 }
 
 export async function generateMetadata({ params }: PageProps<"/lots/[id]">): Promise<Metadata> {
@@ -99,12 +119,35 @@ async function LotDetail({ params }: { params: PageProps<"/lots/[id]">["params"]
           {t("offerHeading")}
         </h2>
         <p className="body-4 text-ink-soft">{t("held")}</p>
-        <div>
-          <ButtonLink href="/buyer/join" tone="ink">
-            {t("signUpToOffer")}
-          </ButtonLink>
-        </div>
+        <OfferSlot lot={lot} />
       </section>
     </main>
+  );
+}
+
+async function OfferSlot({ lot }: { lot: PublicLot }) {
+  const t = await getTranslations("publicLot");
+  const { actor, hasBuyerRole } = await viewer();
+  if (actor?.role === "BUYER") {
+    return (
+      <>
+        <OfferForm
+          lotId={lot.id}
+          askKobo={lot.askKobo}
+          minOrderQty={lot.minOrderQty}
+          quantity={lot.quantity}
+          unit={lot.unit}
+        />
+        <OpenThreadButton lotId={lot.id} label={t("messageCooperative")} />
+      </>
+    );
+  }
+  if (hasBuyerRole) return <p className="body-4">{t("switchToBuyer")}</p>;
+  return (
+    <div>
+      <ButtonLink href="/buyer/join" tone="ink">
+        {t("signUpToOffer")}
+      </ButtonLink>
+    </div>
   );
 }

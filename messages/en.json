@@ -1001,7 +1001,8 @@
     "home": {
       "title": "My offers",
       "lead": "Offers you have made and where each one stands.",
-      "browse": "Browse lots"
+      "browse": "Browse lots",
+      "empty": "You have not made any offers yet. Browse lots to find a harvest."
     }
   },
   "publicLot": {
@@ -1015,7 +1016,9 @@
     "priceNote": "The price is per unit at the pickup location.",
     "offerHeading": "Buy or make an offer",
     "held": "Your payment is held until delivery is confirmed.",
-    "signUpToOffer": "Sign up as a buyer to make an offer"
+    "signUpToOffer": "Sign up as a buyer to make an offer",
+    "messageCooperative": "Message the cooperative",
+    "switchToBuyer": "Switch to your buyer role (top of the page) to make an offer."
   },
   "publicCooperative": {
     "meta": {
@@ -1052,6 +1055,70 @@
       "lotNotAvailable": "This lot is no longer on sale.",
       "ownCooperative": "You can't buy from your own cooperative.",
       "generic": "Something went wrong. Please try again."
+    }
+  },
+  "offers": {
+    "summary": "{quantity} {unit} of {crop}",
+    "totalLine": "Total {total}",
+    "buyerStatus": {
+      "WAITING": "Waiting for the cooperative",
+      "COUNTERED": "Counter offer",
+      "ACCEPTED": "Accepted",
+      "DECLINED": "Declined",
+      "EXPIRED": "Expired",
+      "WITHDRAWN": "Withdrawn"
+    },
+    "form": {
+      "quantity": "Quantity ({unit})",
+      "quantityHint": "From {min} to {max}",
+      "price": "Your price per {unit} (₦)",
+      "priceHint": "The asking price is {ask}",
+      "total": "You offer {total} in total",
+      "totalUnknown": "Enter a quantity and a price to see the total",
+      "message": "Message to the cooperative (optional)",
+      "explainer": "The cooperative answers within 48 hours. If they accept, you have 24 hours to pay, and your payment is held until delivery is confirmed.",
+      "submit": "Make offer"
+    },
+    "buyer": {
+      "yourOffer": "Your offer: {price} per {unit}",
+      "counter": "The cooperative's counter: {price} per {unit}",
+      "agreed": "Agreed price: {price} per {unit}",
+      "expires": "Waiting for an answer until {time}",
+      "payBy": "Accepted. The quantity is held for you until {time}.",
+      "paymentLater": "Paying for an accepted offer opens in a later release of AgroHub.",
+      "viewLot": "View the lot",
+      "acceptCounter": "Accept counter",
+      "declineCounter": "Decline counter",
+      "withdraw": "Withdraw offer",
+      "threadHeading": "Messages with the cooperative",
+      "messageCooperative": "Message the cooperative"
+    },
+    "errors": {
+      "INVALID_OFFER": "Check the quantity and price.",
+      "INVALID_PRICE": "Enter the price in naira, for example 40000 or 40000.50.",
+      "LOT_NOT_AVAILABLE": "This lot is no longer on sale.",
+      "OWN_COOPERATIVE_LOT": "You can't buy from your own cooperative.",
+      "OFFER_ABOVE_ASK": "Your price is above the asking price. Offer the asking price or less.",
+      "BELOW_MIN_ORDER": "The quantity is below the lot's minimum order.",
+      "OFFER_RATE_LIMIT": "You have made many offers in the last hour. Please wait a little.",
+      "OFFER_LOT_LIMIT": "You have made many offers on this lot today. Please try again tomorrow.",
+      "NOT_ENOUGH_STOCK": "There is not enough of this lot left for that quantity.",
+      "OFFER_NOT_FOUND": "This offer is not available.",
+      "OFFER_NOT_OPEN": "This offer has already been answered.",
+      "OFFER_NOT_COUNTERED": "There is no counter offer to answer.",
+      "OFFER_NOT_LIVE": "This offer is no longer open.",
+      "OFFER_NOT_AWAITING_FARMER": "This offer is not waiting for you.",
+      "OFFER_EXPIRED": "This offer has expired.",
+      "COUNTER_NOT_ABOVE_OFFER": "A counter must be above the buyer's offer.",
+      "COUNTER_ABOVE_ASK": "A counter can't be above the asking price.",
+      "COUNTER_BELOW_FLOOR": "A counter can't be below the farmer's lowest price. Reject the offer instead.",
+      "MESSAGE_HAS_CONTACT": "Phone numbers and email addresses can't be shared in messages. Keep the conversation on AgroHub.",
+      "MESSAGE_MENTIONS_FLOOR": "This message names the farmer's private lowest price. Buyers must never see it.",
+      "MESSAGE_LENGTH": "Write a message of up to 2,000 characters.",
+      "MESSAGE_RATE_LIMIT": "You have sent a lot of messages in the last hour. Please wait a little.",
+      "UNAUTHENTICATED": "Please sign in again.",
+      "FORBIDDEN": "You can't do this with your current role.",
+      "INTERNAL": "Something went wrong. Please try again."
     }
   }
 }

@@ -1001,7 +1001,8 @@
     "home": {
       "title": "",
       "lead": "",
-      "browse": ""
+      "browse": "",
+      "empty": ""
     }
   },
   "publicLot": {
@@ -1015,7 +1016,9 @@
     "priceNote": "",
     "offerHeading": "",
     "held": "",
-    "signUpToOffer": ""
+    "signUpToOffer": "",
+    "messageCooperative": "",
+    "switchToBuyer": ""
   },
   "publicCooperative": {
     "meta": {
@@ -1052,6 +1055,70 @@
       "lotNotAvailable": "",
       "ownCooperative": "",
       "generic": ""
+    }
+  },
+  "offers": {
+    "summary": "",
+    "totalLine": "",
+    "buyerStatus": {
+      "WAITING": "",
+      "COUNTERED": "",
+      "ACCEPTED": "",
+      "DECLINED": "",
+      "EXPIRED": "",
+      "WITHDRAWN": ""
+    },
+    "form": {
+      "quantity": "",
+      "quantityHint": "",
+      "price": "",
+      "priceHint": "",
+      "total": "",
+      "totalUnknown": "",
+      "message": "",
+      "explainer": "",
+      "submit": ""
+    },
+    "buyer": {
+      "yourOffer": "",
+      "counter": "",
+      "agreed": "",
+      "expires": "",
+      "payBy": "",
+      "paymentLater": "",
+      "viewLot": "",
+      "acceptCounter": "",
+      "declineCounter": "",
+      "withdraw": "",
+      "threadHeading": "",
+      "messageCooperative": ""
+    },
+    "errors": {
+      "INVALID_OFFER": "",
+      "INVALID_PRICE": "",
+      "LOT_NOT_AVAILABLE": "",
+      "OWN_COOPERATIVE_LOT": "",
+      "OFFER_ABOVE_ASK": "",
+      "BELOW_MIN_ORDER": "",
+      "OFFER_RATE_LIMIT": "",
+      "OFFER_LOT_LIMIT": "",
+      "NOT_ENOUGH_STOCK": "",
+      "OFFER_NOT_FOUND": "",
+      "OFFER_NOT_OPEN": "",
+      "OFFER_NOT_COUNTERED": "",
+      "OFFER_NOT_LIVE": "",
+      "OFFER_NOT_AWAITING_FARMER": "",
+      "OFFER_EXPIRED": "",
+      "COUNTER_NOT_ABOVE_OFFER": "",
+      "COUNTER_ABOVE_ASK": "",
+      "COUNTER_BELOW_FLOOR": "",
+      "MESSAGE_HAS_CONTACT": "",
+      "MESSAGE_MENTIONS_FLOOR": "",
+      "MESSAGE_LENGTH": "",
+      "MESSAGE_RATE_LIMIT": "",
+      "UNAUTHENTICATED": "",
+      "FORBIDDEN": "",
+      "INTERNAL": ""
     }
   }
 }
