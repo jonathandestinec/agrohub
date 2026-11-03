@@ -46,4 +46,5 @@ export async function cleanDatabase(): Promise<void> {
   await prisma.pricePoint.deleteMany();
   await prisma.crop.deleteMany();
   await prisma.unit.deleteMany();
+  await prisma.setting.deleteMany();
 }

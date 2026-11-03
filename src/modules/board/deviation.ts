@@ -1,5 +1,6 @@
 // How far a farmer's asking price may sit from the board price before the lot form shows
-// its neutral warning. Starting default 20%; a Setting can replace it later.
+// its neutral warning. The live value is the price_deviation_bps Setting
+// (src/modules/settings/service.ts); this is its default.
 export const DEFAULT_DEVIATION_THRESHOLD_BPS = 2000;
 
 export type Deviation = "OK" | "HIGH" | "LOW";

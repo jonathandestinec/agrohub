@@ -33,7 +33,8 @@
     "home": "",
     "prices": "",
     "priceEntry": "",
-    "cropsUnits": ""
+    "cropsUnits": "",
+    "platformSettings": ""
   },
   "auth": {
     "fields": {
@@ -307,6 +308,23 @@
         "COOPERATIVE_NOT_FOUND": "",
         "UNAUTHENTICATED": "",
         "FORBIDDEN": "",
+        "INTERNAL": ""
+      }
+    },
+    "settings": {
+      "title": "",
+      "intro": "",
+      "platformFee": "",
+      "platformFeeHint": "",
+      "maxCooperativeCut": "",
+      "maxCooperativeCutHint": "",
+      "priceDeviation": "",
+      "priceDeviationHint": "",
+      "save": "",
+      "saving": "",
+      "saved": "",
+      "errors": {
+        "INVALID_SETTING": "",
         "INTERNAL": ""
       }
     }

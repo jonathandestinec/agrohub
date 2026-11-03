@@ -11,9 +11,10 @@ describe("navLinksFor", () => {
     ]);
   });
 
-  it("gives admins the cooperatives queue", () => {
+  it("gives admins the cooperatives queue and platform settings", () => {
     expect(navLinksFor("ADMIN")).toEqual([
       { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
+      { href: "/admin/settings", labelKey: "platformSettings" },
     ]);
   });
 

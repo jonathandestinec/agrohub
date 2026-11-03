@@ -322,3 +322,15 @@ model PricePoint {
   @@index([weekOf])
   @@map("price_point")
 }
+
+// Platform settings an admin can change (architecture section 5). value is a string holding
+// integer basis points ("300"); src/lib/money.ts parseBps is the only place it becomes a
+// number. A missing row means the default in src/modules/settings/service.ts.
+model Setting {
+  key             String   @id
+  value           String
+  updatedByUserId String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("setting")
+}

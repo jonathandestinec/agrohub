@@ -30,7 +30,8 @@ export type Action =
   | "document:view"
   | "bank:change"
   | "invite:manage"
-  | "catalog:manage";
+  | "catalog:manage"
+  | "setting:write";
 
 export type Resource = {
   cooperativeId?: string;
@@ -59,6 +60,7 @@ export function can(
     case "cooperative:suspend":
     case "cooperative:queue":
     case "dispute:resolve":
+    case "setting:write":
       return actor.role === "ADMIN";
     case "price:write":
     case "catalog:manage":

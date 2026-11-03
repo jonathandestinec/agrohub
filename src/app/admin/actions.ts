@@ -10,6 +10,8 @@ import {
   verifyCooperative,
 } from "@/modules/cooperatives/service";
 import type { Actor } from "@/modules/identity/policies";
+import { percentToBps } from "@/lib/money";
+import { updatePlatformSettings } from "@/modules/settings/service";
 import { requireActor } from "@/modules/identity/session";
 
 type ReviewInput = { cooperativeId: string; reason?: string };
@@ -68,4 +70,28 @@ export async function reinstateCooperativeAction(
   input: ReviewInput,
 ): Promise<ActionResult> {
   return run(input, (actor, id) => reinstateCooperative(actor, id));
+}
+
+type SettingsInput = { platformFee: string; maxCooperativeCut: string; priceDeviation: string };
+
+// Percentages arrive as typed ("3", "2.5"); a malformed one is INVALID_SETTING.
+export async function updateSettingsAction(input: SettingsInput): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    let parsed;
+    try {
+      parsed = {
+        platformFeeBps: percentToBps(String(input?.platformFee ?? "").trim()),
+        maxCooperativeCutBps: percentToBps(String(input?.maxCooperativeCut ?? "").trim()),
+        priceDeviationBps: percentToBps(String(input?.priceDeviation ?? "").trim()),
+      };
+    } catch {
+      throw new ValidationError("Invalid setting", "INVALID_SETTING");
+    }
+    await updatePlatformSettings(actor, parsed);
+    revalidatePath("/admin/settings");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
 }

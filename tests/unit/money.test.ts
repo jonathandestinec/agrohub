@@ -1,6 +1,54 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import { applyBps, formatNaira, formatNairaChange, saleBreakdown, splitByWeights, toKobo } from "@/lib/money";
+import {
+  applyBps,
+  formatNaira,
+  formatNairaChange,
+  formatPercent,
+  parseBps,
+  percentToBps,
+  saleBreakdown,
+  splitByWeights,
+  toKobo,
+} from "@/lib/money";
+
+describe("parseBps", () => {
+  it("parses a stored setting string of integer basis points", () => {
+    expect(parseBps("300")).toBe(300);
+    expect(parseBps("0")).toBe(0);
+    expect(parseBps("10000")).toBe(10000);
+  });
+
+  it("refuses anything that is not 0 to 10000 written as plain digits", () => {
+    for (const bad of ["10001", "3.5", "", "-1", " 300", "3%", "1e3"]) {
+      expect(() => parseBps(bad), bad).toThrow(RangeError);
+    }
+  });
+});
+
+describe("formatPercent", () => {
+  it("shows basis points as a percentage without trailing zeros", () => {
+    expect(formatPercent(300)).toBe("3%");
+    expect(formatPercent(250)).toBe("2.5%");
+    expect(formatPercent(1)).toBe("0.01%");
+    expect(formatPercent(0)).toBe("0%");
+  });
+});
+
+describe("percentToBps", () => {
+  it("converts a percentage with up to two decimals to basis points", () => {
+    expect(percentToBps("3")).toBe(300);
+    expect(percentToBps("2.5")).toBe(250);
+    expect(percentToBps("0.01")).toBe(1);
+    expect(percentToBps("100")).toBe(10000);
+  });
+
+  it("refuses more than two decimals or non-numbers", () => {
+    for (const bad of ["2.555", "", "abc", "-1"]) {
+      expect(() => percentToBps(bad), bad).toThrow(SyntaxError);
+    }
+  });
+});
 
 describe("toKobo", () => {
   it("parses naira strings to integer kobo", () => {

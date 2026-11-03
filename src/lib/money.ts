@@ -38,6 +38,34 @@ export function toKobo(naira: string): number {
   return toSafeNumber(kobo, "amount");
 }
 
+const BPS_STRING = /^\d{1,5}$/;
+const PERCENT = /^(\d{1,3})(?:\.(\d{1,2}))?$/;
+
+/**
+ * Parses a stored basis-point string ("300") into an integer from 0 to 10000. The one place
+ * a Setting value becomes a number; anything else (decimals, signs, spaces, "3%") is refused.
+ */
+export function parseBps(value: string): number {
+  if (!BPS_STRING.test(value)) throw new RangeError(`Invalid basis points: ${JSON.stringify(value)}`);
+  const bps = Number(value);
+  if (bps > 10000) throw new RangeError(`Basis points above 10000: ${value}`);
+  return bps;
+}
+
+/** Converts a percentage typed by a person ("3", "2.5", "0.01") into integer basis points. */
+export function percentToBps(percent: string): number {
+  const match = PERCENT.exec(percent);
+  if (!match) throw new SyntaxError(`Invalid percentage: ${JSON.stringify(percent)}`);
+  return Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+}
+
+/** Formats basis points as a percentage: 300 → "3%", 250 → "2.5%", 1 → "0.01%". */
+export function formatPercent(bps: number): string {
+  assertNonNegativeSafeInt(bps, "bps");
+  const fraction = String(bps % 100).padStart(2, "0").replace(/0+$/, "");
+  return `${Math.floor(bps / 100)}${fraction ? `.${fraction}` : ""}%`;
+}
+
 /** Formats integer kobo as "₦1,500.50" (negatives as "-₦1,500.50"). */
 export function formatNaira(kobo: number): string {
   assertSafeInt(kobo, "kobo");
