@@ -461,7 +461,8 @@
     "about": "",
     "privacy": "",
     "signIn": "",
-    "prices": ""
+    "prices": "",
+    "lots": ""
   },
   "photo": {
     "signUp": "",
@@ -948,5 +949,15 @@
       "reject": "",
       "cancel": ""
     }
+  },
+  "publicLots": {
+    "title": "",
+    "lead": "",
+    "empty": "",
+    "photoAlt": "",
+    "minOrder": "",
+    "pickup": "",
+    "until": "",
+    "soldBy": ""
   }
 }

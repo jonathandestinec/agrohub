@@ -164,3 +164,4 @@ export {
 } from "./screening";
 export { decideRevision, requestRevision, withdrawLot } from "./revisions";
 export type { PendingRevision } from "./views";
+export { expireLots, listLiveLots } from "./public";

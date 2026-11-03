@@ -461,7 +461,8 @@
     "about": "AgroHub helps farmer cooperatives sell their harvests together. Buyers pay upfront and the payment is held until delivery is confirmed.",
     "privacy": "Privacy notice",
     "signIn": "Sign in",
-    "prices": "Price board"
+    "prices": "Price board",
+    "lots": "Harvest lots"
   },
   "photo": {
     "signUp": "Every cooperative is checked by AgroHub before it can sell.",
@@ -948,5 +949,15 @@
       "reject": "Reject change",
       "cancel": "Cancel"
     }
+  },
+  "publicLots": {
+    "title": "Harvest lots",
+    "lead": "Harvests from verified cooperatives, at the price each cooperative asks. Prices are at the pickup location.",
+    "empty": "No lots are on sale right now.",
+    "photoAlt": "{crop} on offer",
+    "minOrder": "Minimum {quantity} × {unit}",
+    "pickup": "Pickup in {lga}, {state}",
+    "until": "until {date}",
+    "soldBy": "Sold by {cooperative}"
   }
 }
