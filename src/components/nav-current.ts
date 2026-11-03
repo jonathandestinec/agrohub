@@ -8,3 +8,8 @@ export function isCurrent(pathname: string, href: string): boolean {
 export function centreNavLinks(count: number): boolean {
   return count > 2;
 }
+
+// Pure: whether the header carries the role switcher. One membership has nothing to switch to.
+export function showRoleSwitcher(membershipCount: number): boolean {
+  return membershipCount > 1;
+}

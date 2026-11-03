@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
-import { centreNavLinks, isCurrent } from "@/components/nav-current";
+import { centreNavLinks, isCurrent, showRoleSwitcher } from "@/components/nav-current";
 
 describe("navLinksFor", () => {
   it("gives officers onboarding, invites and farmers", () => {
@@ -91,5 +91,13 @@ describe("centreNavLinks", () => {
   it("centres three or more links in the bar", () => {
     expect(centreNavLinks(3)).toBe(true);
     expect(centreNavLinks(6)).toBe(true);
+  });
+});
+
+describe("showRoleSwitcher", () => {
+  it("shows the switcher only to someone with two or more memberships", () => {
+    expect(showRoleSwitcher(0)).toBe(false);
+    expect(showRoleSwitcher(1)).toBe(false);
+    expect(showRoleSwitcher(2)).toBe(true);
   });
 });

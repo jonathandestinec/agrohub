@@ -51,6 +51,7 @@ export function AppNav({
   homeLabel,
   openLabel,
   closeLabel,
+  hasSwitcher,
   switcher,
   account,
 }: {
@@ -59,6 +60,7 @@ export function AppNav({
   homeLabel: string;
   openLabel: string;
   closeLabel: string;
+  hasSwitcher: boolean;
   switcher: ReactNode;
   account: ReactNode;
 }) {
@@ -70,6 +72,13 @@ export function AppNav({
   const { scrolled, compact: scrollCompact } = useScrollCompact();
   const compact = scrollCompact && !focused && !open;
   const hasLinks = links.length > 0;
+  // The round menu holds whatever does not fit the bar: the links, and the role switcher too,
+  // which with its label is as wide as the officer's three links. With it, the full bar only
+  // fits from xl (1280px); without it, from lg. Class names stay whole for Tailwind.
+  const hasMenu = hasLinks || hasSwitcher;
+  const wide = hasSwitcher
+    ? { block: "hidden xl:block", flex: "hidden xl:flex", narrowOnly: "xl:hidden" }
+    : { block: "hidden lg:block", flex: "hidden lg:flex", narrowOnly: "lg:hidden" };
   const toggle = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
 
@@ -150,17 +159,17 @@ export function AppNav({
             AgroHub
           </Link>
 
-          {hasLinks && centred ? linkNav("absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:block") : null}
+          {hasLinks && centred ? linkNav(`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${wide.block}`) : null}
 
           <div className="relative z-10 flex shrink-0 items-center gap-2">
-            {hasLinks && !centred ? linkNav(compact ? "hidden" : "hidden lg:block") : null}
-            <div className={`${compact ? "hidden" : hasLinks ? "hidden lg:flex" : "flex"} items-center`}>{switcher}</div>
-            <div className={`${hasLinks ? "hidden lg:flex" : "flex"} items-center`}>{account}</div>
-            {hasLinks ? (
+            {hasLinks && !centred ? linkNav(compact ? "hidden" : wide.block) : null}
+            <div className={`${compact ? "hidden" : hasMenu ? wide.flex : "flex"} items-center`}>{switcher}</div>
+            <div className={`${hasMenu ? wide.flex : "flex"} items-center`}>{account}</div>
+            {hasMenu ? (
               <button
                 ref={toggle}
                 type="button"
-                className="press relative z-50 flex size-11 shrink-0 items-center justify-center rounded-full bg-step lg:hidden"
+                className={`press relative z-50 flex size-11 shrink-0 items-center justify-center rounded-full bg-step ${wide.narrowOnly}`}
                 aria-expanded={open}
                 aria-controls="app-menu"
                 aria-label={open ? closeLabel : openLabel}
@@ -188,25 +197,27 @@ export function AppNav({
     <div
       ref={menu}
       id="app-menu"
-      className="menu-panel fixed inset-0 z-20 overflow-y-auto bg-paper/95 px-4 pb-8 pt-24 backdrop-blur-xl lg:hidden"
+      className={`menu-panel fixed inset-0 z-20 overflow-y-auto bg-paper/95 px-4 pb-8 pt-24 backdrop-blur-xl ${wide.narrowOnly}`}
     >
-      <nav aria-label={label}>
-        <ul className="flex flex-col gap-2">
-          {links.map((link, i) => (
-            <li key={link.href} className="menu-link" style={{ animationDelay: `${Math.min(i * 60, 340)}ms` }}>
-              <Link
-                href={link.href}
-                aria-current={isCurrent(pathname, link.href) ? "page" : undefined}
-                onClick={() => setOpenOn(null)}
-                className="flex min-h-14 items-center rounded-2xl bg-step px-5 heading-5 aria-[current=page]:bg-lime aria-[current=page]:text-lime-ink"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="menu-link mt-6 flex flex-wrap items-center gap-2" style={{ animationDelay: "340ms" }}>
+      {hasLinks ? (
+        <nav aria-label={label}>
+          <ul className="flex flex-col gap-2">
+            {links.map((link, i) => (
+              <li key={link.href} className="menu-link" style={{ animationDelay: `${Math.min(i * 60, 340)}ms` }}>
+                <Link
+                  href={link.href}
+                  aria-current={isCurrent(pathname, link.href) ? "page" : undefined}
+                  onClick={() => setOpenOn(null)}
+                  className="flex min-h-14 items-center rounded-2xl bg-step px-5 heading-5 aria-[current=page]:bg-lime aria-[current=page]:text-lime-ink"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
+      <div className={`menu-link ${hasLinks ? "mt-6" : ""} flex flex-wrap items-center gap-2`} style={{ animationDelay: "340ms" }}>
         {switcher}
         {account}
       </div>
