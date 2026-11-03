@@ -30,7 +30,8 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "skip": "Skip to content",
-    "home": "AgroHub home"
+    "home": "AgroHub home",
+    "prices": "Price board"
   },
   "auth": {
     "fields": {
@@ -414,7 +415,8 @@
   "footer": {
     "about": "AgroHub helps farmer cooperatives sell their harvests together. Buyers pay upfront and the payment is held until delivery is confirmed.",
     "privacy": "Privacy notice",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "prices": "Price board"
   },
   "photo": {
     "signUp": "Every cooperative is checked by AgroHub before it can sell.",
@@ -565,5 +567,24 @@
       "button": "Register your cooperative"
     },
     "photos": "Photographs from Wikimedia Commons:"
+  },
+  "prices": {
+    "title": "Price board",
+    "lead": "Weekly market prices per crop, recorded by AgroHub's price board team.",
+    "filterLabel": "Crop",
+    "allCrops": "All crops",
+    "filter": "Show",
+    "empty": "No prices have been recorded yet.",
+    "emptyCrop": "No prices have been recorded for this crop yet.",
+    "crop": "Crop",
+    "unit": "Unit",
+    "market": "Market",
+    "week": "Week",
+    "price": "Price",
+    "change": "Change",
+    "perUnit": "per {unit}",
+    "weekOf": "Week of {date}",
+    "noEarlier": "No earlier price",
+    "noChange": "No change"
   }
 }

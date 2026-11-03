@@ -17,8 +17,11 @@ describe("navLinksFor", () => {
     ]);
   });
 
-  it("gives farmers their farmer page", () => {
-    expect(navLinksFor("FARMER")).toEqual([{ href: "/farmer", labelKey: "farm" }]);
+  it("gives farmers their farmer page and the price board", () => {
+    expect(navLinksFor("FARMER")).toEqual([
+      { href: "/farmer", labelKey: "farm" },
+      { href: "/prices", labelKey: "prices" },
+    ]);
   });
 
   it.each(["BUYER", "BOARD_ADMIN", null] as const)("gives %s no links yet", (role) => {

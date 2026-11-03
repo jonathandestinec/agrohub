@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 export async function AppFooter({ signedIn }: { signedIn: boolean }) {
   const t = await getTranslations("footer");
   const links = [
+    { href: "/prices", label: t("prices") },
     { href: "/privacy", label: t("privacy") },
     ...(signedIn ? [] : [{ href: "/sign-in", label: t("signIn") }]),
   ];

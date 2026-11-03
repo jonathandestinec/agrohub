@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, ValidationError } from "@/lib/errors";
-import { recordPrice, listWeek } from "@/modules/board/service";
+import { listPublicBoard, listWeek, recordPrice } from "@/modules/board/service";
 import { createCrop, createUnit, setCropActive, setUnitActive } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { cleanDatabase, createTestUser } from "./helpers";
@@ -104,5 +104,48 @@ describe("listWeek", () => {
       "Maize/Kano Dawanau",
       "Rice/Mile 12",
     ]);
+  });
+});
+
+describe("listPublicBoard", () => {
+  it("public_board_shows_latest_and_previous", async () => {
+    await recordPrice(board, entry({ weekOf: "2026-10-19", priceKobo: 48000 }), NOW);
+    await recordPrice(board, entry({ weekOf: "2026-10-26", priceKobo: 50000 }), NOW);
+    expect(await listPublicBoard()).toEqual([
+      { crop: "Maize", unit: "Bag", market: "Bodija Market", weekOf: "2026-10-26", priceKobo: 50000, previousKobo: 48000 },
+    ]);
+  });
+
+  it("gives a first price no previous price", async () => {
+    await recordPrice(board, entry({ priceKobo: 50000 }), NOW);
+    const [row] = await listPublicBoard();
+    expect(row.previousKobo).toBeNull();
+  });
+
+  it("public_board_hides_inactive_crops", async () => {
+    await recordPrice(board, entry(), NOW);
+    await setCropActive(board, cropId, false);
+    expect(await listPublicBoard()).toEqual([]);
+    await setCropActive(board, cropId, true);
+    await setUnitActive(board, unitId, false);
+    expect(await listPublicBoard()).toEqual([]);
+  });
+
+  it("filters by crop and sorts by crop, unit and market", async () => {
+    const rice = await createCrop(board, { name: "Rice" });
+    await recordPrice(board, entry({ cropId: rice.id, market: "Mile 12" }), NOW);
+    await recordPrice(board, entry({ market: "Kano Dawanau" }), NOW);
+    await recordPrice(board, entry({ market: "Bodija Market" }), NOW);
+    expect((await listPublicBoard()).map((r) => `${r.crop}/${r.market}`)).toEqual([
+      "Maize/Bodija Market",
+      "Maize/Kano Dawanau",
+      "Rice/Mile 12",
+    ]);
+    expect((await listPublicBoard({ cropId: rice.id })).map((r) => r.crop)).toEqual(["Rice"]);
+  });
+
+  it("never carries the recording user", async () => {
+    await recordPrice(board, entry(), NOW);
+    expect(JSON.stringify(await listPublicBoard())).not.toContain(board.userId);
   });
 });

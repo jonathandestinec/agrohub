@@ -30,7 +30,8 @@
     "openMenu": "",
     "closeMenu": "",
     "skip": "",
-    "home": ""
+    "home": "",
+    "prices": ""
   },
   "auth": {
     "fields": {
@@ -414,7 +415,8 @@
   "footer": {
     "about": "",
     "privacy": "",
-    "signIn": ""
+    "signIn": "",
+    "prices": ""
   },
   "photo": {
     "signUp": "",
@@ -565,5 +567,24 @@
       "button": ""
     },
     "photos": ""
+  },
+  "prices": {
+    "title": "",
+    "lead": "",
+    "filterLabel": "",
+    "allCrops": "",
+    "filter": "",
+    "empty": "",
+    "emptyCrop": "",
+    "crop": "",
+    "unit": "",
+    "market": "",
+    "week": "",
+    "price": "",
+    "change": "",
+    "perUnit": "",
+    "weekOf": "",
+    "noEarlier": "",
+    "noChange": ""
   }
 }

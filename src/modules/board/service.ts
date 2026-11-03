@@ -4,10 +4,15 @@ import { ForbiddenError, ValidationError } from "@/lib/errors";
 import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
 import { recordPriceInput, weekInput, type RecordPriceInput } from "./schema";
-import { toBoardEntry, type BoardEntry } from "./views";
+import {
+  toBoardEntry,
+  toPublicBoardRow,
+  type BoardEntry,
+  type PublicBoardRow,
+} from "./views";
 import { toWeekKey, weekStart } from "./week";
 
-export type { BoardEntry };
+export type { BoardEntry, PublicBoardRow };
 
 const WITH_NAMES = { crop: true, unit: true } as const;
 
@@ -98,4 +103,39 @@ export async function listWeek(actor: Actor, weekOf: string): Promise<BoardEntry
     orderBy: [{ crop: { nameKey: "asc" } }, { unit: { nameKey: "asc" } }, { marketKey: "asc" }],
   });
   return points.map(toBoardEntry);
+}
+
+type BoardRow = {
+  crop: string;
+  unit: string;
+  market: string;
+  weekOf: Date;
+  priceKobo: number;
+  previousKobo: number | null;
+};
+
+// The public price board: no Actor, because farmers, buyers and signed-out visitors all
+// read it and it holds no private fields. One row per active crop, active unit and market:
+// the latest week's price and the most recent earlier week's.
+export async function listPublicBoard(
+  filter: { cropId?: string } = {},
+): Promise<PublicBoardRow[]> {
+  const cropFilter = filter.cropId ? Prisma.sql`AND p."cropId" = ${filter.cropId}` : Prisma.empty;
+  const rows = await prisma.$queryRaw<BoardRow[]>`
+    SELECT crop, unit, market, "weekOf", "priceKobo", "previousKobo"
+    FROM (
+      SELECT c.name AS crop, u.name AS unit, p.market, p."weekOf", p."priceKobo",
+             c."nameKey" AS crop_key, u."nameKey" AS unit_key, p."marketKey",
+             LEAD(p."priceKobo") OVER w AS "previousKobo",
+             ROW_NUMBER() OVER w AS rank
+      FROM price_point p
+      JOIN crop c ON c.id = p."cropId" AND c.active
+      JOIN unit u ON u.id = p."unitId" AND u.active
+      WHERE TRUE ${cropFilter}
+      WINDOW w AS (PARTITION BY p."cropId", p."unitId", p."marketKey" ORDER BY p."weekOf" DESC)
+    ) ranked
+    WHERE rank = 1
+    ORDER BY crop_key, unit_key, "marketKey"
+  `;
+  return rows.map(toPublicBoardRow);
 }
