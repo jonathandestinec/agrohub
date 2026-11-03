@@ -101,6 +101,24 @@ test("a verified user signs in, then signing out clears the session cookie", asy
   await expect.poll(sessionCookie).toBeUndefined();
 });
 
+test("signing out works before the page has hydrated", async ({ page, request, context }) => {
+  // Sign-up and sign-in on a cold dev server can use most of the 30s default.
+  test.setTimeout(60_000);
+  const email = uniqueEmail();
+  await signUpAndVerify(page, request, email);
+  await signIn(page, email);
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+
+  // Hold back the app's script bundles so React never hydrates: the same as a tap that lands
+  // before it does. Inline scripts still run, so the streamed header with the button appears.
+  await page.route("**/_next/static/chunks/**/*.js", (route) => route.abort());
+  await page.goto("/");
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
+  const cookies = await context.cookies();
+  expect(cookies.find((c) => c.name.endsWith("better-auth.session_token"))).toBeUndefined();
+});
+
 test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", async ({
   page,
   request,
