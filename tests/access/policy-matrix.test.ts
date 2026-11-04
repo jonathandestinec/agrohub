@@ -162,6 +162,32 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["lot:screen", "ADMIN", true],
   ["lot:screen", "BOARD_ADMIN", false],
 
+  ["offer:make", "FARMER", false],
+  ["offer:make", "OFFICER", false],
+  ["offer:make", "BUYER", true],
+  ["offer:make", "ADMIN", false],
+  ["offer:make", "BOARD_ADMIN", false],
+
+  // offer:own is checked against an offer the buyer made.
+  ["offer:own", "FARMER", false],
+  ["offer:own", "OFFICER", false],
+  ["offer:own", "BUYER", true],
+  ["offer:own", "ADMIN", false],
+  ["offer:own", "BOARD_ADMIN", false],
+
+  ["offer:respond", "FARMER", false],
+  ["offer:respond", "OFFICER", true],
+  ["offer:respond", "BUYER", false],
+  ["offer:respond", "ADMIN", false],
+  ["offer:respond", "BOARD_ADMIN", false],
+
+  // thread:participate without a threadKind: buyers and farmers need their own kind (below).
+  ["thread:participate", "FARMER", false],
+  ["thread:participate", "OFFICER", true],
+  ["thread:participate", "BUYER", false],
+  ["thread:participate", "ADMIN", true],
+  ["thread:participate", "BOARD_ADMIN", false],
+
   ["cooperative:rename", "FARMER", false],
   ["cooperative:rename", "OFFICER", true],
   ["cooperative:rename", "BUYER", false],
@@ -186,7 +212,10 @@ describe("policy matrix", () => {
   it.each(matrix)("%s as %s -> %s", (action, role, expected) => {
     const cooperativeId = role === "OFFICER" || role === "FARMER" ? COOP : null;
     const resource =
-      action === "farmer:leave" || action === "farmer:profile" || action === "lot:own"
+      action === "farmer:leave" ||
+      action === "farmer:profile" ||
+      action === "lot:own" ||
+      action === "offer:own"
         ? { ...own, ownerUserId: "user-1" }
         : action === "name:decide"
           ? { ...own, actorInCooperative: false }
@@ -195,7 +224,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(130);
+    expect(matrix).toHaveLength(150);
   });
 });
 
@@ -345,6 +374,29 @@ describe("bank:change", () => {
   it("denies an officer with a null cooperativeId or no resource", () => {
     expect(can(actor("OFFICER", null), "bank:change", {})).toBe(false);
     expect(can(actor("OFFICER", COOP), "bank:change")).toBe(false);
+  });
+});
+
+describe("thread participation", () => {
+  const buyer: Actor = { userId: "buyer-1", role: "BUYER", cooperativeId: null, twoFactorEnabled: false };
+  const farmer: Actor = { userId: "farmer-1", role: "FARMER", cooperativeId: COOP, twoFactorEnabled: false };
+  const officer: Actor = { userId: "officer-1", role: "OFFICER", cooperativeId: COOP, twoFactorEnabled: true };
+
+  it("lets a buyer into their own buyer thread only", () => {
+    expect(can(buyer, "thread:participate", { cooperativeId: COOP, ownerUserId: "buyer-1", threadKind: "BUYER_COOPERATIVE" })).toBe(true);
+    expect(can(buyer, "thread:participate", { cooperativeId: COOP, ownerUserId: "buyer-2", threadKind: "BUYER_COOPERATIVE" })).toBe(false);
+    expect(can(buyer, "thread:participate", { cooperativeId: COOP, ownerUserId: "buyer-1", threadKind: "FARMER_COOPERATIVE" })).toBe(false);
+  });
+
+  it("lets a farmer into their own farmer thread in their cooperative only", () => {
+    expect(can(farmer, "thread:participate", { cooperativeId: COOP, ownerUserId: "farmer-1", threadKind: "FARMER_COOPERATIVE" })).toBe(true);
+    expect(can(farmer, "thread:participate", { cooperativeId: COOP, ownerUserId: "farmer-1", threadKind: "BUYER_COOPERATIVE" })).toBe(false);
+    expect(can(farmer, "thread:participate", { cooperativeId: OTHER_COOP, ownerUserId: "farmer-1", threadKind: "FARMER_COOPERATIVE" })).toBe(false);
+  });
+
+  it("lets an officer into any thread of their own cooperative only", () => {
+    expect(can(officer, "thread:participate", { cooperativeId: COOP, ownerUserId: "buyer-1", threadKind: "BUYER_COOPERATIVE" })).toBe(true);
+    expect(can(officer, "thread:participate", { cooperativeId: OTHER_COOP, ownerUserId: "buyer-1", threadKind: "BUYER_COOPERATIVE" })).toBe(false);
   });
 });
 

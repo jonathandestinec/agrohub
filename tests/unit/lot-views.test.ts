@@ -55,6 +55,7 @@ describe("lot views", () => {
     expect(json).not.toContain("Ada Okafor");
     expect(lot).toEqual({
       id: "lot-1",
+      cooperativeId: "coop-1",
       cooperativeName: "Zaria Growers",
       crop: "Maize",
       unit: "Bag",

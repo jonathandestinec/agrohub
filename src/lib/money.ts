@@ -139,6 +139,80 @@ export function saleBreakdown(
 }
 
 /**
+ * Every number in free text read as an amount, in kobo: each as naira ("₦43,219.87",
+ * "N550", "550.00") and each whole number also as plain kobo ("4321987"). Commas are ignored.
+ * Used only to stop a message from naming a private price.
+ */
+export function amountsIn(text: string): number[] {
+  const found = new Set<number>();
+  for (const token of numberTokens(text)) {
+    if (token.thousands) continue;
+    for (const plain of readings(token.body)) {
+      const kobo = nairaKobo(plain);
+      if (kobo !== null) found.add(kobo);
+      if (/^\d+$/.test(plain) && Number.isSafeInteger(Number(plain))) found.add(Number(plain));
+    }
+  }
+  return [...found];
+}
+
+/** Whether kobo amount a lies within bps of b (|a - b| <= b * bps / 10000), in integers. */
+export function withinBps(a: number, b: number, bps: number): boolean {
+  assertNonNegativeSafeInt(a, "a");
+  assertNonNegativeSafeInt(b, "b");
+  assertNonNegativeSafeInt(bps, "bps");
+  const diff = BigInt(a) > BigInt(b) ? BigInt(a) - BigInt(b) : BigInt(b) - BigInt(a);
+  return diff * BPS_DENOM <= BigInt(b) * BigInt(bps);
+}
+
+/** Amounts written in thousands of naira ("55k", "₦43.2k"), in kobo. Rough by nature. */
+export function thousandsIn(text: string): number[] {
+  const found = new Set<number>();
+  for (const token of numberTokens(text)) {
+    if (!token.thousands) continue;
+    for (const plain of readings(token.body)) {
+      const kobo = nairaKobo(plain);
+      if (kobo !== null && Number.isSafeInteger(kobo * 1000)) found.add(kobo * 1000);
+    }
+  }
+  return [...found];
+}
+
+// Runs of digits that may be grouped by commas, dots or single spaces, each optionally
+// followed by "k" for thousands.
+function numberTokens(text: string): Array<{ body: string; thousands: boolean }> {
+  const tokens: Array<{ body: string; thousands: boolean }> = [];
+  for (const match of text.matchAll(/\d(?:[\d.,]|\s(?=\d))*(\s?k\b)?/gi)) {
+    tokens.push({ body: match[0].replace(/\s?k$/i, ""), thousands: match[1] !== undefined });
+  }
+  return tokens;
+}
+
+// A number read both ways it is commonly written: "43,219.87" / "43 219.87" (dot decimal) and
+// "43.219,87" (comma decimal).
+function readings(body: string): string[] {
+  const dotDecimal = body.replace(/[\s,]/g, "");
+  const commaDecimal = body.replace(/[\s.]/g, "").replace(",", ".");
+  return dotDecimal === commaDecimal ? [dotDecimal] : [dotDecimal, commaDecimal];
+}
+
+function nairaKobo(plain: string): number | null {
+  try {
+    return toKobo(plain);
+  } catch {
+    // More than two decimals, several decimal points, or too large: not a naira amount.
+    return null;
+  }
+}
+
+/** A whole quantity at a per-unit price, in kobo; RangeError beyond the safe integer range. */
+export function lineTotalKobo(unitKobo: number, quantity: number): number {
+  assertNonNegativeSafeInt(unitKobo, "unitKobo");
+  assertNonNegativeSafeInt(quantity, "quantity");
+  return toSafeNumber(BigInt(unitKobo) * BigInt(quantity), "line total");
+}
+
+/**
  * Splits totalKobo in proportion to weights using the largest-remainder method.
  * The parts always sum exactly to totalKobo; leftover kobo go one each to the
  * largest remainders, ties to the lower index. Zero-weight parts get 0.

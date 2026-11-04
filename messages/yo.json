@@ -38,6 +38,11 @@
     "myLots": "",
     "screenLots": "",
     "lotQueue": "",
+    "browseLots": "",
+    "myOffers": "",
+    "buyProduce": "",
+    "messages": "",
+    "offers": "",
     "nameChanges": ""
   },
   "auth": {
@@ -1016,7 +1021,213 @@
     "minOrder": "",
     "pickup": "",
     "until": "",
-    "soldBy": ""
+    "soldBy": "",
+    "emptyFiltered": "",
+    "pagesLabel": "",
+    "previous": "",
+    "next": "",
+    "filters": {
+      "crop": "",
+      "state": "",
+      "grade": "",
+      "sort": "",
+      "any": "",
+      "minPrice": "",
+      "maxPrice": "",
+      "minQuantity": "",
+      "apply": "",
+      "clear": "",
+      "sorts": {
+        "newest": "",
+        "price_asc": "",
+        "price_desc": ""
+      }
+    }
+  },
+  "buyer": {
+    "join": {
+      "title": "",
+      "lead": "",
+      "pointCooperatives": "",
+      "pointOffers": "",
+      "pointHeld": "",
+      "createAccount": "",
+      "signIn": "",
+      "start": "",
+      "emailNotVerified": "",
+      "error": "",
+      "removed": ""
+    },
+    "home": {
+      "title": "",
+      "lead": "",
+      "browse": "",
+      "empty": ""
+    }
+  },
+  "publicLot": {
+    "meta": {
+      "title": "",
+      "description": ""
+    },
+    "photoAlt": "",
+    "availableUntil": "",
+    "soldByPrefix": "",
+    "priceNote": "",
+    "offerHeading": "",
+    "held": "",
+    "signUpToOffer": "",
+    "messageCooperative": "",
+    "switchToBuyer": ""
+  },
+  "publicCooperative": {
+    "meta": {
+      "title": "",
+      "description": ""
+    },
+    "location": "",
+    "verified": "",
+    "verifiedSince": "",
+    "lotsHeading": "",
+    "noLots": ""
+  },
+  "messages": {
+    "title": "",
+    "lead": "",
+    "empty": "",
+    "threadLabel": "",
+    "emptyThread": "",
+    "you": "",
+    "reply": "",
+    "send": "",
+    "back": "",
+    "noContact": "",
+    "kind": {
+      "BUYER_COOPERATIVE": "",
+      "FARMER_COOPERATIVE": ""
+    },
+    "errors": {
+      "hasContact": "",
+      "mentionsFloor": "",
+      "length": "",
+      "rateLimit": "",
+      "notFound": "",
+      "lotNotAvailable": "",
+      "ownCooperative": "",
+      "generic": ""
+    }
+  },
+  "offers": {
+    "summary": "",
+    "totalLine": "",
+    "buyerStatus": {
+      "WAITING": "",
+      "COUNTERED": "",
+      "ACCEPTED": "",
+      "DECLINED": "",
+      "EXPIRED": "",
+      "WITHDRAWN": ""
+    },
+    "form": {
+      "quantity": "",
+      "quantityHint": "",
+      "price": "",
+      "priceHint": "",
+      "total": "",
+      "totalUnknown": "",
+      "message": "",
+      "explainer": "",
+      "submit": ""
+    },
+    "buyer": {
+      "yourOffer": "",
+      "counter": "",
+      "agreed": "",
+      "expires": "",
+      "payBy": "",
+      "paymentLater": "",
+      "viewLot": "",
+      "acceptCounter": "",
+      "declineCounter": "",
+      "withdraw": "",
+      "threadHeading": "",
+      "messageCooperative": ""
+    },
+    "errors": {
+      "INVALID_OFFER": "",
+      "INVALID_PRICE": "",
+      "LOT_NOT_AVAILABLE": "",
+      "OWN_COOPERATIVE_LOT": "",
+      "OFFER_ABOVE_ASK": "",
+      "BELOW_MIN_ORDER": "",
+      "OFFER_RATE_LIMIT": "",
+      "OFFER_LOT_LIMIT": "",
+      "NOT_ENOUGH_STOCK": "",
+      "OFFER_NOT_FOUND": "",
+      "OFFER_NOT_OPEN": "",
+      "OFFER_NOT_COUNTERED": "",
+      "OFFER_NOT_LIVE": "",
+      "OFFER_NOT_AWAITING_FARMER": "",
+      "OFFER_EXPIRED": "",
+      "COUNTER_NOT_ABOVE_OFFER": "",
+      "COUNTER_ABOVE_ASK": "",
+      "COUNTER_BELOW_FLOOR": "",
+      "MESSAGE_HAS_CONTACT": "",
+      "MESSAGE_MENTIONS_FLOOR": "",
+      "MESSAGE_LENGTH": "",
+      "MESSAGE_RATE_LIMIT": "",
+      "UNAUTHENTICATED": "",
+      "FORBIDDEN": "",
+      "INTERNAL": "",
+      "REFERRAL_NOTE_NOT_ALLOWED": "",
+      "REFERRAL_TOO_LATE": ""
+    },
+    "officerStatus": {
+      "OPEN": "",
+      "AWAITING_FARMER": "",
+      "COUNTERED": "",
+      "ACCEPTED": "",
+      "REJECTED": "",
+      "EXPIRED": "",
+      "WITHDRAWN": ""
+    },
+    "officer": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "from": "",
+      "priceLine": "",
+      "belowFloor": "",
+      "until": "",
+      "offered": "",
+      "ask": "",
+      "floor": "",
+      "countered": "",
+      "agreed": "",
+      "withFarmer": "",
+      "viewLot": "",
+      "message": "",
+      "messageHint": "",
+      "belowFloorExplain": "",
+      "accept": "",
+      "sendToFarmer": "",
+      "reject": "",
+      "counterPrice": "",
+      "counter": "",
+      "threadHeading": "",
+      "noThread": "",
+      "messageFarmer": "",
+      "referralNoNote": ""
+    },
+    "farmer": {
+      "heading": "",
+      "explain": "",
+      "agree": "",
+      "decline": "",
+      "waitingHeading": "",
+      "waitingLine": "",
+      "messageOfficer": ""
+    }
   },
   "bankLookup": {
     "checking": "",

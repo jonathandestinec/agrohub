@@ -82,12 +82,12 @@ Plan: `2026-10-31-agrohub-phase-0-foundation.md`. **Done when:** staging deploys
 ## Phase 4: Marketplace, offers and messages
 
 **Depends on:** Phase 3. Spec 6.5, 13.
-- [ ] 4.1 Browse and filter by crop, location, grade, price, quantity.
-- [ ] 4.2 Public lot and cooperative pages (SEO-friendly).
-- [ ] 4.3 Offers: `marketplace/service.ts` `makeOffer`, `respondToOffer`; officer accepts alone at or above the floor, farmer must agree below it; rejections never reveal the floor.
-- [ ] 4.4 Message threads tied to a lot or order; no phone numbers exposed.
-- [ ] 4.5 Offer rate limits; offer and counter expiry job (48 hours).
-- [ ] 4.6 Buyer sign-up with email and phone confirmation.
+- [x] 4.1 Browse and filter by crop, location, grade, price, quantity.
+- [x] 4.2 Public lot and cooperative pages (SEO-friendly).
+- [x] 4.3 Offers: `marketplace/service.ts` `makeOffer`, `respondToOffer`; officer accepts alone at or above the floor, farmer must agree below it; rejections never reveal the floor.
+- [x] 4.4 Message threads tied to a lot (order threads arrive with orders in Phase 5); no phone numbers exposed.
+- [x] 4.5 Offer rate limits; offer and counter expiry job (48 hours).
+- [x] 4.6 Buyer sign-up with email and phone confirmation (phone falls back silently to email; no SMS at launch).
 
 **Done when:** a buyer negotiates a lot to an accepted offer and test `buyer_responses_never_contain_floor` passes.
 

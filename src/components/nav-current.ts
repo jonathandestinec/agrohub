@@ -13,3 +13,13 @@ export function centreNavLinks(count: number): boolean {
 export function showRoleSwitcher(membershipCount: number): boolean {
   return membershipCount > 1;
 }
+
+// Pure: from which width the full bar fits (below it the round menu holds the links), or
+// "menu" when it never does. The bar is at most 1304px wide: up to five links fit from lg, or
+// from xl beside the role switcher (as wide as three links); six links fit from xl alone and
+// never beside the switcher.
+export function navBreakpoint(linkCount: number, hasSwitcher: boolean): "lg" | "xl" | "menu" {
+  const crowded = linkCount > 5;
+  if (crowded && hasSwitcher) return "menu";
+  return crowded || hasSwitcher ? "xl" : "lg";
+}

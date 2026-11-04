@@ -29,6 +29,19 @@ const SCRIPT = `(async () => {
     const unit = await prisma.unit.create({ data: { name: e.E2E_UNIT, nameKey: e.E2E_UNIT.toLowerCase() } });
     await prisma.pricePoint.create({ data: { cropId: crop.id, unitId: unit.id, market: "Zaria market",
       marketKey: "zaria market", weekOf: weekStart(now), priceKobo: 6000000, recordedByUserId: officer.id } });
+    if (e.E2E_LIVE_LOT) {
+      // A lot already approved (Phase 3's journey proves screening through the screens).
+      const live = JSON.parse(e.E2E_LIVE_LOT);
+      const until = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 14));
+      const lot = await prisma.lot.create({ data: {
+        cooperativeId: coop.id, farmerUserId: farmer.id, cropId: crop.id, unitId: unit.id,
+        quantity: live.quantity, grade: "A", pickupState: "Kaduna", pickupLga: "Zaria",
+        askKobo: live.askKobo, floorKobo: live.floorKobo, quotedCutBps: 500, quotedFeeBps: 300,
+        status: "LIVE", availableUntil: until, minOrderQty: live.minOrderQty,
+        screenedByUserId: officer.id, approvedAt: now } });
+      await prisma.lotContribution.create({ data: { lotId: lot.id, farmerUserId: farmer.id, quantity: live.quantity } });
+      await prisma.lotFeeTerms.create({ data: { lotId: lot.id, cooperativeCutBps: 500, platformFeeBps: 300, lockedAt: now } });
+    }
   } finally { await prisma.$disconnect(); }
 })().catch((error) => { console.error(error.code ?? error.message); process.exitCode = 1; });`;
 
@@ -39,6 +52,8 @@ export async function setUpLotWorld(input: {
   unit: string;
   officerEmail: string;
   farmerEmail: string;
+  // When given, also creates a LIVE lot of this crop and unit (grade A, pickup in Zaria).
+  liveLot?: { quantity: number; askKobo: number; floorKobo: number; minOrderQty: number };
   // When set, the cooperative already has a payout account under this name.
   cooperativeAccountName?: string;
 }): Promise<void> {
@@ -59,6 +74,7 @@ export async function setUpLotWorld(input: {
       E2E_UNIT: input.unit,
       E2E_OFFICER: input.officerEmail,
       E2E_FARMER: input.farmerEmail,
+      E2E_LIVE_LOT: input.liveLot ? JSON.stringify(input.liveLot) : "",
       E2E_COOP_ACCOUNT: input.cooperativeAccountName ?? "",
     },
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
-import { centreNavLinks, isCurrent, showRoleSwitcher } from "@/components/nav-current";
+import { centreNavLinks, isCurrent, navBreakpoint, showRoleSwitcher } from "@/components/nav-current";
 
 describe("navLinksFor", () => {
   it("gives officers onboarding, invites, farmers and lot screening", () => {
@@ -9,6 +9,8 @@ describe("navLinksFor", () => {
       { href: "/officer/invites", labelKey: "invites" },
       { href: "/officer/farmers", labelKey: "farmers" },
       { href: "/officer/lots", labelKey: "screenLots" },
+      { href: "/officer/offers", labelKey: "offers" },
+      { href: "/messages", labelKey: "messages" },
     ]);
   });
 
@@ -25,6 +27,7 @@ describe("navLinksFor", () => {
     expect(navLinksFor("FARMER")).toEqual([
       { href: "/farmer", labelKey: "farm" },
       { href: "/farmer/lots", labelKey: "myLots" },
+      { href: "/messages", labelKey: "messages" },
       { href: "/prices", labelKey: "prices" },
     ]);
   });
@@ -37,16 +40,27 @@ describe("navLinksFor", () => {
     ]);
   });
 
-  it.each(["BUYER", null] as const)("gives %s no links yet", (role) => {
-    expect(navLinksFor(role)).toEqual([]);
+  it("gives buyers the lot list and their offers", () => {
+    expect(navLinksFor("BUYER")).toEqual([
+      { href: "/lots", labelKey: "browseLots" },
+      { href: "/buyer", labelKey: "myOffers" },
+      { href: "/messages", labelKey: "messages" },
+    ]);
+  });
+
+  it("gives no links without a role", () => {
+    expect(navLinksFor(null)).toEqual([]);
   });
 });
 
 describe("navLinksWithoutActiveMembership", () => {
-  const register = [{ href: "/officer/onboarding", labelKey: "registerCooperative" }];
+  const register = [
+    { href: "/officer/onboarding", labelKey: "registerCooperative" },
+    { href: "/buyer/join", labelKey: "buyProduce" },
+  ];
   const yourFarm = [{ href: "/farmer", labelKey: "yourFarm" }];
 
-  it("offers to register a cooperative to a user with no officer or farmer membership", () => {
+  it("offers to register a cooperative or buy produce to a user with no officer or farmer membership", () => {
     expect(navLinksWithoutActiveMembership([])).toEqual(register);
     expect(navLinksWithoutActiveMembership([{ role: "BUYER", status: "PENDING" }])).toEqual(
       register,
@@ -104,5 +118,18 @@ describe("showRoleSwitcher", () => {
     expect(showRoleSwitcher(0)).toBe(false);
     expect(showRoleSwitcher(1)).toBe(false);
     expect(showRoleSwitcher(2)).toBe(true);
+  });
+});
+
+describe("navBreakpoint", () => {
+  it("fits up to five links in the bar from lg, or from xl beside the role switcher", () => {
+    expect(navBreakpoint(5, false)).toBe("lg");
+    expect(navBreakpoint(5, true)).toBe("xl");
+    expect(navBreakpoint(0, false)).toBe("lg");
+  });
+
+  it("fits six links from xl, and never beside the role switcher", () => {
+    expect(navBreakpoint(6, false)).toBe("xl");
+    expect(navBreakpoint(6, true)).toBe("menu");
   });
 });

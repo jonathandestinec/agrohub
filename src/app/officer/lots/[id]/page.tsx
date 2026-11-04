@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { getTranslations } from "next-intl/server";
 import { ScreeningLotPage } from "@/components/lots/screening-pages";
+import { OpenThreadButton } from "@/components/messages/open-thread-button";
 
 export default function ScreenLotPage({ params }: { params: Promise<{ id: string }> }) {
   return (
@@ -15,5 +17,6 @@ async function ScreenLot({ params }: { params: Promise<{ id: string }> }) {
   const actor = await requireActorForPage();
   if (actor.role !== "OFFICER") notFound();
   const { id } = await params;
-  return <ScreeningLotPage actor={actor} lotId={id} />;
+  const t = await getTranslations("offers.officer");
+  return <ScreeningLotPage actor={actor} lotId={id} extra={<OpenThreadButton lotId={id} label={t("messageFarmer")} />} />;
 }

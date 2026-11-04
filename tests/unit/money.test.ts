@@ -12,6 +12,7 @@ import {
   saleBreakdown,
   splitByWeights,
   toKobo,
+  lineTotalKobo,
 } from "@/lib/money";
 
 describe("parseBps", () => {
@@ -246,5 +247,16 @@ describe("nairaInput", () => {
     expect(nairaInput(4_321_987)).toBe("43219.87");
     expect(nairaInput(50)).toBe("0.50");
     expect(toKobo(nairaInput(4_321_987))).toBe(4_321_987);
+  });
+});
+
+describe("lineTotalKobo", () => {
+  it("multiplies a unit price by a whole quantity", () => {
+    expect(lineTotalKobo(6_500_000, 30)).toBe(195_000_000);
+    expect(lineTotalKobo(1, 0)).toBe(0);
+  });
+
+  it("refuses a product beyond the safe integer range", () => {
+    expect(() => lineTotalKobo(Number.MAX_SAFE_INTEGER, 2)).toThrow(RangeError);
   });
 });

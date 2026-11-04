@@ -38,6 +38,10 @@ export type Action =
   | "lot:submit"
   | "lot:own"
   | "lot:screen"
+  | "offer:make"
+  | "offer:own"
+  | "offer:respond"
+  | "thread:participate"
   | "cooperative:rename"
   | "name:queue"
   | "name:decide";
@@ -46,6 +50,7 @@ export type Resource = {
   cooperativeId?: string;
   ownerUserId?: string;
   cooperativeHasOtherOfficer?: boolean;
+  threadKind?: "BUYER_COOPERATIVE" | "FARMER_COOPERATIVE";
   // For name:decide: whether the deciding admin holds any membership in the cooperative
   // being renamed, or is the person being renamed.
   actorInCooperative?: boolean;
@@ -141,6 +146,28 @@ export function can(
     case "catalog:request":
     case "lot:submit":
       return actor.role === "FARMER" && isOwnCooperative(actor, resource);
+    case "offer:make":
+      return actor.role === "BUYER";
+    case "offer:own":
+      // The buyer who made the offer.
+      return (
+        actor.role === "BUYER" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
+    case "offer:respond":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "thread:participate":
+      // Admins anywhere; officers in their cooperative's threads; a buyer or farmer only in
+      // their own thread of their own kind (buyers never reach farmers' threads).
+      if (actor.role === "ADMIN") return true;
+      if (actor.role === "OFFICER") return isOwnCooperative(actor, resource);
+      if (resource?.ownerUserId === undefined || resource.ownerUserId !== actor.userId) return false;
+      if (actor.role === "BUYER") return resource.threadKind === "BUYER_COOPERATIVE";
+      if (actor.role === "FARMER") {
+        return resource.threadKind === "FARMER_COOPERATIVE" && isOwnCooperative(actor, resource);
+      }
+      return false;
     case "lot:own":
       // The farmer who submitted the lot, while still in that cooperative.
       return (

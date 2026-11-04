@@ -6,6 +6,7 @@ import { ValidationError } from "@/lib/errors";
 import { toKobo } from "@/lib/money";
 import { requestRevision, respondToCounter, submitLot, withdrawLot } from "@/modules/catalog/service";
 import { requireActor } from "@/modules/identity/session";
+import { farmerRespondToOffer } from "@/modules/marketplace/service";
 
 function text(form: FormData, name: string): string {
   const value = form.get(name);
@@ -102,6 +103,23 @@ export async function withdrawLotAction(input: { lotId: string }): Promise<Actio
     await withdrawLot(actor, lotId);
     revalidateLots();
     revalidatePath(`/farmer/lots/${lotId}`);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+// The farmer agrees to, or declines, a below-floor offer an officer sent them.
+export async function farmerRespondToOfferAction(input: { offerId: string; agree: boolean }): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    if (typeof input.offerId !== "string" || input.offerId.length === 0 || input.offerId.length > 64) {
+      throw new ValidationError("Invalid offer", "OFFER_NOT_FOUND");
+    }
+    await farmerRespondToOffer(actor, input.offerId, input.agree === true);
+    revalidatePath("/farmer/lots");
+    revalidatePath("/officer/offers");
+    revalidatePath("/buyer");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);

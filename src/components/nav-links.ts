@@ -16,6 +16,11 @@ export type NavLabelKey =
   | "myLots"
   | "screenLots"
   | "lotQueue"
+  | "browseLots"
+  | "myOffers"
+  | "buyProduce"
+  | "messages"
+  | "offers"
   | "nameChanges";
 export type NavLink = { href: string; labelKey: NavLabelKey };
 
@@ -25,6 +30,8 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
     { href: "/officer/invites", labelKey: "invites" },
     { href: "/officer/farmers", labelKey: "farmers" },
     { href: "/officer/lots", labelKey: "screenLots" },
+    { href: "/officer/offers", labelKey: "offers" },
+    { href: "/messages", labelKey: "messages" },
   ],
   ADMIN: [
     { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
@@ -35,7 +42,13 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
   FARMER: [
     { href: "/farmer", labelKey: "farm" },
     { href: "/farmer/lots", labelKey: "myLots" },
+    { href: "/messages", labelKey: "messages" },
     { href: "/prices", labelKey: "prices" },
+  ],
+  BUYER: [
+    { href: "/lots", labelKey: "browseLots" },
+    { href: "/buyer", labelKey: "myOffers" },
+    { href: "/messages", labelKey: "messages" },
   ],
   BOARD_ADMIN: [
     { href: "/board", labelKey: "priceEntry" },
@@ -51,7 +64,7 @@ export function navLinksFor(role: Role | null): NavLink[] {
 
 // Pure: the header links for a signed-in user with no ACTIVE membership. A farmer waiting
 // for approval gets their farm page; a user with no officer or farmer membership at all
-// (in any status) is offered to register a cooperative.
+// (in any status) is offered to register a cooperative or to start buying.
 export function navLinksWithoutActiveMembership(
   memberships: Array<{ role: Role; status: MembershipStatus }>,
 ): NavLink[] {
@@ -59,7 +72,10 @@ export function navLinksWithoutActiveMembership(
     return [{ href: "/farmer", labelKey: "yourFarm" }];
   }
   if (!memberships.some((m) => m.role === "OFFICER" || m.role === "FARMER")) {
-    return [{ href: "/officer/onboarding", labelKey: "registerCooperative" }];
+    return [
+      { href: "/officer/onboarding", labelKey: "registerCooperative" },
+      { href: "/buyer/join", labelKey: "buyProduce" },
+    ];
   }
   return [];
 }

@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/cron/bank-change-apply", "schedule": "0 5 * * *" },
     { "path": "/api/cron/certificate-expiry", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/lot-expiry", "schedule": "0 4 * * *" }
+    { "path": "/api/cron/lot-expiry", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/offer-expiry", "schedule": "30 4 * * *" }
   ]
 }

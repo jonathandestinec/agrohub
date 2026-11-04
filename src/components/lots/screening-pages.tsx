@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -56,7 +57,8 @@ export async function ScreeningQueue({ actor, basePath }: { actor: Actor; basePa
   );
 }
 
-export async function ScreeningLotPage({ actor, lotId }: { actor: Actor; lotId: string }) {
+// extra: anything a role adds below the screening actions (the officer's farmer-thread link).
+export async function ScreeningLotPage({ actor, lotId, extra }: { actor: Actor; lotId: string; extra?: ReactNode }) {
   let lot: Awaited<ReturnType<typeof getLotForScreening>>;
   try {
     lot = await getLotForScreening(actor, lotId);
@@ -140,6 +142,7 @@ export async function ScreeningLotPage({ actor, lotId }: { actor: Actor; lotId: 
           </Card>
         </div>
       </div>
+      {extra}
     </main>
   );
 }
