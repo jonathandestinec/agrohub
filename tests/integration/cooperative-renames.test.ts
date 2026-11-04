@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { ForbiddenError } from "@/lib/errors";
 import { fakeStorage } from "@/lib/storage";
@@ -43,6 +43,10 @@ async function codeOf(promise: Promise<unknown>): Promise<string | undefined> {
     return (error as { code?: string }).code;
   }
 }
+
+afterAll(async () => {
+  await cleanDatabase();
+});
 
 beforeEach(async () => {
   await cleanDatabase();

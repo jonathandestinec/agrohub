@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { fakeStorage } from "@/lib/storage";
 import {
@@ -19,6 +19,10 @@ const input = { newName: "Amina Musa", reason: "Married in October 2026" };
 let userId: string;
 let profileId: string;
 let since: Date;
+
+afterAll(async () => {
+  await cleanDatabase();
+});
 
 beforeEach(async () => {
   await cleanDatabase();

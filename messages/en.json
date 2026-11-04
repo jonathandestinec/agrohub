@@ -37,7 +37,8 @@
     "platformSettings": "Platform settings",
     "myLots": "My lots",
     "screenLots": "Screen lots",
-    "lotQueue": "Lot queue"
+    "lotQueue": "Lot queue",
+    "nameChanges": "Name changes"
   },
   "auth": {
     "fields": {
@@ -980,6 +981,66 @@
       "notFound": "We could not find that account. Check the number and the bank.",
       "unavailable": "We could not check the account right now. You can still try to save, or try again in a few minutes.",
       "other": "We could not check the account. Check the number and the bank."
+    }
+  },
+  "nameChange": {
+    "title": "Change my name",
+    "lead": "Your name must match your bank account, so name changes are checked by an admin. While a request is waiting you cannot change your bank account.",
+    "currentName": "Current name",
+    "link": "Change my name",
+    "form": {
+      "heading": "Ask for a name change",
+      "newName": "New name",
+      "newNameHint": "Write it exactly as it appears on your document.",
+      "reason": "Why is the name changing?",
+      "reasonHint": "For example: married in October 2026. At least 10 characters.",
+      "documentKind": "Supporting document",
+      "file": "Document file",
+      "fileHint": "PDF, JPEG or PNG, up to 10 MB.",
+      "submit": "Send for review",
+      "submitting": "Sending…"
+    },
+    "kinds": {
+      "AFFIDAVIT": "Affidavit of change of name",
+      "MARRIAGE_CERTIFICATE": "Marriage certificate",
+      "PUBLIC_NOTICE": "Gazette or newspaper notice",
+      "AMENDED_REGISTRATION_CERTIFICATE": "Amended registration certificate showing the new name"
+    },
+    "pending": {
+      "heading": "Waiting for an admin",
+      "body": "You asked to change {from} to {to} on {date}.",
+      "withdraw": "Withdraw request",
+      "withdrawing": "Withdrawing…"
+    },
+    "outcome": {
+      "APPROVED": "Approved on {date}: the name is now {to}.",
+      "REJECTED": "Not approved: {reason}",
+      "WITHDRAWN": "The request to change the name to {to} was withdrawn."
+    },
+    "cooperative": {
+      "heading": "Cooperative name",
+      "lead": "The cooperative's name must match its registration and its bank account, so name changes are checked by an admin. While a request is waiting, the bank account cannot be changed.",
+      "needsTwoFactor": "Turn on two-factor authentication to ask for a name change.",
+      "setUpTwoFactor": "Set up two-factor",
+      "ownName": "To change your own name, use Change my name."
+    },
+    "errors": {
+      "INVALID_NAME": "Enter a name of 2 to 120 characters, with letters in it.",
+      "NAME_UNCHANGED": "That is already the name.",
+      "REASON_REQUIRED": "Say why the name is changing, in at least 10 characters.",
+      "REASON_TOO_LONG": "Keep the reason under 500 characters.",
+      "INVALID_DOCUMENT_KIND": "Choose one of the listed documents.",
+      "FILE_TYPE_NOT_ALLOWED": "Upload a PDF, JPEG or PNG file.",
+      "FILE_TYPE_MISMATCH": "This file does not look like a PDF, JPEG or PNG. Try another copy.",
+      "FILE_TOO_LARGE": "The file is larger than 10 MB.",
+      "NO_FILE": "Choose the document file.",
+      "BANK_CHANGE_OPEN": "A bank account change is still in progress. Ask again once it has taken effect or expired.",
+      "NAME_CHANGE_ALREADY_PENDING": "A name change is already waiting for an admin.",
+      "NAME_CHANGE_NOT_PENDING": "This request is no longer waiting. Refresh the page.",
+      "COOPERATIVE_NOT_VERIFIED": "Until the cooperative is verified, edit its name in the details above.",
+      "FORBIDDEN": "You cannot do this.",
+      "UNAUTHENTICATED": "Please sign in again.",
+      "INTERNAL": "Something went wrong. Please try again."
     }
   }
 }

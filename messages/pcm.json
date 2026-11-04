@@ -37,7 +37,8 @@
     "platformSettings": "",
     "myLots": "",
     "screenLots": "",
-    "lotQueue": ""
+    "lotQueue": "",
+    "nameChanges": ""
   },
   "auth": {
     "fields": {
@@ -980,6 +981,66 @@
       "notFound": "",
       "unavailable": "",
       "other": ""
+    }
+  },
+  "nameChange": {
+    "title": "",
+    "lead": "",
+    "currentName": "",
+    "link": "",
+    "form": {
+      "heading": "",
+      "newName": "",
+      "newNameHint": "",
+      "reason": "",
+      "reasonHint": "",
+      "documentKind": "",
+      "file": "",
+      "fileHint": "",
+      "submit": "",
+      "submitting": ""
+    },
+    "kinds": {
+      "AFFIDAVIT": "",
+      "MARRIAGE_CERTIFICATE": "",
+      "PUBLIC_NOTICE": "",
+      "AMENDED_REGISTRATION_CERTIFICATE": ""
+    },
+    "pending": {
+      "heading": "",
+      "body": "",
+      "withdraw": "",
+      "withdrawing": ""
+    },
+    "outcome": {
+      "APPROVED": "",
+      "REJECTED": "",
+      "WITHDRAWN": ""
+    },
+    "cooperative": {
+      "heading": "",
+      "lead": "",
+      "needsTwoFactor": "",
+      "setUpTwoFactor": "",
+      "ownName": ""
+    },
+    "errors": {
+      "INVALID_NAME": "",
+      "NAME_UNCHANGED": "",
+      "REASON_REQUIRED": "",
+      "REASON_TOO_LONG": "",
+      "INVALID_DOCUMENT_KIND": "",
+      "FILE_TYPE_NOT_ALLOWED": "",
+      "FILE_TYPE_MISMATCH": "",
+      "FILE_TOO_LARGE": "",
+      "NO_FILE": "",
+      "BANK_CHANGE_OPEN": "",
+      "NAME_CHANGE_ALREADY_PENDING": "",
+      "NAME_CHANGE_NOT_PENDING": "",
+      "COOPERATIVE_NOT_VERIFIED": "",
+      "FORBIDDEN": "",
+      "UNAUTHENTICATED": "",
+      "INTERNAL": ""
     }
   }
 }

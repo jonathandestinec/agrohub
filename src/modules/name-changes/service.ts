@@ -195,6 +195,18 @@ export async function requestOwnNameChange(
   );
 }
 
+// Self-scoped, for /account/name: the caller's current name and their newest request.
+export async function getOwnNameState(
+  user: { userId: string },
+): Promise<{ name: string; request: OwnNameChange | null }> {
+  const row = await prisma.user.findUnique({
+    where: { id: user.userId },
+    select: { name: true },
+  });
+  if (!row) throw new NotFoundError("USER_NOT_FOUND");
+  return { name: row.name, request: await getOwnNameChange(user) };
+}
+
 // Self-scoped: the caller's own newest request, any status.
 export async function getOwnNameChange(user: { userId: string }): Promise<OwnNameChange | null> {
   return newestFor({ type: "USER", id: user.userId });
