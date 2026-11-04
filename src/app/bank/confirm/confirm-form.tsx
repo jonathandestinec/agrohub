@@ -20,7 +20,13 @@ export function ConfirmForm({ token }: { token: string }) {
     const result = await confirmBankChangeAction(new FormData(event.currentTarget));
     setPending(false);
     if (!result.ok) {
-      setError(result.code === "BANK_CHANGE_INVALID" ? t("invalid") : t("error"));
+      setError(
+        result.code === "BANK_CHANGE_INVALID"
+          ? t("invalid")
+          : result.code === "NAME_CHANGE_PENDING"
+            ? t("nameChangePending")
+            : t("error"),
+      );
       return;
     }
     setEffectiveAt(result.data.effectiveAt);

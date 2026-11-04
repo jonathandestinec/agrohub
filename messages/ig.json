@@ -166,7 +166,8 @@
         "INTERNAL": "",
         "INVALID_CUT": "",
         "CUT_ABOVE_MAXIMUM": "",
-        "PAYSTACK_UNAVAILABLE": ""
+        "PAYSTACK_UNAVAILABLE": "",
+        "NAME_CHANGE_PENDING": ""
       },
       "bank": {
         "heading": "",
@@ -353,7 +354,8 @@
       "confirming": "",
       "done": "",
       "invalid": "",
-      "error": ""
+      "error": "",
+      "nameChangePending": ""
     }
   },
   "farmer": {
@@ -448,7 +450,8 @@
       "ILLEGAL_TRANSITION": "",
       "CROP_INACTIVE": "",
       "INVALID_CROPS": "",
-      "PAYSTACK_UNAVAILABLE": ""
+      "PAYSTACK_UNAVAILABLE": "",
+      "NAME_CHANGE_PENDING": ""
     },
     "leave": {
       "heading": "",

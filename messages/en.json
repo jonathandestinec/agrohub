@@ -166,7 +166,8 @@
         "INTERNAL": "Something went wrong. Please try again.",
         "INVALID_CUT": "Enter the cut as a percentage, with at most two decimals.",
         "CUT_ABOVE_MAXIMUM": "That is above the maximum cut AgroHub allows.",
-        "PAYSTACK_UNAVAILABLE": "We could not reach the bank to check the account. Try again in a few minutes."
+        "PAYSTACK_UNAVAILABLE": "We could not reach the bank to check the account. Try again in a few minutes.",
+        "NAME_CHANGE_PENDING": "The cooperative's name change is waiting for an admin. You can change the bank account after it is decided."
       },
       "bank": {
         "heading": "Bank account for payouts",
@@ -353,7 +354,8 @@
       "confirming": "Confirming…",
       "done": "Confirmed. The new bank account takes effect on {date}.",
       "invalid": "This link is invalid, already used or expired. Enter the bank details again to get a new link.",
-      "error": "Something went wrong. Please try again."
+      "error": "Something went wrong. Please try again.",
+      "nameChangePending": "A name change is waiting for an admin. Confirm this bank change after it is decided, within 24 hours of asking for it, or enter the bank details again."
     }
   },
   "farmer": {
@@ -448,7 +450,8 @@
       "ILLEGAL_TRANSITION": "Your membership has changed. Refresh the page.",
       "CROP_INACTIVE": "One of those crops is no longer on the list. Refresh the page and choose again.",
       "INVALID_CROPS": "Choose at most 20 crops.",
-      "PAYSTACK_UNAVAILABLE": "We could not reach the bank to check the account. Try again in a few minutes."
+      "PAYSTACK_UNAVAILABLE": "We could not reach the bank to check the account. Try again in a few minutes.",
+      "NAME_CHANGE_PENDING": "Your name change is waiting for an admin. You can change your bank account after it is decided."
     },
     "leave": {
       "heading": "Leave this cooperative",

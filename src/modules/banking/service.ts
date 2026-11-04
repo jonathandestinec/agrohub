@@ -3,7 +3,7 @@ import type { BankChangeRequest, BankOwnerType, Prisma } from "@/generated/prism
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env } from "@/lib/env";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import {
   createRecipient,
   listBanks,
@@ -64,6 +64,34 @@ async function loadOwner(owner: BankOwner): Promise<StoredAccount> {
   return cooperative;
 }
 
+// The name-change service calls payoutAccountFor in this module, so this module reads the
+// name_change_request table itself instead of importing that service back (no import cycle).
+// A person's pending request blocks their farmer payout account; a cooperative's blocks its own.
+async function nameChangePending(owner: BankOwner): Promise<boolean> {
+  let subject: { subjectType: "USER" | "COOPERATIVE"; subjectId: string };
+  if (owner.type === "FARMER") {
+    const profile = await prisma.farmerProfile.findUnique({
+      where: { id: owner.id },
+      select: { userId: true },
+    });
+    if (!profile) return false;
+    subject = { subjectType: "USER", subjectId: profile.userId };
+  } else {
+    subject = { subjectType: "COOPERATIVE", subjectId: owner.id };
+  }
+  const pending = await prisma.nameChangeRequest.findFirst({
+    where: { ...subject, status: "PENDING" },
+    select: { id: true },
+  });
+  return pending !== null;
+}
+
+async function refuseWhileNameChangePending(owner: BankOwner): Promise<void> {
+  if (await nameChangePending(owner)) {
+    throw new ConflictError("A name change is waiting for an admin", "NAME_CHANGE_PENDING");
+  }
+}
+
 function logEmailFailure(kind: string, requestId: string, err: unknown): void {
   // Never log the recipient address or the html (it carries the confirmation link).
   console.error("bank change email failed", {
@@ -108,6 +136,8 @@ export async function applyBankAccount(
   now: Date = new Date(),
 ): Promise<{ accountName: string; pending: boolean }> {
   validateBankInput(input);
+  // Before any Paystack call: the registered name may be about to change.
+  await refuseWhileNameChangePending(owner);
   const bank = (await listBanks()).find((b) => b.code === input.bankCode);
   if (!bank) throw new ValidationError("Unknown bank", "UNKNOWN_BANK");
   const { accountName } = await resolveAccount(input);
@@ -206,6 +236,15 @@ export async function confirmBankChange(
   now: Date = new Date(),
 ): Promise<{ effectiveAt: Date }> {
   if (typeof token !== "string" || token.length === 0) throw invalidChange();
+  // A name change filed after this bank change was requested waits for its decision; the
+  // request stays unconfirmed and can be confirmed afterwards while its 24 hours last.
+  const unconfirmed = await prisma.bankChangeRequest.findUnique({
+    where: { confirmToken: token },
+    select: { ownerType: true, ownerId: true },
+  });
+  if (unconfirmed) {
+    await refuseWhileNameChangePending({ type: unconfirmed.ownerType, id: unconfirmed.ownerId });
+  }
   const effectiveAt = new Date(now.getTime() + CHANGE_DELAY_MS);
   const { count } = await prisma.bankChangeRequest.updateMany({
     where: {
@@ -465,8 +504,13 @@ export async function getOwnFarmerBankAccount(
 // created; the save re-checks everything on the server.
 export type AccountPreview = { accountName: string; matches: boolean; registeredName: string };
 
-async function preview(registeredName: string, input: BankInput): Promise<AccountPreview> {
+async function preview(
+  owner: BankOwner,
+  registeredName: string,
+  input: BankInput,
+): Promise<AccountPreview> {
   validateBankInput(input);
+  await refuseWhileNameChangePending(owner);
   const { accountName } = await resolveAccount(input);
   return { accountName, matches: namesMatch(registeredName, accountName), registeredName };
 }
@@ -478,7 +522,7 @@ export async function previewOwnFarmerBankAccount(
 ): Promise<AccountPreview> {
   const profile = await ownFarmerProfile(user.userId);
   if (!profile) throw new ForbiddenError();
-  return preview(profile.name, input);
+  return preview({ type: "FARMER", id: profile.id }, profile.name, input);
 }
 
 export async function previewCooperativeBankAccount(
@@ -492,5 +536,5 @@ export async function previewCooperativeBankAccount(
     select: { name: true },
   });
   if (!cooperative) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
-  return preview(cooperative.name, input);
+  return preview({ type: "COOPERATIVE", id: cooperativeId }, cooperative.name, input);
 }
