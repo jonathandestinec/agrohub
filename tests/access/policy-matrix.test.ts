@@ -161,6 +161,25 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["lot:screen", "BUYER", false],
   ["lot:screen", "ADMIN", true],
   ["lot:screen", "BOARD_ADMIN", false],
+
+  ["cooperative:rename", "FARMER", false],
+  ["cooperative:rename", "OFFICER", true],
+  ["cooperative:rename", "BUYER", false],
+  ["cooperative:rename", "ADMIN", false],
+  ["cooperative:rename", "BOARD_ADMIN", false],
+
+  ["name:queue", "FARMER", false],
+  ["name:queue", "OFFICER", false],
+  ["name:queue", "BUYER", false],
+  ["name:queue", "ADMIN", true],
+  ["name:queue", "BOARD_ADMIN", false],
+
+  // name:decide is checked with actorInCooperative: false (see below).
+  ["name:decide", "FARMER", false],
+  ["name:decide", "OFFICER", false],
+  ["name:decide", "BUYER", false],
+  ["name:decide", "ADMIN", true],
+  ["name:decide", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -169,12 +188,14 @@ describe("policy matrix", () => {
     const resource =
       action === "farmer:leave" || action === "farmer:profile" || action === "lot:own"
         ? { ...own, ownerUserId: "user-1" }
-        : own;
+        : action === "name:decide"
+          ? { ...own, actorInCooperative: false }
+          : own;
     expect(can(actor(role, cooperativeId), action, resource)).toBe(expected);
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(115);
+    expect(matrix).toHaveLength(130);
   });
 });
 
@@ -324,5 +345,30 @@ describe("bank:change", () => {
   it("denies an officer with a null cooperativeId or no resource", () => {
     expect(can(actor("OFFICER", null), "bank:change", {})).toBe(false);
     expect(can(actor("OFFICER", COOP), "bank:change")).toBe(false);
+  });
+});
+
+describe("cooperative:rename", () => {
+  it("denies an officer without two-factor", () => {
+    const officer = { ...actor("OFFICER", COOP), twoFactorEnabled: false };
+    expect(can(officer, "cooperative:rename", { cooperativeId: COOP })).toBe(false);
+  });
+
+  it("denies an officer of another cooperative or with no resource", () => {
+    expect(can(actor("OFFICER", OTHER_COOP), "cooperative:rename", { cooperativeId: COOP })).toBe(false);
+    expect(can(actor("OFFICER", COOP), "cooperative:rename")).toBe(false);
+  });
+});
+
+describe("name:decide", () => {
+  const admin = actor("ADMIN");
+  it("denies an admin deciding their own request", () => {
+    expect(can(admin, "name:decide", { ownerUserId: "user-1", actorInCooperative: false })).toBe(false);
+  });
+
+  it("denies an admin who belongs to the cooperative, or when that is unknown", () => {
+    expect(can(admin, "name:decide", { ownerUserId: "farmer-9", actorInCooperative: true })).toBe(false);
+    expect(can(admin, "name:decide", { ownerUserId: "farmer-9" })).toBe(false);
+    expect(can(admin, "name:decide")).toBe(false);
   });
 });

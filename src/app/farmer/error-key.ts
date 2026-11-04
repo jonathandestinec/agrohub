@@ -17,6 +17,7 @@ const KNOWN = [
   "PAYSTACK_UNAVAILABLE",
   "CROP_INACTIVE",
   "INVALID_CROPS",
+  "NAME_CHANGE_PENDING",
 ] as const;
 
 // Maps a server action error code to a key under farmer.errors.

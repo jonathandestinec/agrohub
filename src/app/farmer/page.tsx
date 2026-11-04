@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
@@ -27,6 +28,7 @@ async function FarmerHome() {
   const user = await currentUser();
   if (!user) redirect(withNext("/sign-in", "/farmer"));
   const t = await getTranslations("farmer.home");
+  const nameT = await getTranslations("nameChange");
   const overview = await getOwnFarmerOverview(user);
   const { membership, profile } = overview;
 
@@ -71,6 +73,9 @@ async function FarmerHome() {
               <dt className="body-6 text-ink-soft">{t("location")}</dt>
               <dd className="title-3">{t("place", { lga: profile.lga, state: profile.state })}</dd>
             </dl>
+            <Link href="/account/name" className="inline-flex min-h-11 items-center self-start title-4 underline underline-offset-2">
+              {nameT("link")}
+            </Link>
             {membership.status === "ACTIVE" ? (
               <CropsForm crops={(await listActiveCatalog()).crops} chosen={profile.crops.map((c) => c.id)} />
             ) : null}

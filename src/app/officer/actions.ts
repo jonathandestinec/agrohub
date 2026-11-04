@@ -31,6 +31,12 @@ import {
 } from "@/modules/banking/service";
 import { approveFarmer, rejectFarmer, removeFarmer } from "@/modules/farmers/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
+import {
+  requestCooperativeRename,
+  withdrawCooperativeRename,
+  type OwnNameChange,
+} from "@/modules/name-changes/service";
+import { nameChangeFromForm } from "@/app/account/name/form-data";
 
 function text(form: FormData, name: string): string {
   const value = form.get(name);
@@ -280,6 +286,45 @@ export async function previewBankAccountAction(input: {
       bankCode: String(input?.bankCode ?? ""),
     });
     return { ok: true, data: preview };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+function revalidateRename(): void {
+  revalidatePath("/officer/onboarding");
+  revalidatePath("/admin/names");
+}
+
+// The cooperative is always the actor's own, never one named by the form.
+export async function requestCooperativeRenameAction(
+  form: FormData,
+): Promise<ActionResult<OwnNameChange>> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    const { input, file } = await nameChangeFromForm(form);
+    const request = await requestCooperativeRename(actor, actor.cooperativeId, input, file);
+    revalidateRename();
+    return { ok: true, data: request };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function withdrawCooperativeRenameAction(input: {
+  requestId: string;
+}): Promise<ActionResult<OwnNameChange>> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    const request = await withdrawCooperativeRename(
+      actor,
+      actor.cooperativeId,
+      String(input?.requestId ?? ""),
+    );
+    revalidateRename();
+    return { ok: true, data: request };
   } catch (error) {
     return toActionResult(error);
   }

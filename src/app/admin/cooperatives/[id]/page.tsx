@@ -5,6 +5,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { ArrowUpRight, Card, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
+import { getCooperativeBankAccount } from "@/modules/banking/service";
+import { formatEffectiveAt } from "@/modules/banking/views";
 import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
 import {
   getCooperativeForReview,
@@ -76,6 +78,8 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
   if (cooperative.reviewNote) {
     rows.push([t("detail.reviewNote"), cooperative.reviewNote]);
   }
+  // Bank and account name only; the recipient code never leaves the server.
+  const payout = await getCooperativeBankAccount(actor, cooperative.id, new Date());
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
@@ -97,6 +101,29 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               ))}
             </dl>
+          </Card>
+          <Card tone="paper">
+            <section className="flex flex-col gap-2">
+              <h2 className="heading-6">{t("detail.payoutHeading")}</h2>
+              <p className="title-3 break-words">
+                {payout.accountName
+                  ? t("detail.payoutCurrent", {
+                      accountName: payout.accountName,
+                      bankName: payout.bankName ?? "",
+                    })
+                  : t("detail.payoutNone")}
+              </p>
+              {payout.change?.state === "AWAITING_CONFIRMATION" ? (
+                <p className="body-6 text-ink-soft">{t("detail.payoutAwaiting")}</p>
+              ) : null}
+              {payout.change?.state === "CONFIRMED" ? (
+                <p className="body-6 text-ink-soft">
+                  {t("detail.payoutConfirmed", {
+                    date: formatEffectiveAt(payout.change.effectiveAt, locale),
+                  })}
+                </p>
+              ) : null}
+            </section>
           </Card>
           <Card tone="paper">
             <section className="flex flex-col gap-3">

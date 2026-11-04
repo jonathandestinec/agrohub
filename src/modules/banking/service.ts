@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
-import type { BankChangeRequest, BankOwnerType } from "@/generated/prisma/client";
+import type { BankChangeRequest, BankOwnerType, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env } from "@/lib/env";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import { lockNameSubject, type NameSubject } from "@/lib/subject-lock";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import {
   createRecipient,
   listBanks,
@@ -64,6 +65,50 @@ async function loadOwner(owner: BankOwner): Promise<StoredAccount> {
   return cooperative;
 }
 
+// The name-change service calls payoutAccountFor in this module, so this module reads the
+// name_change_request table itself instead of importing that service back (no import cycle).
+// A person's pending request blocks their farmer payout account; a cooperative's blocks its own.
+type ReadClient = Pick<typeof prisma, "farmerProfile" | "nameChangeRequest">;
+
+// Whose name a payout account is checked against: a farmer account belongs to its user.
+async function nameSubjectOf(owner: BankOwner, client: ReadClient = prisma): Promise<NameSubject | null> {
+  if (owner.type === "COOPERATIVE") return { type: "COOPERATIVE", id: owner.id };
+  const profile = await client.farmerProfile.findUnique({
+    where: { id: owner.id },
+    select: { userId: true },
+  });
+  return profile ? { type: "USER", id: profile.userId } : null;
+}
+
+async function refuseWhileNameChangePending(
+  owner: BankOwner,
+  client: ReadClient = prisma,
+): Promise<void> {
+  const subject = await nameSubjectOf(owner, client);
+  if (!subject) return;
+  const pending = await client.nameChangeRequest.findFirst({
+    where: { subjectType: subject.type, subjectId: subject.id, status: "PENDING" },
+    select: { id: true },
+  });
+  if (pending) {
+    throw new ConflictError("A name change is waiting for an admin", "NAME_CHANGE_PENDING");
+  }
+}
+
+// Every bank write that a pending name change must block runs here: under the subject's
+// lock (shared with name-change requests and approvals), after a fresh check.
+async function underNameLock<T>(
+  owner: BankOwner,
+  work: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    const subject = await nameSubjectOf(owner, tx);
+    if (subject) await lockNameSubject(tx, subject);
+    await refuseWhileNameChangePending(owner, tx);
+    return work(tx);
+  });
+}
+
 function logEmailFailure(kind: string, requestId: string, err: unknown): void {
   // Never log the recipient address or the html (it carries the confirmation link).
   console.error("bank change email failed", {
@@ -108,6 +153,9 @@ export async function applyBankAccount(
   now: Date = new Date(),
 ): Promise<{ accountName: string; pending: boolean }> {
   validateBankInput(input);
+  // Before any Paystack call: the registered name may be about to change. Checked again
+  // under the lock before anything is written.
+  await refuseWhileNameChangePending(owner);
   const bank = (await listBanks()).find((b) => b.code === input.bankCode);
   if (!bank) throw new ValidationError("Unknown bank", "UNKNOWN_BANK");
   const { accountName } = await resolveAccount(input);
@@ -123,30 +171,35 @@ export async function applyBankAccount(
   if (current.recipientCode === null) {
     // First account: nothing to protect yet, so it applies at once. The condition makes
     // a concurrent first set fall through to the change-request path.
-    const { count } =
-      owner.type === "COOPERATIVE"
-        ? await prisma.cooperative.updateMany({
-            where: { id: owner.id, recipientCode: null },
-            data: { recipientCode, accountName, bankName: bank.name },
-          })
-        : await prisma.farmerProfile.updateMany({
-            where: { id: owner.id, recipientCode: null },
-            data: { recipientCode, accountName },
-          });
-    if (count === 1) {
-      await recordAudit({
-        actorId: requestedBy,
-        action: "bank.set",
-        entity: owner.type === "COOPERATIVE" ? "cooperative" : "farmer_profile",
-        entityId: owner.id,
-        meta: { ownerType: owner.type },
-      });
-      return { accountName, pending: false };
-    }
+    const applied = await underNameLock(owner, async (tx) => {
+      const { count } =
+        owner.type === "COOPERATIVE"
+          ? await tx.cooperative.updateMany({
+              where: { id: owner.id, recipientCode: null },
+              data: { recipientCode, accountName, bankName: bank.name },
+            })
+          : await tx.farmerProfile.updateMany({
+              where: { id: owner.id, recipientCode: null },
+              data: { recipientCode, accountName },
+            });
+      if (count !== 1) return false;
+      await recordAudit(
+        {
+          actorId: requestedBy,
+          action: "bank.set",
+          entity: owner.type === "COOPERATIVE" ? "cooperative" : "farmer_profile",
+          entityId: owner.id,
+          meta: { ownerType: owner.type },
+        },
+        tx,
+      );
+      return true;
+    });
+    if (applied) return { accountName, pending: false };
   }
 
   const confirmToken = randomBytes(32).toString("base64url");
-  const request = await prisma.$transaction(async (tx) => {
+  const request = await underNameLock(owner, async (tx) => {
     // A newer request replaces any older one that was never confirmed.
     await tx.bankChangeRequest.updateMany({
       where: {
@@ -206,17 +259,32 @@ export async function confirmBankChange(
   now: Date = new Date(),
 ): Promise<{ effectiveAt: Date }> {
   if (typeof token !== "string" || token.length === 0) throw invalidChange();
-  const effectiveAt = new Date(now.getTime() + CHANGE_DELAY_MS);
-  const { count } = await prisma.bankChangeRequest.updateMany({
-    where: {
-      confirmToken: token,
-      confirmedAt: null,
-      cancelledAt: null,
-      createdAt: { gt: new Date(now.getTime() - CONFIRM_TTL_MS) },
-    },
-    data: { confirmedAt: now, effectiveAt },
+  const found = await prisma.bankChangeRequest.findUnique({
+    where: { confirmToken: token },
+    select: { ownerType: true, ownerId: true },
   });
-  if (count === 0) throw invalidChange();
+  if (!found) throw invalidChange();
+  const effectiveAt = new Date(now.getTime() + CHANGE_DELAY_MS);
+  const confirmable = {
+    confirmToken: token,
+    confirmedAt: null,
+    cancelledAt: null,
+    createdAt: { gt: new Date(now.getTime() - CONFIRM_TTL_MS) },
+  };
+  await prisma.$transaction(async (tx) => {
+    const owner: BankOwner = { type: found.ownerType, id: found.ownerId };
+    const subject = await nameSubjectOf(owner, tx);
+    if (subject) await lockNameSubject(tx, subject);
+    // A dead link says so first; only a live one learns that a name change waits. The
+    // request then stays unconfirmed and can be confirmed after the decision, within 24 hours.
+    if ((await tx.bankChangeRequest.count({ where: confirmable })) === 0) throw invalidChange();
+    await refuseWhileNameChangePending(owner, tx);
+    const { count } = await tx.bankChangeRequest.updateMany({
+      where: confirmable,
+      data: { confirmedAt: now, effectiveAt },
+    });
+    if (count === 0) throw invalidChange();
+  });
   const request = await prisma.bankChangeRequest.findUniqueOrThrow({
     where: { confirmToken: token },
   });
@@ -359,20 +427,50 @@ async function bankAccountView(owner: BankOwner, now: Date): Promise<BankAccount
       }
     : { bankName: stored.bankName, accountName: stored.accountName };
   const pending = await prisma.bankChangeRequest.findFirst({
-    where: {
-      ownerType: owner.type,
-      ownerId: owner.id,
-      cancelledAt: null,
-      appliedAt: null,
-      OR: [
-        { confirmedAt: null, createdAt: { gt: new Date(now.getTime() - CONFIRM_TTL_MS) } },
-        { confirmedAt: { not: null }, effectiveAt: { gt: now } },
-      ],
-    },
+    where: openChangeWhere(owner, now),
     orderBy: { createdAt: "desc" },
     select: { confirmedAt: true, effectiveAt: true },
   });
   return toBankAccountView(current, pending);
+}
+
+// A change still in flight: awaiting its email confirmation (within 24 hours), or confirmed
+// and inside its 48-hour wait.
+function openChangeWhere(owner: BankOwner, now: Date): Prisma.BankChangeRequestWhereInput {
+  return {
+    ownerType: owner.type,
+    ownerId: owner.id,
+    cancelledAt: null,
+    appliedAt: null,
+    OR: [
+      { confirmedAt: null, createdAt: { gt: new Date(now.getTime() - CONFIRM_TTL_MS) } },
+      { confirmedAt: { not: null }, effectiveAt: { gt: now } },
+    ],
+  };
+}
+
+export { namesMatch };
+
+// System function, no Actor: the name-change service calls it for a subject it has already
+// authorised. A person's payout account is their farmer profile's; with no profile there is
+// none. Returns the current account name and whether a bank change is in flight.
+export async function payoutAccountFor(
+  subject: { type: "USER" | "COOPERATIVE"; id: string },
+  now: Date,
+): Promise<{ accountName: string | null; changeOpen: boolean }> {
+  let owner: BankOwner;
+  if (subject.type === "USER") {
+    const profile = await prisma.farmerProfile.findUnique({
+      where: { userId: subject.id },
+      select: { id: true },
+    });
+    if (!profile) return { accountName: null, changeOpen: false };
+    owner = { type: "FARMER", id: profile.id };
+  } else {
+    owner = { type: "COOPERATIVE", id: subject.id };
+  }
+  const view = await bankAccountView(owner, now);
+  return { accountName: view.accountName, changeOpen: view.change !== null };
 }
 
 // The farmer's own profile, if they hold a PENDING or ACTIVE FARMER membership. A farmer
@@ -435,8 +533,13 @@ export async function getOwnFarmerBankAccount(
 // created; the save re-checks everything on the server.
 export type AccountPreview = { accountName: string; matches: boolean; registeredName: string };
 
-async function preview(registeredName: string, input: BankInput): Promise<AccountPreview> {
+async function preview(
+  owner: BankOwner,
+  registeredName: string,
+  input: BankInput,
+): Promise<AccountPreview> {
   validateBankInput(input);
+  await refuseWhileNameChangePending(owner);
   const { accountName } = await resolveAccount(input);
   return { accountName, matches: namesMatch(registeredName, accountName), registeredName };
 }
@@ -448,7 +551,7 @@ export async function previewOwnFarmerBankAccount(
 ): Promise<AccountPreview> {
   const profile = await ownFarmerProfile(user.userId);
   if (!profile) throw new ForbiddenError();
-  return preview(profile.name, input);
+  return preview({ type: "FARMER", id: profile.id }, profile.name, input);
 }
 
 export async function previewCooperativeBankAccount(
@@ -462,5 +565,5 @@ export async function previewCooperativeBankAccount(
     select: { name: true },
   });
   if (!cooperative) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
-  return preview(cooperative.name, input);
+  return preview({ type: "COOPERATIVE", id: cooperativeId }, cooperative.name, input);
 }

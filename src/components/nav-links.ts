@@ -15,7 +15,8 @@ export type NavLabelKey =
   | "platformSettings"
   | "myLots"
   | "screenLots"
-  | "lotQueue";
+  | "lotQueue"
+  | "nameChanges";
 export type NavLink = { href: string; labelKey: NavLabelKey };
 
 const LINKS: Partial<Record<Role, NavLink[]>> = {
@@ -27,6 +28,7 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
   ],
   ADMIN: [
     { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
+    { href: "/admin/names", labelKey: "nameChanges" },
     { href: "/admin/lots", labelKey: "lotQueue" },
     { href: "/admin/settings", labelKey: "platformSettings" },
   ],

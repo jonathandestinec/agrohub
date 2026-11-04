@@ -37,7 +37,8 @@
     "platformSettings": "",
     "myLots": "",
     "screenLots": "",
-    "lotQueue": ""
+    "lotQueue": "",
+    "nameChanges": ""
   },
   "auth": {
     "fields": {
@@ -166,7 +167,8 @@
         "INTERNAL": "",
         "INVALID_CUT": "",
         "CUT_ABOVE_MAXIMUM": "",
-        "PAYSTACK_UNAVAILABLE": ""
+        "PAYSTACK_UNAVAILABLE": "",
+        "NAME_CHANGE_PENDING": ""
       },
       "bank": {
         "heading": "",
@@ -298,7 +300,12 @@
         "noDocument": "",
         "viewDocument": "",
         "actionsHeading": "",
-        "reason": ""
+        "reason": "",
+        "payoutHeading": "",
+        "payoutCurrent": "",
+        "payoutNone": "",
+        "payoutAwaiting": "",
+        "payoutConfirmed": ""
       },
       "state": {
         "PENDING": "",
@@ -343,6 +350,53 @@
         "INVALID_SETTING": "",
         "INTERNAL": ""
       }
+    },
+    "names": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "person": "",
+      "cooperative": "",
+      "fromTo": "",
+      "waiting": "",
+      "cannotDecideChip": "",
+      "back": "",
+      "detail": {
+        "subject": "",
+        "currentName": "",
+        "newName": "",
+        "reason": "",
+        "document": "",
+        "viewDocument": "",
+        "requester": "",
+        "submittedAt": "",
+        "account": "",
+        "accountMatches": "",
+        "accountDiffers": "",
+        "noAccount": "",
+        "actionsHeading": "",
+        "cannotDecide": "",
+        "approve": "",
+        "reject": "",
+        "rejectReason": "",
+        "working": "",
+        "status": {
+          "APPROVED": "",
+          "REJECTED": "",
+          "WITHDRAWN": ""
+        },
+        "openCooperative": ""
+      },
+      "errors": {
+        "NAME_CHANGE_NOT_PENDING": "",
+        "CANNOT_DECIDE_OWN_NAME_CHANGE": "",
+        "REASON_REQUIRED": "",
+        "REASON_TOO_LONG": "",
+        "NAME_CHANGE_NOT_FOUND": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
+        "INTERNAL": ""
+      }
     }
   },
   "bank": {
@@ -353,7 +407,8 @@
       "confirming": "",
       "done": "",
       "invalid": "",
-      "error": ""
+      "error": "",
+      "nameChangePending": ""
     }
   },
   "farmer": {
@@ -448,7 +503,8 @@
       "ILLEGAL_TRANSITION": "",
       "CROP_INACTIVE": "",
       "INVALID_CROPS": "",
-      "PAYSTACK_UNAVAILABLE": ""
+      "PAYSTACK_UNAVAILABLE": "",
+      "NAME_CHANGE_PENDING": ""
     },
     "leave": {
       "heading": "",
@@ -976,7 +1032,68 @@
     "errors": {
       "notFound": "",
       "unavailable": "",
-      "other": ""
+      "other": "",
+      "nameChangePending": ""
+    }
+  },
+  "nameChange": {
+    "title": "",
+    "lead": "",
+    "currentName": "",
+    "link": "",
+    "form": {
+      "heading": "",
+      "newName": "",
+      "newNameHint": "",
+      "reason": "",
+      "reasonHint": "",
+      "documentKind": "",
+      "file": "",
+      "fileHint": "",
+      "submit": "",
+      "submitting": ""
+    },
+    "kinds": {
+      "AFFIDAVIT": "",
+      "MARRIAGE_CERTIFICATE": "",
+      "PUBLIC_NOTICE": "",
+      "AMENDED_REGISTRATION_CERTIFICATE": ""
+    },
+    "pending": {
+      "heading": "",
+      "body": "",
+      "withdraw": "",
+      "withdrawing": ""
+    },
+    "outcome": {
+      "APPROVED": "",
+      "REJECTED": "",
+      "WITHDRAWN": ""
+    },
+    "cooperative": {
+      "heading": "",
+      "lead": "",
+      "needsTwoFactor": "",
+      "setUpTwoFactor": "",
+      "ownName": ""
+    },
+    "errors": {
+      "INVALID_NAME": "",
+      "NAME_UNCHANGED": "",
+      "REASON_REQUIRED": "",
+      "REASON_TOO_LONG": "",
+      "INVALID_DOCUMENT_KIND": "",
+      "FILE_TYPE_NOT_ALLOWED": "",
+      "FILE_TYPE_MISMATCH": "",
+      "FILE_TOO_LARGE": "",
+      "NO_FILE": "",
+      "BANK_CHANGE_OPEN": "",
+      "NAME_CHANGE_ALREADY_PENDING": "",
+      "NAME_CHANGE_NOT_PENDING": "",
+      "COOPERATIVE_NOT_VERIFIED": "",
+      "FORBIDDEN": "",
+      "UNAUTHENTICATED": "",
+      "INTERNAL": ""
     }
   }
 }

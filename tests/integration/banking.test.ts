@@ -18,6 +18,7 @@ import {
   setOwnFarmerBankAccount,
 } from "@/modules/banking/service";
 import type { Actor } from "@/modules/identity/policies";
+import { approveNameChange, requestOwnNameChange } from "@/modules/name-changes/service";
 import { cleanDatabase, createTestCooperative, createTestUser } from "./helpers";
 
 vi.mock("@/lib/email", async (importOriginal) => {
@@ -586,5 +587,146 @@ describe("farmer bank account", () => {
 
   it("returns null for a user with no farmer profile", async () => {
     await expect(getOwnFarmerBankAccount({ userId: "u-nobody" }, T)).resolves.toBeNull();
+  });
+});
+
+describe("name change pending", () => {
+  const FARMER_OLD = "3333333333";
+  const FARMER_NEW = "4444444444";
+  let farmerUserId: string;
+  let profileId: string;
+
+  async function pendingNameChange(subjectType: "USER" | "COOPERATIVE", subjectId: string) {
+    await prisma.nameChangeRequest.create({
+      data: {
+        subjectType,
+        subjectId,
+        fromName: "Old",
+        toName: "New",
+        reason: "Married in October 2026",
+        documentKind: subjectType === "USER" ? "AFFIDAVIT" : "AMENDED_REGISTRATION_CERTIFICATE",
+        storageKey: "name-changes/test",
+        contentType: "application/pdf",
+        sizeBytes: 10,
+        requestedByUserId: farmerUserId,
+      },
+    });
+  }
+
+  async function codeOf(promise: Promise<unknown>): Promise<string | undefined> {
+    try {
+      await promise;
+      return undefined;
+    } catch (error) {
+      return (error as { code?: string }).code;
+    }
+  }
+
+  beforeEach(async () => {
+    fakePaystack.accounts.set(`058:${FARMER_OLD}`, "AMINA BELLO");
+    fakePaystack.accounts.set(`044:${FARMER_NEW}`, "AMINA MUSA");
+    const user = await createTestUser({ id: "u-amina", name: "Amina Bello", email: "amina@example.com" });
+    farmerUserId = user.id;
+    await prisma.membership.create({
+      data: { userId: user.id, role: "FARMER", cooperativeId, status: "ACTIVE" },
+    });
+    profileId = (
+      await prisma.farmerProfile.create({
+        data: { userId: user.id, cooperativeId, farmSizeHectares: "1", state: "Ogun", lga: "Abeokuta North" },
+      })
+    ).id;
+  });
+
+  it("bank_change_refused_while_name_change_pending", async () => {
+    await setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T);
+    await pendingNameChange("USER", farmerUserId);
+    const recipients = fakePaystack.recipients.length;
+    expect(
+      await codeOf(
+        setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_NEW, bankCode: "044" }, T),
+      ),
+    ).toBe("NAME_CHANGE_PENDING");
+    expect(
+      await codeOf(
+        previewOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_NEW, bankCode: "044" }),
+      ),
+    ).toBe("NAME_CHANGE_PENDING");
+    expect(await prisma.bankChangeRequest.count({ where: { ownerId: profileId } })).toBe(0);
+    expect(fakePaystack.recipients.length).toBe(recipients);
+  });
+
+  it("blocks the first bank account too", async () => {
+    await pendingNameChange("USER", farmerUserId);
+    expect(
+      await codeOf(
+        setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T),
+      ),
+    ).toBe("NAME_CHANGE_PENDING");
+    expect((await prisma.farmerProfile.findUniqueOrThrow({ where: { id: profileId } })).recipientCode).toBeNull();
+  });
+
+  it("blocks a cooperative bank change while its rename is pending", async () => {
+    await pendingNameChange("COOPERATIVE", cooperativeId);
+    expect(
+      await codeOf(
+        setCooperativeBankAccount(officer, cooperativeId, { accountNumber: OLD_ACCOUNT, bankCode: "058" }, T),
+      ),
+    ).toBe("NAME_CHANGE_PENDING");
+    expect(
+      await codeOf(
+        previewCooperativeBankAccount(officer, cooperativeId, { accountNumber: OLD_ACCOUNT, bankCode: "058" }),
+      ),
+    ).toBe("NAME_CHANGE_PENDING");
+    expect(fakePaystack.recipients).toHaveLength(0);
+  });
+
+  it("bank_confirm_refused_while_name_change_pending", async () => {
+    await setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T);
+    await setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T);
+    const request = await prisma.bankChangeRequest.findFirstOrThrow({ where: { ownerId: profileId } });
+    await pendingNameChange("USER", farmerUserId);
+    expect(await codeOf(confirmBankChange(request.confirmToken, T))).toBe("NAME_CHANGE_PENDING");
+    expect(
+      (await prisma.bankChangeRequest.findUniqueOrThrow({ where: { id: request.id } })).confirmedAt,
+    ).toBeNull();
+  });
+
+  it("bank_change_after_approval_uses_new_name_and_waits", async () => {
+    await setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T);
+    await addAdmin("u-admin");
+    const admin: Actor = { userId: "u-admin", role: "ADMIN", cooperativeId: null, twoFactorEnabled: true };
+    const request = await requestOwnNameChange(
+      { userId: farmerUserId },
+      { newName: "Amina Musa", reason: "Married in October 2026" },
+      { kind: "AFFIDAVIT", body: Buffer.from("%PDF-1.4\n"), contentType: "application/pdf" },
+      T,
+    );
+    await approveNameChange(admin, request.id, T);
+
+    expect(
+      await codeOf(
+        setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T),
+      ),
+    ).toBe("ACCOUNT_NAME_MISMATCH");
+    const result = await setOwnFarmerBankAccount(
+      { userId: farmerUserId },
+      { accountNumber: FARMER_NEW, bankCode: "044" },
+      T,
+    );
+    expect(result).toEqual({ accountName: "AMINA MUSA", pending: true });
+  });
+
+  it("works as before after a rejected or withdrawn request", async () => {
+    await setOwnFarmerBankAccount({ userId: farmerUserId }, { accountNumber: FARMER_OLD, bankCode: "058" }, T);
+    await pendingNameChange("USER", farmerUserId);
+    await prisma.nameChangeRequest.updateMany({ data: { status: "REJECTED" } });
+    await pendingNameChange("USER", farmerUserId);
+    await prisma.nameChangeRequest.updateMany({ where: { status: "PENDING" }, data: { status: "WITHDRAWN" } });
+    const result = await setOwnFarmerBankAccount(
+      { userId: farmerUserId },
+      { accountNumber: FARMER_OLD, bankCode: "058" },
+      T,
+    );
+    expect(result.pending).toBe(true);
   });
 });

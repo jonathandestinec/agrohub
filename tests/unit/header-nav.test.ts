@@ -12,9 +12,10 @@ describe("navLinksFor", () => {
     ]);
   });
 
-  it("gives admins the cooperatives queue, the lot queue and platform settings", () => {
+  it("gives admins the cooperatives queue, name changes, the lot queue and platform settings", () => {
     expect(navLinksFor("ADMIN")).toEqual([
       { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
+      { href: "/admin/names", labelKey: "nameChanges" },
       { href: "/admin/lots", labelKey: "lotQueue" },
       { href: "/admin/settings", labelKey: "platformSettings" },
     ]);

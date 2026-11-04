@@ -37,12 +37,18 @@ export type Action =
   | "catalog:forward"
   | "lot:submit"
   | "lot:own"
-  | "lot:screen";
+  | "lot:screen"
+  | "cooperative:rename"
+  | "name:queue"
+  | "name:decide";
 
 export type Resource = {
   cooperativeId?: string;
   ownerUserId?: string;
   cooperativeHasOtherOfficer?: boolean;
+  // For name:decide: whether the deciding admin holds any membership in the cooperative
+  // being renamed, or is the person being renamed.
+  actorInCooperative?: boolean;
 };
 
 function isOwnCooperative(
@@ -67,7 +73,16 @@ export function can(
     case "cooperative:queue":
     case "dispute:resolve":
     case "setting:write":
+    case "name:queue":
       return actor.role === "ADMIN";
+    case "name:decide":
+      // Never the admin's own request, nor one about themselves or a cooperative they belong to.
+      return (
+        actor.role === "ADMIN" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId !== actor.userId &&
+        resource.actorInCooperative === false
+      );
     case "price:write":
     case "catalog:manage":
       return actor.role === "BOARD_ADMIN";
@@ -112,7 +127,9 @@ export function can(
     case "cooperative:edit":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     case "bank:change":
-      // Farmers change their own account through the self-scoped banking function.
+    case "cooperative:rename":
+      // Farmers change their own account through the self-scoped banking function. A
+      // cooperative's name drives the bank-name check, so renaming needs two-factor too.
       return (
         actor.role === "OFFICER" &&
         actor.twoFactorEnabled &&

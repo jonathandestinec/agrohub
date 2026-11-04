@@ -13,6 +13,7 @@ import type { Actor } from "@/modules/identity/policies";
 import { percentToBps } from "@/lib/money";
 import { updatePlatformSettings } from "@/modules/settings/service";
 import { requireActor } from "@/modules/identity/session";
+import { approveNameChange, rejectNameChange } from "@/modules/name-changes/service";
 
 type ReviewInput = { cooperativeId: string; reason?: string };
 
@@ -94,4 +95,35 @@ export async function updateSettingsAction(input: SettingsInput): Promise<Action
   } catch (error) {
     return toActionResult(error);
   }
+}
+
+type NameDecisionInput = { requestId: string; reason?: string };
+
+// Name-change decisions; the actor always comes from the session.
+async function decideName(
+  input: NameDecisionInput,
+  work: (actor: Actor, requestId: string) => Promise<unknown>,
+): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    const requestId = typeof input?.requestId === "string" ? input.requestId : "";
+    await work(actor, requestId);
+    revalidatePath("/admin/names");
+    revalidatePath(`/admin/names/${requestId}`);
+    revalidatePath("/account/name");
+    revalidatePath("/officer/onboarding");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+export async function approveNameChangeAction(input: NameDecisionInput): Promise<ActionResult> {
+  return decideName(input, (actor, id) => approveNameChange(actor, id));
+}
+
+export async function rejectNameChangeAction(input: NameDecisionInput): Promise<ActionResult> {
+  return decideName(input, (actor, id) =>
+    rejectNameChange(actor, id, { reason: typeof input.reason === "string" ? input.reason : "" }),
+  );
 }

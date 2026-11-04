@@ -515,3 +515,51 @@ model LotRevision {
   @@index([lotId, status])
   @@map("lot_revision")
 }
+
+enum NameSubjectType {
+  USER
+  COOPERATIVE
+}
+
+enum NameChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum NameDocumentKind {
+  AFFIDAVIT
+  MARRIAGE_CERTIFICATE
+  PUBLIC_NOTICE
+  AMENDED_REGISTRATION_CERTIFICATE
+}
+
+// A request to change User.name (subjectType USER, subjectId = User.id) or a verified
+// cooperative's name (COOPERATIVE, subjectId = Cooperative.id). No foreign keys: the subject
+// is polymorphic, like BankChangeRequest's owner. The migration adds a partial unique index
+// the schema cannot express, so each subject has at most one PENDING request:
+// name_change_request_one_pending_key ON (subjectType, subjectId) WHERE status = 'PENDING'.
+// storageKey points into the private bucket and never leaves the server.
+model NameChangeRequest {
+  id                String           @id @default(cuid())
+  subjectType       NameSubjectType
+  subjectId         String
+  fromName          String
+  toName            String
+  reason            String
+  documentKind      NameDocumentKind
+  storageKey        String
+  contentType       String
+  sizeBytes         Int
+  status            NameChangeStatus @default(PENDING)
+  requestedByUserId String
+  decidedByUserId   String?
+  rejectionReason   String?
+  decidedAt         DateTime?
+  createdAt         DateTime         @default(now())
+
+  @@index([status, createdAt])
+  @@index([subjectType, subjectId])
+  @@map("name_change_request")
+}
