@@ -226,4 +226,35 @@ export async function expireOffers(now: Date = new Date()): Promise<number> {
   return expired;
 }
 
+// For checkout (orders module): the buyer's own offer, its agreed price and what the buyer sees of
+// its status. Checkout takes only an offer that reads ACCEPTED here.
+export async function checkoutFactsForOffer(
+  actor: Actor,
+  offerId: string,
+  now: Date = new Date(),
+): Promise<{ id: string; lotId: string; quantity: number; agreedKobo: number; status: BuyerOffer["status"] }> {
+  const offer = await loadOwnOffer(actor, offerId);
+  return {
+    id: offer.id,
+    lotId: offer.lotId,
+    quantity: offer.quantity,
+    agreedKobo: offer.agreedKobo ?? offer.offeredKobo,
+    status: buyerViewOf(offer, now).status,
+  };
+}
+
+// For payment confirmation (payments module): the offer's order was paid, so the order holds
+// the stock now. An offer that expired while its payment was landing becomes ORDERED too.
+export async function markOfferOrdered(tx: Prisma.TransactionClient, offerId: string, now: Date): Promise<void> {
+  const { count } = await tx.offer.updateMany({
+    where: { id: offerId, status: { in: ["ACCEPTED", "EXPIRED"] } },
+    data: { status: "ORDERED", decidedAt: now },
+  });
+  if (count === 0) return;
+  await recordAudit(
+    { actorId: null, action: "offer.ordered", entity: "offer", entityId: offerId, meta: { offerId } },
+    tx,
+  );
+}
+
 export type { Offer };
