@@ -12,6 +12,7 @@ import {
   suspendCooperative,
   verifyCooperative,
 } from "@/modules/cooperatives/service";
+import { getCooperativeBankAccount } from "@/modules/banking/service";
 import type { Actor } from "@/modules/identity/policies";
 import {
   cleanDatabase,
@@ -379,5 +380,18 @@ describe("re-submission after rejection", () => {
     expect(after?.submittedAt).not.toBeNull();
     const queue = await listVerificationQueue(admin, new Date());
     expect(queue.map((c) => c.id)).toEqual([coop.id]);
+  });
+});
+
+describe("the cooperative's payout account on review", () => {
+  it("shows an admin the bank and account name, never the recipient code", async () => {
+    const coop = await submittedCooperative({
+      recipientCode: "RCP_secret_code",
+      accountName: "OGUN FARMERS COOP",
+      bankName: "Test Bank",
+    });
+    const account = await getCooperativeBankAccount(admin, coop.id, NOW);
+    expect(account).toEqual({ bankName: "Test Bank", accountName: "OGUN FARMERS COOP", change: null });
+    expect(JSON.stringify(account)).not.toContain("RCP_secret_code");
   });
 });

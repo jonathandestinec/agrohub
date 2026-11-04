@@ -300,7 +300,12 @@
         "noDocument": "Not uploaded",
         "viewDocument": "Open document",
         "actionsHeading": "Decision",
-        "reason": "Reason (shown to the officers, no personal details)"
+        "reason": "Reason (shown to the officers, no personal details)",
+        "payoutHeading": "Payout account",
+        "payoutCurrent": "{accountName} at {bankName}",
+        "payoutNone": "No bank account yet.",
+        "payoutAwaiting": "A change is waiting for the officer's email confirmation.",
+        "payoutConfirmed": "A confirmed change takes effect on {date}."
       },
       "state": {
         "PENDING": "Pending review",
@@ -344,6 +349,52 @@
       "errors": {
         "INVALID_SETTING": "Enter each value as a percentage within its range, with at most two decimals.",
         "INTERNAL": "Something went wrong. Try again."
+      }
+    },
+    "names": {
+      "title": "Name changes",
+      "lead": "People and cooperatives asking to change their name. Names must match bank accounts, so check the document before approving.",
+      "empty": "No name changes are waiting.",
+      "person": "Person",
+      "cooperative": "Cooperative",
+      "fromTo": "{from} → {to}",
+      "waiting": "{days, plural, =0 {Today} one {# day waiting} other {# days waiting}}",
+      "cannotDecideChip": "You can't decide this one",
+      "back": "Back to name changes",
+      "detail": {
+        "subject": "Who",
+        "currentName": "Current name",
+        "newName": "New name",
+        "reason": "Reason given",
+        "document": "Document",
+        "viewDocument": "Open document",
+        "requester": "Asked by",
+        "submittedAt": "Submitted",
+        "account": "Payout account",
+        "accountMatches": "Payout account name: {accountName}. It matches the new name.",
+        "accountDiffers": "Payout account name: {accountName}. It does not match the new name, so they will need to change their bank account after this.",
+        "noAccount": "No payout account yet.",
+        "actionsHeading": "Decision",
+        "cannotDecide": "You made this request, it is about you, or you belong to this cooperative, so another admin must decide it.",
+        "approve": "Approve name change",
+        "reject": "Reject",
+        "rejectReason": "Reason (shown to the person who asked)",
+        "working": "Working…",
+        "status": {
+          "APPROVED": "Approved on {date}.",
+          "REJECTED": "Rejected on {date}: {reason}",
+          "WITHDRAWN": "Withdrawn on {date}."
+        }
+      },
+      "errors": {
+        "NAME_CHANGE_NOT_PENDING": "This request has already been decided or withdrawn. Refresh the page.",
+        "CANNOT_DECIDE_OWN_NAME_CHANGE": "Another admin must decide this request.",
+        "REASON_REQUIRED": "Give a reason of at least 3 characters.",
+        "REASON_TOO_LONG": "Keep the reason under 500 characters.",
+        "NAME_CHANGE_NOT_FOUND": "This request no longer exists.",
+        "UNAUTHENTICATED": "Please sign in again.",
+        "FORBIDDEN": "You cannot do this.",
+        "INTERNAL": "Something went wrong. Please try again."
       }
     }
   },

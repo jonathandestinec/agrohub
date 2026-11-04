@@ -300,7 +300,12 @@
         "noDocument": "",
         "viewDocument": "",
         "actionsHeading": "",
-        "reason": ""
+        "reason": "",
+        "payoutHeading": "",
+        "payoutCurrent": "",
+        "payoutNone": "",
+        "payoutAwaiting": "",
+        "payoutConfirmed": ""
       },
       "state": {
         "PENDING": "",
@@ -343,6 +348,52 @@
       "saved": "",
       "errors": {
         "INVALID_SETTING": "",
+        "INTERNAL": ""
+      }
+    },
+    "names": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "person": "",
+      "cooperative": "",
+      "fromTo": "",
+      "waiting": "",
+      "cannotDecideChip": "",
+      "back": "",
+      "detail": {
+        "subject": "",
+        "currentName": "",
+        "newName": "",
+        "reason": "",
+        "document": "",
+        "viewDocument": "",
+        "requester": "",
+        "submittedAt": "",
+        "account": "",
+        "accountMatches": "",
+        "accountDiffers": "",
+        "noAccount": "",
+        "actionsHeading": "",
+        "cannotDecide": "",
+        "approve": "",
+        "reject": "",
+        "rejectReason": "",
+        "working": "",
+        "status": {
+          "APPROVED": "",
+          "REJECTED": "",
+          "WITHDRAWN": ""
+        }
+      },
+      "errors": {
+        "NAME_CHANGE_NOT_PENDING": "",
+        "CANNOT_DECIDE_OWN_NAME_CHANGE": "",
+        "REASON_REQUIRED": "",
+        "REASON_TOO_LONG": "",
+        "NAME_CHANGE_NOT_FOUND": "",
+        "UNAUTHENTICATED": "",
+        "FORBIDDEN": "",
         "INTERNAL": ""
       }
     }
