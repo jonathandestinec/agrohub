@@ -1126,7 +1126,8 @@
       "ACCEPTED": "",
       "DECLINED": "",
       "EXPIRED": "",
-      "WITHDRAWN": ""
+      "WITHDRAWN": "",
+      "ORDERED": ""
     },
     "form": {
       "quantity": "",
@@ -1189,7 +1190,8 @@
       "ACCEPTED": "",
       "REJECTED": "",
       "EXPIRED": "",
-      "WITHDRAWN": ""
+      "WITHDRAWN": "",
+      "ORDERED": ""
     },
     "officer": {
       "title": "",

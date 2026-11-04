@@ -4,7 +4,8 @@ import { lineTotalKobo, type SaleBreakdown } from "@/lib/money";
 // What the buyer may know about an offer's state. OPEN and AWAITING_FARMER both read WAITING,
 // so a buyer cannot tell that an officer found the offer below the farmer's floor; a rejection
 // by the officer or by the farmer both read DECLINED.
-export type BuyerOfferStatus = "WAITING" | "COUNTERED" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "WITHDRAWN";
+// ORDERED: the accepted offer's order was paid (Phase 5).
+export type BuyerOfferStatus = "WAITING" | "COUNTERED" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "WITHDRAWN" | "ORDERED";
 
 // Pure. An offer reads EXPIRED once its time (to answer, or to pay once accepted) has passed or
 // its lot is no longer on sale, before the daily job marks it. Phase 5's checkout must take only
@@ -30,6 +31,8 @@ export function buyerStatusOf(
       return "EXPIRED";
     case "WITHDRAWN":
       return "WITHDRAWN";
+    case "ORDERED":
+      return "ORDERED";
   }
 }
 

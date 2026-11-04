@@ -1126,7 +1126,8 @@
       "ACCEPTED": "Accepted",
       "DECLINED": "Declined",
       "EXPIRED": "Expired",
-      "WITHDRAWN": "Withdrawn"
+      "WITHDRAWN": "Withdrawn",
+      "ORDERED": "Paid"
     },
     "form": {
       "quantity": "Quantity ({unit})",
@@ -1189,7 +1190,8 @@
       "ACCEPTED": "Accepted",
       "REJECTED": "Rejected",
       "EXPIRED": "Expired",
-      "WITHDRAWN": "Withdrawn"
+      "WITHDRAWN": "Withdrawn",
+      "ORDERED": "Paid"
     },
     "officer": {
       "title": "Offers",
