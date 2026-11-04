@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { DOCUMENT_CONTENT_TYPES, MAX_DOCUMENT_BYTES, matchesSignature } from "@/lib/file-type";
 import { putPrivate, signedUrl } from "@/lib/storage";
+import { lockNameSubject } from "@/lib/subject-lock";
 import { recordAudit } from "@/modules/audit/audit";
 import { namesMatch, payoutAccountFor } from "@/modules/banking/service";
 import { can, type Actor, type Resource } from "@/modules/identity/policies";
@@ -76,12 +77,7 @@ async function createRequest(
   if (toName === currentName.trim().replace(/\s+/g, " ")) {
     throw new ValidationError("That is already the name", "NAME_UNCHANGED");
   }
-  if ((await payoutAccountFor(subject, now)).changeOpen) {
-    throw new ConflictError(
-      "A bank account change is still in progress",
-      "BANK_CHANGE_OPEN",
-    );
-  }
+  await refuseWhileBankChangeOpen(subject, now);
   const pending = await prisma.nameChangeRequest.findFirst({
     where: { subjectType: subject.type, subjectId: subject.id, status: "PENDING" },
     select: { id: true },
@@ -92,6 +88,10 @@ async function createRequest(
   await putPrivate(storageKey, file.body, file.contentType);
   try {
     const row = await prisma.$transaction(async (tx) => {
+      // Checked again under the subject's lock, which bank changes take too, so a bank
+      // change cannot start between the check and this insert.
+      await lockNameSubject(tx, subject);
+      await refuseWhileBankChangeOpen(subject, now);
       const created = await tx.nameChangeRequest.create({
         data: {
           subjectType: subject.type,
@@ -130,6 +130,14 @@ async function createRequest(
       throw alreadyPending();
     }
     throw error;
+  }
+}
+
+// Reads through the shared client: called with the subject's lock held, it sees every
+// bank change committed under that lock.
+async function refuseWhileBankChangeOpen(subject: Subject, now: Date): Promise<void> {
+  if ((await payoutAccountFor(subject, now)).changeOpen) {
+    throw new ConflictError("A bank account change is still in progress", "BANK_CHANGE_OPEN");
   }
 }
 
@@ -394,6 +402,10 @@ export async function approveNameChange(
   const request = await loadRequest(requestId);
   await requireDecision(actor, request);
   await prisma.$transaction(async (tx) => {
+    // Never rename while a bank change for this subject is still in flight.
+    const subject = { type: request.subjectType, id: request.subjectId };
+    await lockNameSubject(tx, subject);
+    await refuseWhileBankChangeOpen(subject, now);
     const { count } = await tx.nameChangeRequest.updateMany({
       where: { id: request.id, status: "PENDING" },
       data: { status: "APPROVED", decidedByUserId: actor.userId, decidedAt: now },
