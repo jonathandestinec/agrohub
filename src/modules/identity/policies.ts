@@ -38,12 +38,17 @@ export type Action =
   | "lot:submit"
   | "lot:own"
   | "lot:screen"
-  | "cooperative:rename";
+  | "cooperative:rename"
+  | "name:queue"
+  | "name:decide";
 
 export type Resource = {
   cooperativeId?: string;
   ownerUserId?: string;
   cooperativeHasOtherOfficer?: boolean;
+  // For name:decide: whether the deciding admin holds any membership in the cooperative
+  // being renamed, or is the person being renamed.
+  actorInCooperative?: boolean;
 };
 
 function isOwnCooperative(
@@ -68,7 +73,16 @@ export function can(
     case "cooperative:queue":
     case "dispute:resolve":
     case "setting:write":
+    case "name:queue":
       return actor.role === "ADMIN";
+    case "name:decide":
+      // Never the admin's own request, nor one about themselves or a cooperative they belong to.
+      return (
+        actor.role === "ADMIN" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId !== actor.userId &&
+        resource.actorInCooperative === false
+      );
     case "price:write":
     case "catalog:manage":
       return actor.role === "BOARD_ADMIN";

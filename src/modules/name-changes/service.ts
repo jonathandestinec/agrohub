@@ -1,27 +1,34 @@
 import { randomBytes } from "node:crypto";
 import {
   Prisma,
+  type NameChangeRequest,
   type NameDocumentKind,
   type NameSubjectType,
 } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { DOCUMENT_CONTENT_TYPES, MAX_DOCUMENT_BYTES, matchesSignature } from "@/lib/file-type";
-import { putPrivate } from "@/lib/storage";
+import { putPrivate, signedUrl } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
-import { payoutAccountFor } from "@/modules/banking/service";
-import { can, type Actor } from "@/modules/identity/policies";
+import { namesMatch, payoutAccountFor } from "@/modules/banking/service";
+import { can, type Actor, type Resource } from "@/modules/identity/policies";
 import {
   COOPERATIVE_DOCUMENT_KINDS,
   PERSON_DOCUMENT_KINDS,
   cleanName,
+  cleanRejectionReason,
   cleanRequestReason,
   type NameChangeFile,
   type NameChangeInput,
 } from "./schema";
-import { toOwnNameChange, type OwnNameChange } from "./views";
+import {
+  toAdminNameChange,
+  toOwnNameChange,
+  type AdminNameChange,
+  type OwnNameChange,
+} from "./views";
 
-export type { OwnNameChange };
+export type { AdminNameChange, OwnNameChange };
 
 type Subject = { type: NameSubjectType; id: string };
 
@@ -253,4 +260,167 @@ export async function withdrawCooperativeRename(
 ): Promise<OwnNameChange> {
   if (!can(actor, "cooperative:rename", { cooperativeId })) throw new ForbiddenError();
   return withdraw({ type: "COOPERATIVE", id: cooperativeId }, requestId, actor.userId, now);
+}
+
+// ---- Admin review and decisions ----
+
+const DAY_MS = 86_400_000;
+const DOCUMENT_URL_TTL_SECONDS = 300;
+
+function notFound(): NotFoundError {
+  return new NotFoundError("NAME_CHANGE_NOT_FOUND");
+}
+
+// Who the request belongs to, for name:decide. For a person the subject is the requester,
+// so an admin can never decide a rename of themselves. For a cooperative, any membership
+// (any role, any status) of the admin in that cooperative counts as involvement.
+async function decisionResource(actor: Actor, request: NameChangeRequest): Promise<Resource> {
+  let actorInCooperative: boolean;
+  if (request.subjectType === "USER") {
+    actorInCooperative = request.subjectId === actor.userId;
+  } else {
+    const membership = await prisma.membership.findFirst({
+      where: { userId: actor.userId, cooperativeId: request.subjectId },
+      select: { id: true },
+    });
+    actorInCooperative = membership !== null;
+  }
+  return { ownerUserId: request.requestedByUserId, actorInCooperative };
+}
+
+// An admin refused only by their own involvement gets a code the screen can explain.
+async function requireDecision(actor: Actor, request: NameChangeRequest): Promise<void> {
+  if (can(actor, "name:decide", await decisionResource(actor, request))) return;
+  if (can(actor, "name:queue")) throw new ForbiddenError("CANNOT_DECIDE_OWN_NAME_CHANGE");
+  throw new ForbiddenError();
+}
+
+async function loadRequest(requestId: string): Promise<NameChangeRequest> {
+  if (typeof requestId !== "string" || requestId === "") throw notFound();
+  const row = await prisma.nameChangeRequest.findUnique({ where: { id: requestId } });
+  if (!row) throw notFound();
+  return row;
+}
+
+async function adminView(actor: Actor, row: NameChangeRequest, now: Date): Promise<AdminNameChange> {
+  const requester = await prisma.user.findUnique({
+    where: { id: row.requestedByUserId },
+    select: { name: true },
+  });
+  let subjectLabel: string;
+  if (row.subjectType === "USER") {
+    const subject = await prisma.user.findUnique({
+      where: { id: row.subjectId },
+      select: { email: true },
+    });
+    subjectLabel = subject?.email ?? "";
+  } else {
+    const cooperative = await prisma.cooperative.findUnique({
+      where: { id: row.subjectId },
+      select: { registrationNumber: true },
+    });
+    subjectLabel = cooperative?.registrationNumber ?? "";
+  }
+  const account = await payoutAccountFor({ type: row.subjectType, id: row.subjectId }, now);
+  return toAdminNameChange(row, {
+    subjectLabel,
+    requesterName: requester?.name ?? "",
+    waitingDays: Math.max(0, Math.floor((now.getTime() - row.createdAt.getTime()) / DAY_MS)),
+    canDecide: can(actor, "name:decide", await decisionResource(actor, row)),
+    payoutAccountName: account.accountName,
+    newNameMatchesAccount:
+      account.accountName === null ? null : namesMatch(row.toName, account.accountName),
+  });
+}
+
+export async function listNameChangeQueue(
+  actor: Actor,
+  now: Date = new Date(),
+): Promise<AdminNameChange[]> {
+  if (!can(actor, "name:queue")) throw new ForbiddenError();
+  const rows = await prisma.nameChangeRequest.findMany({
+    where: { status: "PENDING" },
+    orderBy: { createdAt: "asc" },
+  });
+  return Promise.all(rows.map((row) => adminView(actor, row, now)));
+}
+
+export async function getNameChangeForReview(
+  actor: Actor,
+  requestId: string,
+  now: Date = new Date(),
+): Promise<AdminNameChange> {
+  if (!can(actor, "name:queue")) throw new ForbiddenError();
+  return adminView(actor, await loadRequest(requestId), now);
+}
+
+// Returns only a short-lived signed link; the file is never streamed through the app.
+export async function getNameChangeDocumentUrl(actor: Actor, requestId: string): Promise<string> {
+  if (!can(actor, "name:queue")) throw new ForbiddenError();
+  const row = await loadRequest(requestId);
+  return signedUrl(row.storageKey, DOCUMENT_URL_TTL_SECONDS);
+}
+
+function decisionAudit(actor: Actor, request: NameChangeRequest, action: string) {
+  // Ids only: the names and any reason stay on the request row.
+  return {
+    actorId: actor.userId,
+    action,
+    entity: "name_change_request",
+    entityId: request.id,
+    meta: { requestId: request.id, subjectType: request.subjectType, subjectId: request.subjectId },
+  };
+}
+
+// Changes the name only: the payout account (recipient code, account name, bank name) is
+// never touched, so the next bank change is checked against the new name.
+export async function approveNameChange(
+  actor: Actor,
+  requestId: string,
+  now: Date = new Date(),
+): Promise<AdminNameChange> {
+  const request = await loadRequest(requestId);
+  await requireDecision(actor, request);
+  await prisma.$transaction(async (tx) => {
+    const { count } = await tx.nameChangeRequest.updateMany({
+      where: { id: request.id, status: "PENDING" },
+      data: { status: "APPROVED", decidedByUserId: actor.userId, decidedAt: now },
+    });
+    if (count === 0) throw notPending();
+    if (request.subjectType === "USER") {
+      await tx.user.update({ where: { id: request.subjectId }, data: { name: request.toName } });
+    } else {
+      await tx.cooperative.update({
+        where: { id: request.subjectId },
+        data: { name: request.toName },
+      });
+    }
+    await recordAudit(decisionAudit(actor, request, "name_change.approve"), tx);
+  });
+  return adminView(actor, await loadRequest(request.id), now);
+}
+
+export async function rejectNameChange(
+  actor: Actor,
+  requestId: string,
+  input: { reason: string },
+  now: Date = new Date(),
+): Promise<AdminNameChange> {
+  const request = await loadRequest(requestId);
+  await requireDecision(actor, request);
+  const reason = cleanRejectionReason(input?.reason);
+  await prisma.$transaction(async (tx) => {
+    const { count } = await tx.nameChangeRequest.updateMany({
+      where: { id: request.id, status: "PENDING" },
+      data: {
+        status: "REJECTED",
+        rejectionReason: reason,
+        decidedByUserId: actor.userId,
+        decidedAt: now,
+      },
+    });
+    if (count === 0) throw notPending();
+    await recordAudit(decisionAudit(actor, request, "name_change.reject"), tx);
+  });
+  return adminView(actor, await loadRequest(request.id), now);
 }

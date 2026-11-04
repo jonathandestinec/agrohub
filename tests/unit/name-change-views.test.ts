@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { NameChangeRequest } from "@/generated/prisma/client";
-import { toOwnNameChange } from "@/modules/name-changes/views";
+import { toAdminNameChange, toOwnNameChange } from "@/modules/name-changes/views";
 
 const row: NameChangeRequest = {
   id: "ncr-1",
@@ -40,5 +40,21 @@ describe("toOwnNameChange", () => {
       createdAt: "2026-11-04T10:00:00.000Z",
       decidedAt: null,
     });
+  });
+});
+
+describe("toAdminNameChange", () => {
+  it("adds the review fields and never the storage key", () => {
+    const view = toAdminNameChange(row, {
+      subjectLabel: "amina@example.com",
+      requesterName: "Amina Bello",
+      waitingDays: 2,
+      canDecide: true,
+      payoutAccountName: "AMINA BELLO",
+      newNameMatchesAccount: false,
+    });
+    expect(view.reason).toBe("Married in October 2026");
+    expect(view.waitingDays).toBe(2);
+    expect(JSON.stringify(view)).not.toContain("secretkey123");
   });
 });

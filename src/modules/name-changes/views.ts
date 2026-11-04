@@ -33,3 +33,34 @@ export function toOwnNameChange(r: NameChangeRequest): OwnNameChange {
     decidedAt: r.decidedAt?.toISOString() ?? null,
   };
 }
+
+// What an admin reviewing a request sees. Never a phone number, recipient code or
+// storage key; the document opens only through a signed link.
+export type AdminNameChange = OwnNameChange & {
+  reason: string;
+  // The person's email, or the cooperative's registration number.
+  subjectLabel: string;
+  requesterName: string;
+  waitingDays: number;
+  canDecide: boolean;
+  payoutAccountName: string | null;
+  newNameMatchesAccount: boolean | null;
+};
+
+export type AdminNameChangeExtras = Omit<AdminNameChange, keyof OwnNameChange | "reason">;
+
+export function toAdminNameChange(
+  r: NameChangeRequest,
+  extras: AdminNameChangeExtras,
+): AdminNameChange {
+  return {
+    ...toOwnNameChange(r),
+    reason: r.reason,
+    subjectLabel: extras.subjectLabel,
+    requesterName: extras.requesterName,
+    waitingDays: extras.waitingDays,
+    canDecide: extras.canDecide,
+    payoutAccountName: extras.payoutAccountName,
+    newNameMatchesAccount: extras.newNameMatchesAccount,
+  };
+}
