@@ -1123,7 +1123,8 @@
       "UNAUTHENTICATED": "",
       "FORBIDDEN": "",
       "INTERNAL": "",
-      "REFERRAL_NOTE_NOT_ALLOWED": ""
+      "REFERRAL_NOTE_NOT_ALLOWED": "",
+      "REFERRAL_TOO_LATE": ""
     },
     "officerStatus": {
       "OPEN": "",

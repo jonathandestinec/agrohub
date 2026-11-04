@@ -91,7 +91,7 @@ export async function makeOffer(
   if (quantity < lot.minOrderQty) throw new ValidationError("Below the minimum order", "BELOW_MIN_ORDER");
   const note = message?.trim() ? message : null;
   if (note) {
-    assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo: lot.floorKobo }, note);
+    assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo: lot.floorKobo, quantities: [quantity] }, note);
     await assertMessageRateOk(actor, now);
   }
 
@@ -187,8 +187,8 @@ export async function getOwnOffer(actor: Actor, offerId: string, now: Date = new
   return buyerViewOf(await loadOwnOffer(actor, offerId), now);
 }
 
-// The daily offer-expiry job: offers still waiting for an answer after 48 hours or on a lot no
-// longer on sale, and accepted offers whose 24 hours to pay have passed, become EXPIRED. Every
+// The daily offer-expiry job: offers still waiting for an answer after 48 hours, accepted offers
+// whose 24 hours to pay have passed, and either kind on a lot no longer on sale, become EXPIRED. Every
 // action already refuses such offers before this runs. Safe to run twice: each update is
 // conditional on the status it read. Returns how many offers it expired.
 export async function expireOffers(now: Date = new Date()): Promise<number> {
@@ -196,7 +196,7 @@ export async function expireOffers(now: Date = new Date()): Promise<number> {
     where: {
       OR: [
         { status: { in: [...LIVE_OFFER] }, expiresAt: { lte: now } },
-        { status: { in: [...LIVE_OFFER] }, lot: { NOT: publiclyVisibleWhere(now) } },
+        { status: { in: [...LIVE_OFFER, "ACCEPTED"] }, lot: { NOT: publiclyVisibleWhere(now) } },
         { status: "ACCEPTED", payByAt: { lte: now } },
       ],
     },

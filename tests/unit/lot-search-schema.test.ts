@@ -46,3 +46,10 @@ describe("parseLotFilters", () => {
     });
   });
 });
+
+describe("parseLotFilters page", () => {
+  it("keeps pages up to 500 and drops anything beyond", () => {
+    expect(parseLotFilters({ page: "500" }).page).toBe(500);
+    expect(parseLotFilters({ page: "501" }).page).toBe(1);
+  });
+});

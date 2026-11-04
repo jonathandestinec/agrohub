@@ -102,7 +102,7 @@ export async function openLotThread(actor: Actor, lotId: string, now: Date = new
 // postMessage and by offer actions that carry a note, so a refused note refuses the action.
 export function assertMessageAllowed(
   actor: Actor,
-  thread: { kind: ThreadKind; floorKobo: number },
+  thread: { kind: ThreadKind; floorKobo: number; quantities?: number[] },
   body: string,
 ): string {
   const text = body.trim();
@@ -111,7 +111,7 @@ export function assertMessageAllowed(
     throw new ValidationError("Messages cannot share phone numbers or emails", "MESSAGE_HAS_CONTACT");
   }
   const cooperativeSide = actor.role === "OFFICER" || actor.role === "ADMIN";
-  if (thread.kind === "BUYER_COOPERATIVE" && cooperativeSide && mentionsAmount(text, thread.floorKobo)) {
+  if (thread.kind === "BUYER_COOPERATIVE" && cooperativeSide && mentionsAmount(text, thread.floorKobo, thread.quantities)) {
     throw new ValidationError("Message names the private floor", "MESSAGE_MENTIONS_FLOOR");
   }
   return text;
@@ -140,9 +140,24 @@ async function writeMessage(actor: Actor, threadId: string, text: string, now: D
   });
 }
 
+// The quantities this buyer has offered for on the lot, so a note naming the floor as a line
+// total ("₦550,000 for your 10 bags") is caught too. Read straight from the offer table:
+// marketplace imports messaging, not the other way round.
+async function offeredQuantities(thread: { kind: ThreadKind; lotId: string; counterpartUserId: string }): Promise<number[]> {
+  if (thread.kind !== "BUYER_COOPERATIVE") return [];
+  const offers = await prisma.offer.findMany({
+    where: { lotId: thread.lotId, buyerUserId: thread.counterpartUserId },
+    select: { quantity: true },
+    distinct: ["quantity"],
+    take: 50,
+  });
+  return offers.map((offer) => offer.quantity);
+}
+
 export async function postMessage(actor: Actor, threadId: string, body: string, now: Date = new Date()): Promise<ThreadView> {
   const thread = await loadThread(actor, threadId);
-  const text = assertMessageAllowed(actor, { kind: thread.kind, floorKobo: thread.lot.floorKobo }, body);
+  const quantities = await offeredQuantities(thread);
+  const text = assertMessageAllowed(actor, { kind: thread.kind, floorKobo: thread.lot.floorKobo, quantities }, body);
   await writeMessage(actor, thread.id, text, now);
   return getThread(actor, thread.id);
 }
@@ -159,7 +174,8 @@ export async function postToBuyerThread(
   const lot = await lotNegotiationFacts(lotId, now);
   const threadId = await ensureThread(lot, "BUYER_COOPERATIVE", buyerUserId);
   const thread = await loadThread(actor, threadId);
-  const text = assertMessageAllowed(actor, { kind: thread.kind, floorKobo: thread.lot.floorKobo }, body);
+  const quantities = await offeredQuantities(thread);
+  const text = assertMessageAllowed(actor, { kind: thread.kind, floorKobo: thread.lot.floorKobo, quantities }, body);
   await writeMessage(actor, thread.id, text, now);
 }
 

@@ -6,8 +6,9 @@ import { lineTotalKobo, type SaleBreakdown } from "@/lib/money";
 // by the officer or by the farmer both read DECLINED.
 export type BuyerOfferStatus = "WAITING" | "COUNTERED" | "ACCEPTED" | "DECLINED" | "EXPIRED" | "WITHDRAWN";
 
-// Pure. An offer still awaiting an answer reads EXPIRED once its time has passed or its lot is
-// no longer on sale, before the daily job marks it; an accepted one once its time to pay ends.
+// Pure. An offer reads EXPIRED once its time (to answer, or to pay once accepted) has passed or
+// its lot is no longer on sale, before the daily job marks it. Phase 5's checkout must take only
+// offers whose status reads ACCEPTED here.
 export function buyerStatusOf(
   status: OfferStatus,
   expiresAt: Date,
@@ -22,7 +23,7 @@ export function buyerStatusOf(
     case "COUNTERED":
       return expiresAt <= now || !lotVisible ? "EXPIRED" : "COUNTERED";
     case "ACCEPTED":
-      return payByAt !== null && payByAt <= now ? "EXPIRED" : "ACCEPTED";
+      return (payByAt !== null && payByAt <= now) || !lotVisible ? "EXPIRED" : "ACCEPTED";
     case "REJECTED":
       return "DECLINED";
     case "EXPIRED":
@@ -71,8 +72,8 @@ export function toBuyerOffer(offer: Offer, lot: OfferLotSummary, lotVisible: boo
   };
 }
 
-// Pure: the status officers see. An offer still waiting reads EXPIRED once its time has passed
-// or its lot is off sale, and an accepted one once its time to pay ends, before the job runs.
+// Pure: the status officers and farmers see. An offer still waiting, or accepted and not yet
+// paid, reads EXPIRED once its time has passed or its lot is off sale, before the job runs.
 export function effectiveStatus(
   status: OfferStatus,
   expiresAt: Date,
@@ -83,7 +84,7 @@ export function effectiveStatus(
   if ((status === "OPEN" || status === "AWAITING_FARMER" || status === "COUNTERED") && (expiresAt <= now || !lotVisible)) {
     return "EXPIRED";
   }
-  if (status === "ACCEPTED" && payByAt !== null && payByAt <= now) return "EXPIRED";
+  if (status === "ACCEPTED" && ((payByAt !== null && payByAt <= now) || !lotVisible)) return "EXPIRED";
   return status;
 }
 

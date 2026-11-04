@@ -40,6 +40,9 @@ function positiveWhole(value: string | undefined): number | undefined {
   return value !== undefined && /^\d{1,7}$/.test(value) && Number(value) > 0 ? Number(value) : undefined;
 }
 
+// Deep pages cost a large OFFSET scan; nobody pages past 500 (12,000 lots).
+const MAX_PAGE = 500;
+
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 // Pure: lot filters from URL search params. Values that do not parse are dropped rather than
@@ -63,6 +66,6 @@ export function parseLotFilters(params: Params): LotFilters {
   const sort = first(params, "sort");
   if (sort && (LOT_SORTS as readonly string[]).includes(sort)) filters.sort = sort as LotSort;
   const page = positiveWhole(first(params, "page"));
-  if (page !== undefined) filters.page = page;
+  if (page !== undefined && page <= MAX_PAGE) filters.page = page;
   return filters;
 }

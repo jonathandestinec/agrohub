@@ -6,7 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
-import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, heldQuantity, hoursAfter } from "./limits";
+import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, REFERRAL_MIN_HOURS, heldQuantity, hoursAfter } from "./limits";
 import { LIVE_OFFER, buyerViewOf, loadOwnOffer } from "./offers";
 import { respondToOfferInput, type RespondToOfferInput } from "./schema";
 import { toFarmerOffer, toOfficerOffer, type BuyerOffer, type FarmerOffer, type OfficerOffer } from "./views";
@@ -120,17 +120,23 @@ function stateCode(from: OfferStatus): string {
   return "OFFER_NOT_OPEN";
 }
 
-// Moves an offer from one status to another and audits it, or fails with the state's code.
+// Moves a live offer from one status to another and audits it, or fails with the state's code.
+// The lot's row is locked and its visibility read again, and the update is conditional on the
+// offer not having expired, so the checks callers make before the transaction still hold here.
 async function move(
   tx: Prisma.TransactionClient,
-  offerId: string,
+  offer: { id: string; lotId: string },
   from: OfferStatus | readonly OfferStatus[],
   data: Prisma.OfferUpdateManyMutationInput,
   audit: { actorId: string; action: string; meta: Record<string, unknown> },
   code: string,
+  now: Date,
 ): Promise<void> {
+  await lockLot(tx, offer.lotId);
+  if (!(await lotNegotiationFacts(offer.lotId, now, tx)).publiclyVisible) throw notAvailable();
+  const offerId = offer.id;
   const { count } = await tx.offer.updateMany({
-    where: { id: offerId, status: typeof from === "string" ? from : { in: [...from] } },
+    where: { id: offerId, status: typeof from === "string" ? from : { in: [...from] }, expiresAt: { gt: now } },
     data,
   });
   if (count === 0) throw new ConflictError("Offer was already answered", code);
@@ -157,6 +163,10 @@ export async function respondToOffer(
   assertNotExpired(row.expiresAt, now);
   if (!isPubliclyVisible(row.lot, now)) throw notAvailable();
   const { askKobo, floorKobo } = row.lot;
+  const referral = decision === "ACCEPT" && row.offeredKobo < floorKobo;
+  if (referral && row.expiresAt < hoursAfter(now, REFERRAL_MIN_HOURS)) {
+    throw new ConflictError("Too little time left for the farmer to answer", "REFERRAL_TOO_LATE");
+  }
 
   if (decision === "COUNTER") {
     const counter = counterKobo as number;
@@ -169,42 +179,45 @@ export async function respondToOffer(
   if (note) {
     // A note at the moment of a referral would tell the buyer the offer went somewhere other
     // than an answer, that is, below the floor; the buyer's view must not move.
-    if (decision === "ACCEPT" && row.offeredKobo < floorKobo) {
+    if (referral) {
       throw new ValidationError("No note when sending an offer to the farmer", "REFERRAL_NOTE_NOT_ALLOWED");
     }
-    assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo }, note);
+    assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo, quantities: [row.quantity] }, note);
     await assertMessageRateOk(actor, now);
   }
 
   await prisma.$transaction(async (tx) => {
-    if (decision === "ACCEPT" && row.offeredKobo >= floorKobo) {
+    if (decision === "ACCEPT" && !referral) {
       await accept(tx, row, "OPEN", row.offeredKobo, actor.userId, "offer.accept", now);
     } else if (decision === "ACCEPT") {
       await move(
         tx,
-        row.id,
+        row,
         "OPEN",
         { status: "AWAITING_FARMER", referredByUserId: actor.userId },
         { actorId: actor.userId, action: "offer.refer", meta: { offerId: row.id } },
         "OFFER_NOT_OPEN",
+        now,
       );
     } else if (decision === "REJECT") {
       await move(
         tx,
-        row.id,
+        row,
         "OPEN",
         { status: "REJECTED", decidedByUserId: actor.userId, decidedAt: now },
         { actorId: actor.userId, action: "offer.reject", meta: { offerId: row.id } },
         "OFFER_NOT_OPEN",
+        now,
       );
     } else {
       await move(
         tx,
-        row.id,
+        row,
         "OPEN",
         { status: "COUNTERED", counterKobo, expiresAt: hoursAfter(now, OFFER_TTL_HOURS), decidedByUserId: actor.userId },
         { actorId: actor.userId, action: "offer.counter", meta: { offerId: row.id, counterKobo } },
         "OFFER_NOT_OPEN",
+        now,
       );
     }
   });
@@ -234,11 +247,12 @@ export async function farmerRespondToOffer(
     } else {
       await move(
         tx,
-        row.id,
+        row,
         "AWAITING_FARMER",
         { status: "REJECTED", decidedByUserId: actor.userId, decidedAt: now },
         { actorId: actor.userId, action: "offer.farmer_decline", meta: { offerId: row.id } },
         "OFFER_NOT_AWAITING_FARMER",
+        now,
       );
     }
   });
@@ -263,11 +277,12 @@ export async function respondToCounter(
     } else {
       await move(
         tx,
-        offer.id,
+        offer,
         "COUNTERED",
         { status: "WITHDRAWN", decidedAt: now },
         { actorId: actor.userId, action: "offer.counter_decline", meta: { offerId: offer.id } },
         "OFFER_NOT_COUNTERED",
+        now,
       );
     }
   });
@@ -279,14 +294,17 @@ export async function withdrawOffer(actor: Actor, offerId: string, now: Date = n
   if (!(LIVE_OFFER as readonly OfferStatus[]).includes(offer.status)) {
     throw new ConflictError("Offer is no longer live", "OFFER_NOT_LIVE");
   }
+  assertNotExpired(offer.expiresAt, now);
+  if (!isPubliclyVisible(offer.lot, now)) throw notAvailable();
   await prisma.$transaction((tx) =>
     move(
       tx,
-      offer.id,
+      offer,
       LIVE_OFFER,
       { status: "WITHDRAWN", decidedAt: now },
       { actorId: actor.userId, action: "offer.withdraw", meta: { offerId: offer.id } },
       "OFFER_NOT_LIVE",
+      now,
     ),
   );
   return buyerViewOf(await loadOwnOffer(actor, offerId), now);

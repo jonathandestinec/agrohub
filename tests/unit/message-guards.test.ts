@@ -11,11 +11,13 @@ describe("hasContactDetails", () => {
     "2348031234567",
     "mail me at a@b.co",
     "Reach ngozi.okafor@example.com today",
+    "(0803) 123 4567",
+    "0803.123.4567",
   ])("finds contact details in %j", (text) => {
     expect(hasContactDetails(text)).toBe(true);
   });
 
-  it.each(["50 bags at 6,500 each", "deliver on 12/11", "₦43,219.87 per bag", "order 2026-11-03", "100000 kg"])(
+  it.each(["50 bags at 6,500 each", "deliver on 12/11", "₦43,219.87 per bag", "order 2026-11-03", "100000 kg", "on 12.11.2026"])(
     "finds none in %j",
     (text) => {
       expect(hasContactDetails(text)).toBe(false);
@@ -44,7 +46,16 @@ describe("mentionsAmount", () => {
     },
   );
 
-  it.each(["₦43,000", "43,219.8", "432198"])("does not find ₦43,219.87 in %j", (text) => {
+  it.each(["43 219.87", "43.219,87", "₦43.2k", "43k"])("finds ₦43,219.87 written as %j", (text) => {
+    expect(mentionsAmount(text, 4_321_987)).toBe(true);
+  });
+
+  it("finds the amount as a line total for a quantity", () => {
+    expect(mentionsAmount("₦432,198.70 for ten bags", 4_321_987, [10])).toBe(true);
+    expect(mentionsAmount("₦432,198.70 for ten bags", 4_321_987, [5])).toBe(false);
+  });
+
+  it.each(["₦43,000", "43,219.8", "432198", "45k"])("does not find ₦43,219.87 in %j", (text) => {
     expect(mentionsAmount(text, 4_321_987)).toBe(false);
   });
 

@@ -1123,7 +1123,8 @@
       "UNAUTHENTICATED": "Please sign in again.",
       "FORBIDDEN": "You can't do this with your current role.",
       "INTERNAL": "Something went wrong. Please try again.",
-      "REFERRAL_NOTE_NOT_ALLOWED": "A message can't go with sending an offer to the farmer. Clear the message box and try again."
+      "REFERRAL_NOTE_NOT_ALLOWED": "A message can't go with sending an offer to the farmer. Clear the message box and try again.",
+      "REFERRAL_TOO_LATE": "There's too little time left on this offer for the farmer to answer. Reject it, or counter at or above the floor."
     },
     "officerStatus": {
       "OPEN": "Waiting for you",
