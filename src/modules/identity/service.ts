@@ -140,6 +140,8 @@ export async function becomeBuyer(user: { userId: string }): Promise<{ membershi
     where: { userId: user.userId, role: "BUYER", cooperativeId: null },
   });
   if (existing?.status === "ACTIVE") return { membershipId: existing.id };
+  // Only a buyer who left comes back by themselves; one an admin removed stays removed.
+  if (existing?.status === "REMOVED") throw new ConflictError("Removed as a buyer", "REMOVED_AS_BUYER");
   try {
     const membership = await prisma.$transaction(async (tx) => {
       const row = existing

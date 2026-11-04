@@ -47,6 +47,7 @@ export function OfficerOfferActions({ offerId, belowFloor }: { offerId: string; 
       </label>
       <div className="flex flex-col gap-2">
         {belowFloor ? <p className="body-5">{t("officer.belowFloorExplain")}</p> : null}
+        {belowFloor ? <p className="body-6 text-ink-soft">{t("officer.referralNoNote")}</p> : null}
         <div className="flex flex-wrap gap-2">
           <Button tone="ink" disabled={busy} onClick={() => void answer("ACCEPT")}>
             {belowFloor ? t("officer.sendToFarmer") : t("officer.accept")}

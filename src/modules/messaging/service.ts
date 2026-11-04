@@ -117,6 +117,15 @@ export function assertMessageAllowed(
   return text;
 }
 
+// The hourly message limit, checked before an action that carries a note changes anything;
+// writeMessage checks it again under the author's row lock.
+export async function assertMessageRateOk(actor: Actor, now: Date = new Date()): Promise<void> {
+  const lastHour = await prisma.message.count({
+    where: { authorUserId: actor.userId, createdAt: { gt: new Date(now.getTime() - HOUR_MS) } },
+  });
+  if (lastHour >= MESSAGES_PER_HOUR) throw new ValidationError("Too many messages", "MESSAGE_RATE_LIMIT");
+}
+
 async function writeMessage(actor: Actor, threadId: string, text: string, now: Date): Promise<void> {
   const side = SIDE[actor.role];
   if (!side) throw new ForbiddenError();

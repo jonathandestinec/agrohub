@@ -997,7 +997,8 @@
       "signIn": "",
       "start": "",
       "emailNotVerified": "",
-      "error": ""
+      "error": "",
+      "removed": ""
     },
     "home": {
       "title": "",
@@ -1119,7 +1120,8 @@
       "MESSAGE_RATE_LIMIT": "",
       "UNAUTHENTICATED": "",
       "FORBIDDEN": "",
-      "INTERNAL": ""
+      "INTERNAL": "",
+      "REFERRAL_NOTE_NOT_ALLOWED": ""
     },
     "officerStatus": {
       "OPEN": "",
@@ -1155,7 +1157,8 @@
       "counter": "",
       "threadHeading": "",
       "noThread": "",
-      "messageFarmer": ""
+      "messageFarmer": "",
+      "referralNoNote": ""
     },
     "farmer": {
       "heading": "",

@@ -4,13 +4,14 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@
 import { recordAudit } from "@/modules/audit/audit";
 import {
   isPubliclyVisible,
+  lockLot,
   lotNegotiationFacts,
   publiclyVisibleWhere,
   type NegotiationFacts,
 } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { holdsCooperativeRole } from "@/modules/identity/service";
-import { assertMessageAllowed, postToBuyerThread } from "@/modules/messaging/service";
+import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
 import {
   HOUR_MS,
   OFFER_TTL_HOURS,
@@ -89,10 +90,16 @@ export async function makeOffer(
   if (offeredKobo > lot.askKobo) throw new ValidationError("Offer is above the asking price", "OFFER_ABOVE_ASK");
   if (quantity < lot.minOrderQty) throw new ValidationError("Below the minimum order", "BELOW_MIN_ORDER");
   const note = message?.trim() ? message : null;
-  if (note) assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo: lot.floorKobo }, note);
+  if (note) {
+    assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo: lot.floorKobo }, note);
+    await assertMessageRateOk(actor, now);
+  }
 
   const offer = await prisma.$transaction(async (tx) => {
     await lockUser(tx, actor.userId);
+    // Acceptances lock the lot too, so an earlier offer cannot be accepted between the read of
+    // the buyer's live offers below and their withdrawal.
+    await lockLot(tx, lotId);
     const lastHour = await tx.offer.count({
       where: { buyerUserId: actor.userId, createdAt: { gt: new Date(now.getTime() - HOUR_MS) } },
     });
@@ -124,7 +131,11 @@ export async function makeOffer(
     });
     // One live offer per buyer per lot: a new offer replaces the earlier one.
     for (const old of replaced) {
-      await tx.offer.update({ where: { id: old.id }, data: { status: "WITHDRAWN", decidedAt: now } });
+      const { count } = await tx.offer.updateMany({
+        where: { id: old.id, status: { in: [...LIVE_OFFER] } },
+        data: { status: "WITHDRAWN", decidedAt: now },
+      });
+      if (count === 0) continue;
       await recordAudit(
         {
           actorId: actor.userId,

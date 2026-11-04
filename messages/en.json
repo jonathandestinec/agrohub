@@ -997,7 +997,8 @@
       "signIn": "I already have an account",
       "start": "Start buying",
       "emailNotVerified": "Confirm your email address first, using the link we sent you.",
-      "error": "Something went wrong. Please try again."
+      "error": "Something went wrong. Please try again.",
+      "removed": "Your buyer account was closed by AgroHub. Contact support to reopen it."
     },
     "home": {
       "title": "My offers",
@@ -1119,7 +1120,8 @@
       "MESSAGE_RATE_LIMIT": "You have sent a lot of messages in the last hour. Please wait a little.",
       "UNAUTHENTICATED": "Please sign in again.",
       "FORBIDDEN": "You can't do this with your current role.",
-      "INTERNAL": "Something went wrong. Please try again."
+      "INTERNAL": "Something went wrong. Please try again.",
+      "REFERRAL_NOTE_NOT_ALLOWED": "A message can't go with sending an offer to the farmer. Clear the message box and try again."
     },
     "officerStatus": {
       "OPEN": "Waiting for you",
@@ -1155,7 +1157,8 @@
       "counter": "Counter",
       "threadHeading": "Messages with the buyer",
       "noThread": "The buyer has not written yet. A message you add to your answer starts the conversation.",
-      "messageFarmer": "Message the farmer about this lot"
+      "messageFarmer": "Message the farmer about this lot",
+      "referralNoNote": "Sending to the farmer carries no message: the buyer just sees the offer as waiting. Leave the message box empty."
     },
     "farmer": {
       "heading": "A buyer offers {price} per {unit} for {quantity}",

@@ -19,7 +19,9 @@ export function JoinForm() {
     const result = await becomeBuyerAction();
     if (!result.ok) {
       setPending(false);
-      setError(t(result.code === "EMAIL_NOT_VERIFIED" ? "emailNotVerified" : "error"));
+      setError(
+        t(result.code === "EMAIL_NOT_VERIFIED" ? "emailNotVerified" : result.code === "REMOVED_AS_BUYER" ? "removed" : "error"),
+      );
       return;
     }
     router.push("/buyer");

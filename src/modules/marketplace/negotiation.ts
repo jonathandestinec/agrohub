@@ -5,7 +5,7 @@ import { saleBreakdown } from "@/lib/money";
 import { recordAudit } from "@/modules/audit/audit";
 import { isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
-import { assertMessageAllowed, postToBuyerThread } from "@/modules/messaging/service";
+import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
 import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, heldQuantity, hoursAfter } from "./limits";
 import { LIVE_OFFER, buyerViewOf, loadOwnOffer } from "./offers";
 import { respondToOfferInput, type RespondToOfferInput } from "./schema";
@@ -166,7 +166,15 @@ export async function respondToOffer(
   }
   // A note goes to the buyer's thread; it is checked first, so a refused note refuses the answer.
   const note = message?.trim() ? message : null;
-  if (note) assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo }, note);
+  if (note) {
+    // A note at the moment of a referral would tell the buyer the offer went somewhere other
+    // than an answer, that is, below the floor; the buyer's view must not move.
+    if (decision === "ACCEPT" && row.offeredKobo < floorKobo) {
+      throw new ValidationError("No note when sending an offer to the farmer", "REFERRAL_NOTE_NOT_ALLOWED");
+    }
+    assertMessageAllowed(actor, { kind: "BUYER_COOPERATIVE", floorKobo }, note);
+    await assertMessageRateOk(actor, now);
+  }
 
   await prisma.$transaction(async (tx) => {
     if (decision === "ACCEPT" && row.offeredKobo >= floorKobo) {
