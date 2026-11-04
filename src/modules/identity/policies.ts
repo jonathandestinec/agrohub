@@ -37,7 +37,8 @@ export type Action =
   | "catalog:forward"
   | "lot:submit"
   | "lot:own"
-  | "lot:screen";
+  | "lot:screen"
+  | "cooperative:rename";
 
 export type Resource = {
   cooperativeId?: string;
@@ -112,7 +113,9 @@ export function can(
     case "cooperative:edit":
       return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
     case "bank:change":
-      // Farmers change their own account through the self-scoped banking function.
+    case "cooperative:rename":
+      // Farmers change their own account through the self-scoped banking function. A
+      // cooperative's name drives the bank-name check, so renaming needs two-factor too.
       return (
         actor.role === "OFFICER" &&
         actor.twoFactorEnabled &&

@@ -5,12 +5,14 @@ import {
   type NameSubjectType,
 } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { DOCUMENT_CONTENT_TYPES, MAX_DOCUMENT_BYTES, matchesSignature } from "@/lib/file-type";
 import { putPrivate } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
 import { payoutAccountFor } from "@/modules/banking/service";
+import { can, type Actor } from "@/modules/identity/policies";
 import {
+  COOPERATIVE_DOCUMENT_KINDS,
   PERSON_DOCUMENT_KINDS,
   cleanName,
   cleanRequestReason,
@@ -199,4 +201,56 @@ export async function withdrawOwnNameChange(
   now: Date = new Date(),
 ): Promise<OwnNameChange> {
   return withdraw({ type: "USER", id: user.userId }, requestId, user.userId, now);
+}
+
+// ---- A verified cooperative's name ----
+
+// A PENDING cooperative is still corrected directly (updateCooperativeDetails); once
+// verified, its name changes only through an approved request.
+export async function requestCooperativeRename(
+  actor: Actor,
+  cooperativeId: string,
+  input: NameChangeInput,
+  file: NameChangeFile,
+  now: Date = new Date(),
+): Promise<OwnNameChange> {
+  if (!can(actor, "cooperative:rename", { cooperativeId })) throw new ForbiddenError();
+  const cooperative = await prisma.cooperative.findUnique({
+    where: { id: cooperativeId },
+    select: { name: true, status: true },
+  });
+  if (!cooperative) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
+  if (cooperative.status === "PENDING") {
+    throw new ValidationError(
+      "Edit the name directly until the cooperative is verified",
+      "COOPERATIVE_NOT_VERIFIED",
+    );
+  }
+  return createRequest(
+    { type: "COOPERATIVE", id: cooperativeId },
+    cooperative.name,
+    COOPERATIVE_DOCUMENT_KINDS,
+    actor.userId,
+    input,
+    file,
+    now,
+  );
+}
+
+export async function getCooperativeRename(
+  actor: Actor,
+  cooperativeId: string,
+): Promise<OwnNameChange | null> {
+  if (!can(actor, "cooperative:read", { cooperativeId })) throw new ForbiddenError();
+  return newestFor({ type: "COOPERATIVE", id: cooperativeId });
+}
+
+export async function withdrawCooperativeRename(
+  actor: Actor,
+  cooperativeId: string,
+  requestId: string,
+  now: Date = new Date(),
+): Promise<OwnNameChange> {
+  if (!can(actor, "cooperative:rename", { cooperativeId })) throw new ForbiddenError();
+  return withdraw({ type: "COOPERATIVE", id: cooperativeId }, requestId, actor.userId, now);
 }

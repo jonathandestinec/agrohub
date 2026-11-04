@@ -161,6 +161,12 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["lot:screen", "BUYER", false],
   ["lot:screen", "ADMIN", true],
   ["lot:screen", "BOARD_ADMIN", false],
+
+  ["cooperative:rename", "FARMER", false],
+  ["cooperative:rename", "OFFICER", true],
+  ["cooperative:rename", "BUYER", false],
+  ["cooperative:rename", "ADMIN", false],
+  ["cooperative:rename", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -174,7 +180,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(115);
+    expect(matrix).toHaveLength(120);
   });
 });
 
@@ -324,5 +330,17 @@ describe("bank:change", () => {
   it("denies an officer with a null cooperativeId or no resource", () => {
     expect(can(actor("OFFICER", null), "bank:change", {})).toBe(false);
     expect(can(actor("OFFICER", COOP), "bank:change")).toBe(false);
+  });
+});
+
+describe("cooperative:rename", () => {
+  it("denies an officer without two-factor", () => {
+    const officer = { ...actor("OFFICER", COOP), twoFactorEnabled: false };
+    expect(can(officer, "cooperative:rename", { cooperativeId: COOP })).toBe(false);
+  });
+
+  it("denies an officer of another cooperative or with no resource", () => {
+    expect(can(actor("OFFICER", OTHER_COOP), "cooperative:rename", { cooperativeId: COOP })).toBe(false);
+    expect(can(actor("OFFICER", COOP), "cooperative:rename")).toBe(false);
   });
 });
