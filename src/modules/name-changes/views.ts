@@ -45,9 +45,14 @@ export type AdminNameChange = OwnNameChange & {
   canDecide: boolean;
   payoutAccountName: string | null;
   newNameMatchesAccount: boolean | null;
+  // For a cooperative rename, so the admin can open its review page.
+  cooperativeId: string | null;
 };
 
-export type AdminNameChangeExtras = Omit<AdminNameChange, keyof OwnNameChange | "reason">;
+export type AdminNameChangeExtras = Omit<
+  AdminNameChange,
+  keyof OwnNameChange | "reason" | "cooperativeId"
+>;
 
 export function toAdminNameChange(
   r: NameChangeRequest,
@@ -62,5 +67,6 @@ export function toAdminNameChange(
     canDecide: extras.canDecide,
     payoutAccountName: extras.payoutAccountName,
     newNameMatchesAccount: extras.newNameMatchesAccount,
+    cooperativeId: r.subjectType === "COOPERATIVE" ? r.subjectId : null,
   };
 }

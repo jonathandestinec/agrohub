@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext, type Browser, type Locator, type Page } from "@playwright/test";
+import { totp } from "./totp";
 
 // Helpers shared by the end-to-end journeys. Each actor gets their own browser context, so
 // their sessions never mix.
@@ -76,4 +77,24 @@ export function nav(page: Page, name: string): Locator {
 export async function clickNav(page: Page, name: string) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await nav(page, name).click();
+}
+
+// A tiny but valid PDF: the upload checks the %PDF magic bytes.
+export const PDF = Buffer.from(
+  "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
+    "2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n",
+);
+
+// Enrols TOTP on /two-factor, answering with a code computed from the setup key shown.
+export async function enrolTwoFactor(page: Page) {
+  await expect(
+    page.getByRole("heading", { name: "Set up two-factor authentication" }),
+  ).toBeVisible();
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Get setup key" }).click();
+  const secret = (await page.getByTestId("totp-secret").textContent())?.trim() ?? "";
+  expect(secret).toMatch(/^[A-Z2-7]+$/);
+  await page.getByLabel("6-digit code").fill(totp(secret));
+  await page.getByRole("button", { name: "Verify" }).click();
+  await expect(page).toHaveURL(HOME);
 }

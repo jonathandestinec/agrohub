@@ -165,8 +165,11 @@ export function BankAccountForm({
   );
 }
 
-function lookupErrorKey(code: string): "errors.notFound" | "errors.unavailable" | "errors.other" {
+function lookupErrorKey(
+  code: string,
+): "errors.notFound" | "errors.unavailable" | "errors.nameChangePending" | "errors.other" {
   if (code === "BANK_ACCOUNT_NOT_FOUND") return "errors.notFound";
+  if (code === "NAME_CHANGE_PENDING") return "errors.nameChangePending";
   if (code === "PAYSTACK_UNAVAILABLE") return "errors.unavailable";
   return "errors.other";
 }

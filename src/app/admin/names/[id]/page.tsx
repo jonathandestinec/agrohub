@@ -102,6 +102,14 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
             <section className="flex flex-col gap-2">
               <h2 className="heading-6">{t("detail.account")}</h2>
               <p className="body-3">{account}</p>
+              {request.cooperativeId ? (
+                <Link
+                  href={`/admin/cooperatives/${request.cooperativeId}`}
+                  className="inline-flex min-h-11 items-center self-start title-4 underline underline-offset-2"
+                >
+                  {t("detail.openCooperative")}
+                </Link>
+              ) : null}
             </section>
           </Card>
         </div>

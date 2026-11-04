@@ -384,7 +384,8 @@
           "APPROVED": "Approved on {date}.",
           "REJECTED": "Rejected on {date}: {reason}",
           "WITHDRAWN": "Withdrawn on {date}."
-        }
+        },
+        "openCooperative": "Open the cooperative"
       },
       "errors": {
         "NAME_CHANGE_NOT_PENDING": "This request has already been decided or withdrawn. Refresh the page.",
@@ -1031,7 +1032,8 @@
     "errors": {
       "notFound": "We could not find that account. Check the number and the bank.",
       "unavailable": "We could not check the account right now. You can still try to save, or try again in a few minutes.",
-      "other": "We could not check the account. Check the number and the bank."
+      "other": "We could not check the account. Check the number and the bank.",
+      "nameChangePending": "A name change is waiting for an admin. You can change the bank account after it is decided."
     }
   },
   "nameChange": {

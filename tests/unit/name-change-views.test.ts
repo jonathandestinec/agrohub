@@ -55,6 +55,15 @@ describe("toAdminNameChange", () => {
     });
     expect(view.reason).toBe("Married in October 2026");
     expect(view.waitingDays).toBe(2);
+    expect(view.cooperativeId).toBeNull();
+    expect(toAdminNameChange({ ...row, subjectType: "COOPERATIVE", subjectId: "coop-5" }, {
+      subjectLabel: "RC-1",
+      requesterName: "Officer",
+      waitingDays: 0,
+      canDecide: true,
+      payoutAccountName: null,
+      newNameMatchesAccount: null,
+    }).cooperativeId).toBe("coop-5");
     expect(JSON.stringify(view)).not.toContain("secretkey123");
   });
 });

@@ -19,7 +19,8 @@ const SCRIPT = `(async () => {
     const coop = await prisma.cooperative.create({ data: {
       name: e.E2E_COOP, registrationNumber: "RC-" + e.E2E_TAG, state: "Kaduna", lga: "Zaria",
       certificateExpiresAt: new Date("2030-01-01T00:00:00Z"), status: "VERIFIED",
-      submittedAt: now, verifiedAt: now, cutBps: 500 } });
+      submittedAt: now, verifiedAt: now, cutBps: 500,
+      ...(e.E2E_COOP_ACCOUNT ? { recipientCode: "RCP_COOP_" + e.E2E_TAG, accountName: e.E2E_COOP_ACCOUNT, bankName: "Guaranty Trust Bank" } : {}) } });
     await prisma.membership.create({ data: { userId: officer.id, role: "OFFICER", cooperativeId: coop.id, status: "ACTIVE", approvedAt: now } });
     await prisma.membership.create({ data: { userId: farmer.id, role: "FARMER", cooperativeId: coop.id, status: "ACTIVE", approvedAt: now } });
     await prisma.farmerProfile.create({ data: { userId: farmer.id, cooperativeId: coop.id, farmSizeHectares: "2.5",
@@ -38,6 +39,8 @@ export async function setUpLotWorld(input: {
   unit: string;
   officerEmail: string;
   farmerEmail: string;
+  // When set, the cooperative already has a payout account under this name.
+  cooperativeAccountName?: string;
 }): Promise<void> {
   const cli = join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
   await run(process.execPath, [cli, "--eval", SCRIPT], {
@@ -56,6 +59,7 @@ export async function setUpLotWorld(input: {
       E2E_UNIT: input.unit,
       E2E_OFFICER: input.officerEmail,
       E2E_FARMER: input.farmerEmail,
+      E2E_COOP_ACCOUNT: input.cooperativeAccountName ?? "",
     },
   });
 }

@@ -3,26 +3,20 @@ import { grantAdmin } from "./grant";
 import {
   clickNav,
   completeSignUp,
+  enrolTwoFactor,
   fillSignIn,
   HOME,
   nav,
   newPage,
-  password,
+  PDF,
   signIn,
   uniqueEmail,
   uniqueTag,
 } from "./journey";
-import { totp } from "./totp";
 
 // The whole Phase 1 journey: an officer sets up a cooperative, an admin verifies it, a
 // farmer joins through the invite link, and the officer approves them. Each actor has
 // their own browser context, so their sessions never mix.
-
-// A tiny but valid PDF: the upload checks the %PDF magic bytes.
-const PDF = Buffer.from(
-  "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
-    "2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n",
-);
 
 // Ten digits, unique enough per run that fake accounts never collide.
 function uniqueAccountNumber(): string {
@@ -35,20 +29,6 @@ async function addFakeBankAccount(
 ) {
   const response = await request.post("/api/dev/paystack/accounts", { data: account });
   expect(response.status()).toBe(201);
-}
-
-// Enrols TOTP on /two-factor, answering with a code computed from the setup key shown.
-async function enrolTwoFactor(page: Page) {
-  await expect(
-    page.getByRole("heading", { name: "Set up two-factor authentication" }),
-  ).toBeVisible();
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Get setup key" }).click();
-  const secret = (await page.getByTestId("totp-secret").textContent())?.trim() ?? "";
-  expect(secret).toMatch(/^[A-Z2-7]+$/);
-  await page.getByLabel("6-digit code").fill(totp(secret));
-  await page.getByRole("button", { name: "Verify" }).click();
-  await expect(page).toHaveURL(HOME);
 }
 
 async function saveBankAccount(page: Page, bankName: string, accountNumber: string) {

@@ -384,7 +384,8 @@
           "APPROVED": "",
           "REJECTED": "",
           "WITHDRAWN": ""
-        }
+        },
+        "openCooperative": ""
       },
       "errors": {
         "NAME_CHANGE_NOT_PENDING": "",
@@ -1031,7 +1032,8 @@
     "errors": {
       "notFound": "",
       "unavailable": "",
-      "other": ""
+      "other": "",
+      "nameChangePending": ""
     }
   },
   "nameChange": {
