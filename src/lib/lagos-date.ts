@@ -27,3 +27,17 @@ export function lagosDate(key: string): Date {
 export function addDays(key: string, days: number): string {
   return new Date(lagosDate(key).getTime() + days * DAY_MS).toISOString().slice(0, 10);
 }
+
+/** An instant as Lagos wall-clock time for text a person reads: "5 Nov 2026, 13:00 Lagos time". */
+export function formatLagosDateTime(at: Date): string {
+  const text = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Africa/Lagos",
+  }).format(at);
+  return `${text} Lagos time`;
+}

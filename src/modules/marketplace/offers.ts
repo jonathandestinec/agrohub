@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { recordAudit } from "@/modules/audit/audit";
 import {
+  committedQuantity,
   isPubliclyVisible,
   lockLot,
   lotNegotiationFacts,
@@ -17,7 +18,6 @@ import {
   OFFER_TTL_HOURS,
   OFFERS_PER_HOUR,
   OFFERS_PER_LOT_PER_DAY,
-  heldQuantity,
   hoursAfter,
   lockUser,
 } from "./limits";
@@ -110,7 +110,7 @@ export async function makeOffer(
     if (lastDayOnLot >= OFFERS_PER_LOT_PER_DAY) {
       throw new ValidationError("Too many offers on this lot", "OFFER_LOT_LIMIT");
     }
-    if (quantity > lot.quantity - (await heldQuantity(tx, lotId, now))) {
+    if (quantity > lot.quantity - (await committedQuantity(tx, lotId, now))) {
       throw new ConflictError("Not enough stock", "NOT_ENOUGH_STOCK");
     }
     const replaced = await tx.offer.findMany({

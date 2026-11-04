@@ -44,7 +44,13 @@ export type Action =
   | "thread:participate"
   | "cooperative:rename"
   | "name:queue"
-  | "name:decide";
+  | "name:decide"
+  | "order:checkout"
+  | "order:own"
+  | "order:manage"
+  | "order:admin"
+  | "quote:make"
+  | "earnings:own";
 
 export type Resource = {
   cooperativeId?: string;
@@ -79,6 +85,7 @@ export function can(
     case "dispute:resolve":
     case "setting:write":
     case "name:queue":
+    case "order:admin":
       return actor.role === "ADMIN";
     case "name:decide":
       // Never the admin's own request, nor one about themselves or a cooperative they belong to.
@@ -147,7 +154,25 @@ export function can(
     case "lot:submit":
       return actor.role === "FARMER" && isOwnCooperative(actor, resource);
     case "offer:make":
+    case "order:checkout":
       return actor.role === "BUYER";
+    case "order:own":
+      // The buyer who placed the order.
+      return (
+        actor.role === "BUYER" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
+    case "order:manage":
+    case "quote:make":
+      return actor.role === "OFFICER" && isOwnCooperative(actor, resource);
+    case "earnings:own":
+      // A farmer's own earnings statements, on lots they contributed to.
+      return (
+        actor.role === "FARMER" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
     case "offer:own":
       // The buyer who made the offer.
       return (

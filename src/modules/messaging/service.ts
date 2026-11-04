@@ -224,3 +224,40 @@ export async function findFarmerThreadId(actor: Actor, lotId: string, farmerUser
   });
   return thread && participates(actor, thread) ? thread.id : null;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Phase 5: order services use the buyer's lot thread as the order thread. These are system
+// functions with no Actor: only order services call them, after their own can() check.
+
+/** The buyer's thread with the lot's cooperative, created if needed, whether or not the lot is on sale. */
+export async function ensureBuyerThread(lotId: string, buyerUserId: string): Promise<string> {
+  const lot = await lotNegotiationFacts(lotId);
+  return ensureThread(lot, "BUYER_COOPERATIVE", buyerUserId);
+}
+
+/** The buyer's thread on a lot, if it exists. */
+export async function buyerThreadIdOf(lotId: string, buyerUserId: string): Promise<string | null> {
+  const thread = await prisma.thread.findUnique({
+    where: { lotId_kind_counterpartUserId: { lotId, kind: "BUYER_COOPERATIVE", counterpartUserId: buyerUserId } },
+    select: { id: true },
+  });
+  return thread?.id ?? null;
+}
+
+/**
+ * Writes text the caller composed (for example a delivery quote line) as the actor, under the
+ * hourly limit. The caller has already checked the actor may post and passed any free text it
+ * contains through assertMessageAllowed.
+ */
+export async function writeComposedMessage(actor: Actor, threadId: string, text: string, now: Date = new Date()): Promise<void> {
+  if (text.length < 1 || text.length > MESSAGE_MAX) throw new ValidationError("Message length", "MESSAGE_LENGTH");
+  await writeMessage(actor, threadId, text, now);
+}
+
+/** An AgroHub line in a thread (side ADMIN, shown as "AgroHub"), recorded as written by the user whose action caused it. */
+export async function postSystemMessage(threadId: string, causedByUserId: string, text: string, now: Date = new Date()): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await tx.message.create({ data: { threadId, authorUserId: causedByUserId, side: "ADMIN", body: text, createdAt: now } });
+    await tx.thread.update({ where: { id: threadId }, data: { lastMessageAt: now } });
+  });
+}

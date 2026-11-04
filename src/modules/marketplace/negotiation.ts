@@ -3,10 +3,10 @@ import { prisma } from "@/lib/db";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { saleBreakdown } from "@/lib/money";
 import { recordAudit } from "@/modules/audit/audit";
-import { isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
+import { committedQuantity, isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
-import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, REFERRAL_MIN_HOURS, heldQuantity, hoursAfter } from "./limits";
+import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, REFERRAL_MIN_HOURS, hoursAfter } from "./limits";
 import { LIVE_OFFER, buyerViewOf, loadOwnOffer } from "./offers";
 import { respondToOfferInput, type RespondToOfferInput } from "./schema";
 import { toFarmerOffer, toOfficerOffer, type BuyerOffer, type FarmerOffer, type OfficerOffer } from "./views";
@@ -93,7 +93,7 @@ async function accept(
   await lockLot(tx, offer.lotId);
   const lot = await lotNegotiationFacts(offer.lotId, now, tx);
   if (!lot.publiclyVisible) throw notAvailable();
-  if (offer.quantity > lot.quantity - (await heldQuantity(tx, offer.lotId, now))) {
+  if (offer.quantity > lot.quantity - (await committedQuantity(tx, offer.lotId, now))) {
     throw new ConflictError("Not enough stock", "NOT_ENOUGH_STOCK");
   }
   const { count } = await tx.offer.updateMany({
