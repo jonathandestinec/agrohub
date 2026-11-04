@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { BankChangeRequest, BankOwnerType } from "@/generated/prisma/client";
+import type { BankChangeRequest, BankOwnerType, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env } from "@/lib/env";
@@ -359,20 +359,50 @@ async function bankAccountView(owner: BankOwner, now: Date): Promise<BankAccount
       }
     : { bankName: stored.bankName, accountName: stored.accountName };
   const pending = await prisma.bankChangeRequest.findFirst({
-    where: {
-      ownerType: owner.type,
-      ownerId: owner.id,
-      cancelledAt: null,
-      appliedAt: null,
-      OR: [
-        { confirmedAt: null, createdAt: { gt: new Date(now.getTime() - CONFIRM_TTL_MS) } },
-        { confirmedAt: { not: null }, effectiveAt: { gt: now } },
-      ],
-    },
+    where: openChangeWhere(owner, now),
     orderBy: { createdAt: "desc" },
     select: { confirmedAt: true, effectiveAt: true },
   });
   return toBankAccountView(current, pending);
+}
+
+// A change still in flight: awaiting its email confirmation (within 24 hours), or confirmed
+// and inside its 48-hour wait.
+function openChangeWhere(owner: BankOwner, now: Date): Prisma.BankChangeRequestWhereInput {
+  return {
+    ownerType: owner.type,
+    ownerId: owner.id,
+    cancelledAt: null,
+    appliedAt: null,
+    OR: [
+      { confirmedAt: null, createdAt: { gt: new Date(now.getTime() - CONFIRM_TTL_MS) } },
+      { confirmedAt: { not: null }, effectiveAt: { gt: now } },
+    ],
+  };
+}
+
+export { namesMatch };
+
+// System function, no Actor: the name-change service calls it for a subject it has already
+// authorised. A person's payout account is their farmer profile's; with no profile there is
+// none. Returns the current account name and whether a bank change is in flight.
+export async function payoutAccountFor(
+  subject: { type: "USER" | "COOPERATIVE"; id: string },
+  now: Date,
+): Promise<{ accountName: string | null; changeOpen: boolean }> {
+  let owner: BankOwner;
+  if (subject.type === "USER") {
+    const profile = await prisma.farmerProfile.findUnique({
+      where: { userId: subject.id },
+      select: { id: true },
+    });
+    if (!profile) return { accountName: null, changeOpen: false };
+    owner = { type: "FARMER", id: profile.id };
+  } else {
+    owner = { type: "COOPERATIVE", id: subject.id };
+  }
+  const view = await bankAccountView(owner, now);
+  return { accountName: view.accountName, changeOpen: view.change !== null };
 }
 
 // The farmer's own profile, if they hold a PENDING or ACTIVE FARMER membership. A farmer

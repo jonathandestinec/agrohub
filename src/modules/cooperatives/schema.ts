@@ -7,13 +7,10 @@ export const DOCUMENT_KINDS = [
   "OFFICER_LIST",
 ] as const;
 
-export const ALLOWED_CONTENT_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-] as const;
-
-export const MAX_DOCUMENT_BYTES = 10_485_760;
+export {
+  DOCUMENT_CONTENT_TYPES as ALLOWED_CONTENT_TYPES,
+  MAX_DOCUMENT_BYTES,
+} from "@/lib/file-type";
 
 // The officer-editable details; create adds the certificate expiry.
 export const cooperativeDetailsInput = z.object({
