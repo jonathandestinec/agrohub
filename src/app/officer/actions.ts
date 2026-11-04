@@ -24,7 +24,11 @@ import {
   forwardCatalogRequest,
   matchCatalogRequest,
 } from "@/modules/catalog/service";
-import { setCooperativeBankAccount } from "@/modules/banking/service";
+import {
+  previewCooperativeBankAccount,
+  setCooperativeBankAccount,
+  type AccountPreview,
+} from "@/modules/banking/service";
 import { approveFarmer, rejectFarmer, removeFarmer } from "@/modules/farmers/service";
 import { currentUser, requireActor } from "@/modules/identity/session";
 
@@ -261,4 +265,22 @@ export async function declineCatalogRequestAction(input: RequestDecision): Promi
 
 export async function matchCatalogRequestAction(input: RequestDecision): Promise<ActionResult> {
   return decideRequest(input, (actor, id) => matchCatalogRequest(actor, id, String(input?.itemId ?? "")));
+}
+
+// Live lookup while typing: the name the bank holds and whether it matches. Stores nothing.
+export async function previewBankAccountAction(input: {
+  bankCode: string;
+  accountNumber: string;
+}): Promise<ActionResult<AccountPreview>> {
+  try {
+    const actor = await requireActor();
+    if (actor.cooperativeId === null) throw new ForbiddenError();
+    const preview = await previewCooperativeBankAccount(actor, actor.cooperativeId, {
+      accountNumber: String(input?.accountNumber ?? "").replace(/\s/g, ""),
+      bankCode: String(input?.bankCode ?? ""),
+    });
+    return { ok: true, data: preview };
+  } catch (error) {
+    return toActionResult(error);
+  }
 }

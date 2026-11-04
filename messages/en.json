@@ -170,7 +170,8 @@
         "COOPERATIVE_NOT_FOUND": "We could not find your cooperative.",
         "INTERNAL": "Something went wrong. Please try again.",
         "INVALID_CUT": "Enter the cut as a percentage, with at most two decimals.",
-        "CUT_ABOVE_MAXIMUM": "That is above the maximum cut AgroHub allows."
+        "CUT_ABOVE_MAXIMUM": "That is above the maximum cut AgroHub allows.",
+        "PAYSTACK_UNAVAILABLE": "We could not reach the bank to check the account. Try again in a few minutes."
       },
       "bank": {
         "heading": "Bank account for payouts",
@@ -451,7 +452,8 @@
       "UNFINISHED_ORDERS": "You cannot leave while orders for your produce are still in progress.",
       "ILLEGAL_TRANSITION": "Your membership has changed. Refresh the page.",
       "CROP_INACTIVE": "One of those crops is no longer on the list. Refresh the page and choose again.",
-      "INVALID_CROPS": "Choose at most 20 crops."
+      "INVALID_CROPS": "Choose at most 20 crops.",
+      "PAYSTACK_UNAVAILABLE": "We could not reach the bank to check the account. Try again in a few minutes."
     },
     "leave": {
       "heading": "Leave this cooperative",
@@ -1168,6 +1170,23 @@
       "waitingHeading": "Offers waiting for you",
       "waitingLine": "{quantity} × {unit} of {crop} at {price}",
       "messageOfficer": "Message your officer about this lot"
+    }
+  },
+  "bankLookup": {
+    "checking": "Checking the account with the bank…",
+    "found": "Account name:",
+    "matches": {
+      "farmer": "This matches the name on your AgroHub account.",
+      "cooperative": "This matches your cooperative's registered name."
+    },
+    "mismatch": {
+      "farmer": "This does not match the name on your AgroHub account ({name}), so it cannot be saved. Use an account in your own name.",
+      "cooperative": "This does not match your cooperative's registered name ({name}), so it cannot be saved. Use the cooperative's own account."
+    },
+    "errors": {
+      "notFound": "We could not find that account. Check the number and the bank.",
+      "unavailable": "We could not check the account right now. You can still try to save, or try again in a few minutes.",
+      "other": "We could not check the account. Check the number and the bank."
     }
   }
 }

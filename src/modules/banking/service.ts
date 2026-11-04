@@ -427,3 +427,40 @@ export async function getOwnFarmerBankAccount(
   if (!profile) return null;
   return bankAccountView({ type: "FARMER", id: profile.id }, now);
 }
+
+// ---- Live name lookup on the bank forms ----
+
+// What the bank holds for an account, before anything is saved: the name, and whether it
+// matches the registered name the save will check. Nothing is stored and no recipient is
+// created; the save re-checks everything on the server.
+export type AccountPreview = { accountName: string; matches: boolean; registeredName: string };
+
+async function preview(registeredName: string, input: BankInput): Promise<AccountPreview> {
+  validateBankInput(input);
+  const { accountName } = await resolveAccount(input);
+  return { accountName, matches: namesMatch(registeredName, accountName), registeredName };
+}
+
+// Self-scoped like setOwnFarmerBankAccount: a PENDING farmer has no Actor yet.
+export async function previewOwnFarmerBankAccount(
+  user: { userId: string },
+  input: BankInput,
+): Promise<AccountPreview> {
+  const profile = await ownFarmerProfile(user.userId);
+  if (!profile) throw new ForbiddenError();
+  return preview(profile.name, input);
+}
+
+export async function previewCooperativeBankAccount(
+  actor: Actor,
+  cooperativeId: string,
+  input: BankInput,
+): Promise<AccountPreview> {
+  if (!can(actor, "bank:change", { cooperativeId })) throw new ForbiddenError();
+  const cooperative = await prisma.cooperative.findUnique({
+    where: { id: cooperativeId },
+    select: { name: true },
+  });
+  if (!cooperative) throw new NotFoundError("COOPERATIVE_NOT_FOUND");
+  return preview(cooperative.name, input);
+}
