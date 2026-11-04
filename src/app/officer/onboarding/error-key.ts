@@ -19,6 +19,7 @@ const KNOWN = [
   "COOPERATIVE_NOT_FOUND",
   "INVALID_CUT",
   "CUT_ABOVE_MAXIMUM",
+  "NAME_CHANGE_PENDING",
 ] as const;
 
 // Maps a server action error code to a key under officer.onboarding.errors.

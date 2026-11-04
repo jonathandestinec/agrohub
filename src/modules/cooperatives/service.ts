@@ -14,6 +14,7 @@ import {
   ValidationError,
 } from "@/lib/errors";
 import { sendEmail } from "@/lib/email";
+import { matchesSignature } from "@/lib/file-type";
 import { putPrivate, signedUrl } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
 import { getPlatformSettings } from "@/modules/settings/service";
@@ -125,22 +126,6 @@ export async function createCooperative(
     meta: { role: "OFFICER", status: "ACTIVE" },
   });
   return created.cooperative;
-}
-
-// First bytes of each allowed type; the declared contentType alone is not trusted.
-const SIGNATURES: Record<(typeof ALLOWED_CONTENT_TYPES)[number], number[]> = {
-  "application/pdf": [0x25, 0x50, 0x44, 0x46], // %PDF
-  "image/jpeg": [0xff, 0xd8, 0xff],
-  "image/png": [0x89, 0x50, 0x4e, 0x47],
-};
-
-function matchesSignature(body: Buffer, contentType: string): boolean {
-  const signature = SIGNATURES[contentType as keyof typeof SIGNATURES];
-  return (
-    signature !== undefined &&
-    body.length >= signature.length &&
-    signature.every((byte, i) => body[i] === byte)
-  );
 }
 
 export async function uploadDocument(

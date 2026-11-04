@@ -34,6 +34,7 @@ agrohub/
     lib/                     env.ts, db.ts, auth.ts, money.ts, email.ts, storage.ts, paystack.ts, jobs/
     modules/
       identity/              users, memberships, roles, policies (can), active-role
+      name-changes/          admin-approved changes to a person's or a verified cooperative's name
       cooperatives/          signup, documents, verification, invite links, suspension
       farmers/               profile, bank recipient, approval, leaving
       catalog/               crops, units, lots, screening, fee terms, contributions
@@ -61,7 +62,7 @@ Each module folder holds: `service.ts` (the only public entry), `schema.ts` (zod
 - **Private fields never serialize:** the floor price, phone numbers and bank data leave the server only through mapper functions in `views.ts` (for example `toPublicLot`). Mapper return types omit the private fields, and tests assert the serialized JSON contains no floor value.
 - **Validation:** zod at every boundary (server action input, route handler, webhook body).
 - **Idempotency:** webhooks, payouts, refunds and scheduled jobs are safe to run twice (unique references and a `JobRun` key table).
-- **Audit:** approvals, price changes, role changes, bank changes, admin actions and every money movement write to the append-only audit log.
+- **Audit:** approvals, price changes, role changes, bank changes, name changes, admin actions and every money movement write to the append-only audit log.
 - **Errors:** services throw typed errors (`ForbiddenError`, `NotFoundError`, `ConflictError`, `ValidationError`); route handlers translate them to responses.
 - **i18n:** `next-intl`; all user-facing strings in `messages/*.json`. Only `en` is in `enabledLocales` until a native speaker reviews another file.
 
@@ -85,6 +86,7 @@ Each module folder holds: `service.ts` (the only public entry), `schema.ts` (zod
 - **Payment** `{ orderId, paystackReference unique, status }`; **PaystackEvent** `{ eventId unique, payload }`; **LedgerEntry** `{ orderId, account, amountKobo, direction }` (append-only); **Payout** `{ orderId, recipientCode, amountKobo, reference unique, status }`; **Refund**.
 - **Thread** `{ kind: BUYER_COOPERATIVE|FARMER_COOPERATIVE, lotId, cooperativeId, counterpartUserId, lastMessageAt }` (one per lot and buyer, one per lot for the farmer; order threads in Phase 5); **Message** `{ threadId, authorUserId, side: BUYER|COOPERATIVE|FARMER|ADMIN, body }` (1 to 2000 characters; phone numbers and emails refused; a cooperative-side message to a buyer naming the floor refused; 30 a person an hour); **Review**; **Report**; **Dispute**; **Notification**.
 - **InputOrder**, **InputSignup**, **Loan** (tracking only).
+- **NameChangeRequest** `{ subjectType: USER|COOPERATIVE, subjectId, fromName, toName, reason, documentKind, storageKey (private bucket), status: PENDING|APPROVED|REJECTED|WITHDRAWN, requestedByUserId, decidedByUserId, rejectionReason }`: at most one PENDING per subject (partial unique index). Nobody renames themselves: an admin who is not involved approves, which updates `User.name` or `Cooperative.name` and never the payout account. While one is pending no bank change can start or be confirmed for that subject, and a name change is refused while a bank change is in flight. Both sides check and write under one per-subject Postgres advisory lock (`src/lib/subject-lock.ts`), and an approval re-checks that no bank change is in flight.
 - **AuditLog** (append-only), **JobRun** `{ key unique }`, **Setting** `{ key, value }`: `platform_fee_bps` (default "300"), `max_cooperative_cut_bps` ("500"), `price_deviation_bps` ("2000"); later, timeouts. The value is a string of integer basis points, parsed only by `parseBps` in `src/lib/money.ts`; a missing row means the default in `settings/service.ts`.
 
 ## 6. State machines

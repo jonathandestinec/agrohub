@@ -27,6 +27,7 @@ import { CreateCooperativeForm } from "./create-cooperative-form";
 import { DocumentUploads } from "./document-uploads";
 import { EditCooperativeForm } from "./edit-cooperative-form";
 import { CutForm } from "./cut-form";
+import { RenameSection } from "./rename-section";
 import { effectiveCutBps, formatPercent } from "@/lib/money";
 import { getPlatformSettings } from "@/modules/settings/service";
 
@@ -58,6 +59,7 @@ async function OnboardingStep() {
   if (actor.role !== "OFFICER") redirect("/");
   const { cooperative, documents } = await getOwnCooperative(actor);
   const view = toOwnCooperative(cooperative);
+  const nameT = await getTranslations("nameChange");
   const locale = await getLocale();
   const formatDate = (iso: string) =>
     new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
@@ -113,6 +115,15 @@ async function OnboardingStep() {
                 states={[...STATES]}
               />
             </Card>
+          ) : (
+            <Card tone="paper">
+              <RenameSection actor={actor} cooperativeId={view.id} />
+            </Card>
+          )}
+          {view.status === "PENDING" ? (
+            <Link href="/account/name" className="self-start body-6 underline underline-offset-2">
+              {nameT("cooperative.ownName")}
+            </Link>
           ) : null}
           <Card tone="paper">
             <CutSection cutBps={view.cutBps} />
