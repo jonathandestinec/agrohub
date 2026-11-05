@@ -2,12 +2,12 @@ import { prisma } from "@/lib/db";
 import { koboFromDb, koboToDb } from "@/lib/money";
 import { verifyTransaction } from "@/lib/paystack";
 import { recordAudit } from "@/modules/audit/audit";
-import { committedQuantity, lockLot, refreshSoldOut } from "@/modules/catalog/service";
+import { committedQuantity, lockLot, refreshSoldOut, SOLD_STATUSES } from "@/modules/catalog/service";
 import { markOfferOrdered } from "@/modules/marketplace/service";
 import { ensureBuyerThread } from "@/modules/messaging/service";
 import { assertTransition } from "@/modules/orders/service";
 import { postLedger } from "./ledger";
-import { issueRefund } from "./refunds";
+import { issueRefund, resendPendingRefunds } from "./refunds";
 
 export type ConfirmOutcome = "PAID" | "REFUNDING" | "ALREADY_CONFIRMED" | "UNKNOWN_REFERENCE" | "VERIFY_MISMATCH";
 
@@ -22,7 +22,11 @@ export type ConfirmOutcome = "PAID" | "REFUNDING" | "ALREADY_CONFIRMED" | "UNKNO
 export async function confirmPayment(reference: string, now: Date = new Date()): Promise<ConfirmOutcome> {
   const payment = await prisma.payment.findUnique({ where: { reference }, include: { order: true } });
   if (!payment) return "UNKNOWN_REFERENCE";
-  if (payment.status === "SUCCEEDED") return "ALREADY_CONFIRMED";
+  if (payment.status === "SUCCEEDED") {
+    // A refund Paystack could not take the first time is sent now.
+    await resendPendingRefunds(payment.orderId);
+    return "ALREADY_CONFIRMED";
+  }
   const amountKobo = koboFromDb(payment.amountKobo);
   const verified = await verifyTransaction(reference);
   if (verified.status !== "success" || verified.amountKobo !== amountKobo || verified.currency !== "NGN") {
@@ -78,8 +82,16 @@ export async function confirmPayment(reference: string, now: Date = new Date()):
       offerId: order.offerId ?? undefined,
     });
     const unpaid = order.status === "PENDING_PAYMENT" || order.status === "CANCELLED";
+    // One accepted offer is paid once: a second order of the same offer (a second tab, the
+    // back button) that is also paid is refunded, whatever stock is left.
+    const offerAlreadyPaid =
+      order.offerId !== null &&
+      (await tx.order.count({
+        where: { offerId: order.offerId, id: { not: orderId }, status: { in: [...SOLD_STATUSES] } },
+      })) > 0;
     const sellable =
       unpaid &&
+      !offerAlreadyPaid &&
       (lot.status === "LIVE" || lot.status === "SOLD_OUT") &&
       lot.cooperative.status === "VERIFIED" &&
       order.quantity <= lot.quantity - committed;
@@ -106,7 +118,10 @@ export async function confirmPayment(reference: string, now: Date = new Date()):
     // Too late: the stock went to another buyer, or the lot or cooperative stopped selling.
     if (unpaid) {
       assertTransition(order.status, "REFUNDED");
-      await tx.order.update({ where: { id: orderId }, data: { status: "REFUNDED", cancelReason: "LATE_PAYMENT" } });
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "REFUNDED", cancelReason: offerAlreadyPaid ? "DUPLICATE_PAYMENT" : "LATE_PAYMENT" },
+      });
     }
     const refund = await tx.refund.create({
       data: { orderId, purpose: "late", reason: "LATE_PAYMENT", amountKobo: koboToDb(amountKobo), createdAt: now },

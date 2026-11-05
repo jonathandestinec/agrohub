@@ -803,6 +803,9 @@ model PaystackEvent {
   payload    Json
   outcome    String?
   receivedAt DateTime @default(now())
+  // When processing last started: a PROCESSING row older than a few minutes was left by a
+  // killed function and may be taken over by a redelivery.
+  claimedAt  DateTime @default(now())
 
   @@map("paystack_event")
 }

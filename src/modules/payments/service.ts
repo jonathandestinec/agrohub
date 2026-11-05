@@ -3,6 +3,6 @@
 // them after their own checks.
 export { confirmPayment, type ConfirmOutcome } from "./payments";
 export { ledgerBalance, postLedger, type LedgerKind, type LedgerLine } from "./ledger";
-export { issueRefund, settleRefund } from "./refunds";
+export { issueRefund, resendPendingRefunds, settleRefund } from "./refunds";
 export { handlePaystackWebhook, type WebhookResult } from "./webhook";
 export { fakeCheckoutDetails, settleFakeCheckout } from "./dev";

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { UnavailableError } from "@/lib/errors";
+import { ConflictError, UnavailableError } from "@/lib/errors";
 import { koboFromDb } from "@/lib/money";
 import { refundTransaction } from "@/lib/paystack";
 import { recordAudit } from "@/modules/audit/audit";
@@ -46,17 +46,46 @@ export async function issueRefund(refundId: string): Promise<void> {
       entityId: refundId,
       meta: { refundId, orderId: refund.orderId, error: error instanceof UnavailableError ? error.code : "ERROR" },
     });
-    if (!(error instanceof UnavailableError)) throw error;
+    // Paystack down or refusing: the refund stays PENDING and is sent again on the next
+    // confirmation of this payment (a webhook redelivery, or reconciliation in Phase 5b).
+    if (!(error instanceof UnavailableError) && !(error instanceof ConflictError)) throw error;
   }
+}
+
+/** System function: sends every refund of an order that is still waiting to reach Paystack. */
+export async function resendPendingRefunds(orderId: string): Promise<void> {
+  const pending = await prisma.refund.findMany({
+    where: { orderId, status: "PENDING", paystackRefundId: null },
+    select: { id: true },
+  });
+  for (const refund of pending) await issueRefund(refund.id);
+}
+
+// The refund a Paystack refund event is about: by the Paystack refund id when the event carries
+// one we stored, else by the transaction reference (our payment) and the amount, among refunds
+// not yet settled. The second path also covers a refund whose id was never stored because the
+// refund call timed out after Paystack created it.
+async function findRefund(event: { refundId?: string; transactionReference?: string; amountKobo?: number }) {
+  if (event.refundId) {
+    const byId = await prisma.refund.findUnique({ where: { paystackRefundId: event.refundId } });
+    if (byId) return byId;
+  }
+  if (!event.transactionReference) return null;
+  const payment = await prisma.payment.findUnique({ where: { reference: event.transactionReference }, select: { orderId: true } });
+  if (!payment) return null;
+  const candidates = await prisma.refund.findMany({ where: { orderId: payment.orderId, status: "PENDING" } });
+  const matching =
+    event.amountKobo === undefined ? candidates : candidates.filter((r) => koboFromDb(r.amountKobo) === event.amountKobo);
+  return matching.length === 1 ? matching[0] : null;
 }
 
 /** System function: Paystack's refund.processed or refund.failed webhook. Safe to run twice. */
 export async function settleRefund(
-  paystackRefundId: string,
+  event: { refundId?: string; transactionReference?: string; amountKobo?: number },
   outcome: "PROCESSED" | "FAILED",
   now: Date = new Date(),
 ): Promise<"SETTLED" | "UNKNOWN_REFUND" | "ALREADY_SETTLED"> {
-  const refund = await prisma.refund.findUnique({ where: { paystackRefundId } });
+  const refund = await findRefund(event);
   if (!refund) return "UNKNOWN_REFUND";
   const amountKobo = koboFromDb(refund.amountKobo);
   return prisma.$transaction(async (tx) => {
