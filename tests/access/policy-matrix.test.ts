@@ -206,6 +206,44 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["name:decide", "BUYER", false],
   ["name:decide", "ADMIN", true],
   ["name:decide", "BOARD_ADMIN", false],
+
+  ["order:checkout", "FARMER", false],
+  ["order:checkout", "OFFICER", false],
+  ["order:checkout", "BUYER", true],
+  ["order:checkout", "ADMIN", false],
+  ["order:checkout", "BOARD_ADMIN", false],
+
+  // order:own is checked against an order the buyer placed.
+  ["order:own", "FARMER", false],
+  ["order:own", "OFFICER", false],
+  ["order:own", "BUYER", true],
+  ["order:own", "ADMIN", false],
+  ["order:own", "BOARD_ADMIN", false],
+
+  ["order:manage", "FARMER", false],
+  ["order:manage", "OFFICER", true],
+  ["order:manage", "BUYER", false],
+  ["order:manage", "ADMIN", false],
+  ["order:manage", "BOARD_ADMIN", false],
+
+  ["order:admin", "FARMER", false],
+  ["order:admin", "OFFICER", false],
+  ["order:admin", "BUYER", false],
+  ["order:admin", "ADMIN", true],
+  ["order:admin", "BOARD_ADMIN", false],
+
+  ["quote:make", "FARMER", false],
+  ["quote:make", "OFFICER", true],
+  ["quote:make", "BUYER", false],
+  ["quote:make", "ADMIN", false],
+  ["quote:make", "BOARD_ADMIN", false],
+
+  // earnings:own is checked against the farmer's own statements.
+  ["earnings:own", "FARMER", true],
+  ["earnings:own", "OFFICER", false],
+  ["earnings:own", "BUYER", false],
+  ["earnings:own", "ADMIN", false],
+  ["earnings:own", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -215,7 +253,9 @@ describe("policy matrix", () => {
       action === "farmer:leave" ||
       action === "farmer:profile" ||
       action === "lot:own" ||
-      action === "offer:own"
+      action === "offer:own" ||
+      action === "order:own" ||
+      action === "earnings:own"
         ? { ...own, ownerUserId: "user-1" }
         : action === "name:decide"
           ? { ...own, actorInCooperative: false }
@@ -224,7 +264,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(150);
+    expect(matrix).toHaveLength(180);
   });
 });
 

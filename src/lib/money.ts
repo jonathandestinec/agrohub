@@ -242,3 +242,78 @@ export function splitByWeights(totalKobo: number, weights: number[]): number[] {
   }
   return parts.map((p) => Number(p));
 }
+
+export type OrderSplit = {
+  goodsKobo: number;
+  deliveryKobo: number;
+  totalKobo: number;
+  cutKobo: number;
+  feeKobo: number;
+  cooperativePayoutKobo: number;
+  farmerKobo: number[];
+};
+
+/**
+ * What an order of `quantity` units at `unitKobo` is worth to each party, from the lot's
+ * locked terms. The cut and the fee come out of the goods (rounded down); the farmers share
+ * the rest by contribution; the cooperative also keeps the delivery cost. The cooperative's
+ * payout, the fee and the farmers' shares always sum exactly to the total the buyer pays.
+ */
+export function orderSplit(input: {
+  unitKobo: number;
+  quantity: number;
+  cutBps: number;
+  feeBps: number;
+  deliveryKobo: number;
+  contributions: number[];
+}): OrderSplit {
+  if (input.contributions.length === 0) throw new RangeError("contributions must not be empty");
+  assertNonNegativeSafeInt(input.deliveryKobo, "deliveryKobo");
+  const goodsKobo = lineTotalKobo(input.unitKobo, input.quantity);
+  const cutKobo = applyBps(goodsKobo, input.cutBps);
+  const feeKobo = applyBps(goodsKobo, input.feeBps);
+  const farmerKobo = splitByWeights(goodsKobo - cutKobo - feeKobo, input.contributions);
+  return {
+    goodsKobo,
+    deliveryKobo: input.deliveryKobo,
+    totalKobo: toSafeNumber(BigInt(goodsKobo) + BigInt(input.deliveryKobo), "total"),
+    cutKobo,
+    feeKobo,
+    cooperativePayoutKobo: cutKobo + input.deliveryKobo,
+    farmerKobo,
+  };
+}
+
+/** The refund for units not delivered (or refunded by an admin), at the order's unit price. */
+export function refundForUnits(unitKobo: number, units: number): number {
+  return lineTotalKobo(unitKobo, units);
+}
+
+/** Paystack's limit on one transfer: ₦10,000,000. */
+export const MAX_TRANSFER_KOBO = 1_000_000_000;
+
+/** Splits an amount into as few, as equal as possible, parts of at most maxKobo each. */
+export function splitTransferParts(kobo: number, maxKobo: number = MAX_TRANSFER_KOBO): number[] {
+  assertNonNegativeSafeInt(kobo, "kobo");
+  assertNonNegativeSafeInt(maxKobo, "maxKobo");
+  if (maxKobo === 0) throw new RangeError("maxKobo must be positive");
+  if (kobo === 0) return [];
+  const total = BigInt(kobo);
+  const max = BigInt(maxKobo);
+  const count = (total + max - ONE) / max;
+  const base = total / count;
+  const extra = Number(total % count);
+  return Array.from({ length: Number(count) }, (_, i) => Number(base) + (i < extra ? 1 : 0));
+}
+
+/** An order amount read from a Postgres BIGINT column, as a safe integer of kobo. */
+export function koboFromDb(value: bigint): number {
+  if (value < -MAX_SAFE || value > MAX_SAFE) throw new RangeError("kobo exceeds the safe integer range");
+  return Number(value);
+}
+
+/** Kobo for a Postgres BIGINT column: a non-negative safe integer only. */
+export function koboToDb(kobo: number): bigint {
+  assertNonNegativeSafeInt(kobo, "kobo");
+  return BigInt(kobo);
+}
