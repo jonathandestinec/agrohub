@@ -46,7 +46,8 @@
     "nameChanges": "",
     "orders": "",
     "myOrders": "",
-    "payouts": ""
+    "payouts": "",
+    "orderQueue": ""
   },
   "auth": {
     "fields": {
@@ -429,6 +430,59 @@
       "retry": "",
       "retryCurrent": "",
       "unblock": ""
+    },
+    "orders": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "order": "",
+      "noOrder": "",
+      "waiting": "",
+      "back": "",
+      "summary": "",
+      "total": "",
+      "unit": "",
+      "delivered": "",
+      "paidAt": "",
+      "markedAt": "",
+      "kind": {
+        "REPORT": "",
+        "TIMEOUT": "",
+        "SUSPENSION": "",
+        "AFTER_COMPLETION": "",
+        "PAYOUT": "",
+        "RECONCILIATION": ""
+      },
+      "status": {
+        "PENDING_PAYMENT": "",
+        "PAID_HELD": "",
+        "PREPARING": "",
+        "DELIVERED_MARKED": "",
+        "COMPLETED": "",
+        "CANCELLED": "",
+        "REFUNDED": "",
+        "DISPUTED": "",
+        "TIMED_OUT": ""
+      },
+      "decide": "",
+      "outcome": {
+        "RELEASE": "",
+        "REFUND_ALL": "",
+        "REFUND_UNITS": "",
+        "NOTE": ""
+      },
+      "units": "",
+      "note": "",
+      "submit": "",
+      "decided": "",
+      "ledger": "",
+      "payouts": "",
+      "payout": "",
+      "refunds": "",
+      "refund": "",
+      "thread": "",
+      "resolveIssue": "",
+      "issueNote": ""
     }
   },
   "bank": {
@@ -1394,7 +1448,12 @@
       "PAYOUT_PAID_AT_PAYSTACK": "",
       "NO_RECIPIENT": "",
       "REASON_REQUIRED": "",
-      "NO_CANCEL_REQUEST": ""
+      "NO_CANCEL_REQUEST": "",
+      "UNITS_RANGE": "",
+      "DISPUTE_NOT_FOUND": "",
+      "DISPUTE_RESOLVED": "",
+      "OUTCOME_NOT_ALLOWED": "",
+      "INVALID_DECISION": ""
     },
     "checkout": {
       "heading": "",
@@ -1443,7 +1502,13 @@
       "cancel": "",
       "requestLead": "",
       "request": "",
-      "requested": ""
+      "requested": "",
+      "reportHeading": "",
+      "reportLead": "",
+      "reportLeadCompleted": "",
+      "reportLabel": "",
+      "report": "",
+      "underReview": ""
     },
     "officer": {
       "title": "",

@@ -5,6 +5,7 @@
     { "path": "/api/cron/lot-expiry", "schedule": "0 4 * * *" },
     { "path": "/api/cron/offer-expiry", "schedule": "30 4 * * *" },
     { "path": "/api/cron/order-expiry", "schedule": "45 4 * * *" },
+    { "path": "/api/cron/order-timers", "schedule": "30 5 * * *" },
     { "path": "/api/cron/payouts", "schedule": "30 6 * * *" }
   ]
 }

@@ -46,7 +46,8 @@
     "nameChanges": "Name changes",
     "orders": "Orders",
     "myOrders": "My orders",
-    "payouts": "Payouts"
+    "payouts": "Payouts",
+    "orderQueue": "Order queue"
   },
   "auth": {
     "fields": {
@@ -429,6 +430,59 @@
       "retry": "Retry",
       "retryCurrent": "Retry to current account",
       "unblock": "Unblock"
+    },
+    "orders": {
+      "title": "Order queue",
+      "lead": "Everything waiting for you, oldest first: problems buyers reported, late deliveries, orders of suspended cooperatives, payout problems and reconciliation differences.",
+      "empty": "Nothing is waiting.",
+      "order": "Order {reference}",
+      "noOrder": "No order",
+      "waiting": "Waiting",
+      "back": "Back to the order queue",
+      "summary": "{quantity} × {unit} of {crop}",
+      "total": "Paid: {amount}",
+      "unit": "Unit price: {amount}",
+      "delivered": "Marked delivered: {delivered} of {quantity} {unit}",
+      "paidAt": "Paid {time}",
+      "markedAt": "Marked delivered {time}",
+      "kind": {
+        "REPORT": "The buyer reported a problem",
+        "TIMEOUT": "No delivery within 14 days",
+        "SUSPENSION": "The cooperative is suspended",
+        "AFTER_COMPLETION": "Report after completion (no money action)",
+        "PAYOUT": "Payout problem",
+        "RECONCILIATION": "Reconciliation difference"
+      },
+      "status": {
+        "PENDING_PAYMENT": "Not paid",
+        "PAID_HELD": "Paid, held",
+        "PREPARING": "Preparing",
+        "DELIVERED_MARKED": "Marked delivered",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled",
+        "REFUNDED": "Refunded",
+        "DISPUTED": "Frozen for a decision",
+        "TIMED_OUT": "Late: frozen for a decision"
+      },
+      "decide": "Decision",
+      "outcome": {
+        "RELEASE": "Release the payment in full",
+        "REFUND_ALL": "Refund the buyer in full",
+        "REFUND_UNITS": "Refund some units and release the rest",
+        "NOTE": "Record a note (no money moves)"
+      },
+      "units": "Units to refund",
+      "note": "Note (kept with the decision)",
+      "submit": "Decide",
+      "decided": "Decided: {outcome}. {note}",
+      "ledger": "Ledger totals",
+      "payouts": "Payouts",
+      "payout": "{recipient} part {part}: {amount} ({status})",
+      "refunds": "Refunds",
+      "refund": "{amount}, {reason} ({status})",
+      "thread": "Messages between the buyer and the cooperative",
+      "resolveIssue": "Mark resolved",
+      "issueNote": "What you did"
     }
   },
   "bank": {
@@ -1394,7 +1448,12 @@
       "PAYOUT_PAID_AT_PAYSTACK": "Paystack says the last transfer went through, so it was recorded as paid and nothing was sent again.",
       "NO_RECIPIENT": "The recipient has no payout account yet.",
       "REASON_REQUIRED": "Give a reason of at least 5 characters.",
-      "NO_CANCEL_REQUEST": "There is no request to cancel this order. Refresh the page."
+      "NO_CANCEL_REQUEST": "There is no request to cancel this order. Refresh the page.",
+      "UNITS_RANGE": "Enter a number of units from 1 to one less than the quantity delivered.",
+      "DISPUTE_NOT_FOUND": "This case was not found.",
+      "DISPUTE_RESOLVED": "This case is already decided. Refresh the page.",
+      "OUTCOME_NOT_ALLOWED": "That decision does not fit this order now. Refresh the page.",
+      "INVALID_DECISION": "Choose a decision and write a note."
     },
     "checkout": {
       "heading": "Buy now",
@@ -1443,7 +1502,13 @@
       "cancel": "Cancel and get a full refund",
       "requestLead": "The cooperative is preparing your order, so you can ask them to cancel. If they agree, you get everything you paid back.",
       "request": "Ask to cancel",
-      "requested": "You asked to cancel. Waiting for the cooperative to answer."
+      "requested": "You asked to cancel. Waiting for the cooperative to answer.",
+      "reportHeading": "Report a problem",
+      "reportLead": "Tell AgroHub what went wrong. The payment stays held while AgroHub reviews it, and nothing is released until a decision.",
+      "reportLeadCompleted": "This order is complete and the payment was released. AgroHub will read your report, but it can't move the money back.",
+      "reportLabel": "What went wrong",
+      "report": "Report the problem",
+      "underReview": "AgroHub is reviewing this order. The payment stays held until a decision."
     },
     "officer": {
       "title": "Orders",

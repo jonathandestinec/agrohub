@@ -10,7 +10,7 @@ import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { formatNaira, refundForUnits } from "@/lib/money";
 import { OrderActionButton, OrderFieldForm } from "@/components/orders/order-actions";
-import { cancelOrderAction, confirmReceiptAction } from "../actions";
+import { cancelOrderAction, confirmReceiptAction, reportProblemAction } from "../actions";
 import { getThread } from "@/modules/messaging/service";
 import { getOwnOrder, type BuyerOrder } from "@/modules/orders/service";
 
@@ -123,6 +123,22 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
           kind="text"
           name="reason"
           optional
+        />
+      ) : null}
+      {order.status === "UNDER_REVIEW" ? (
+        <Card tone="paper">
+          <p className="body-4">{t("buyer.underReview")}</p>
+        </Card>
+      ) : null}
+      {["PAID_HELD", "PREPARING", "DELIVERED", "COMPLETED"].includes(order.status) ? (
+        <OrderFieldForm
+          action={reportProblemAction.bind(null, order.id)}
+          heading={t("buyer.reportHeading")}
+          hint={order.status === "COMPLETED" ? t("buyer.reportLeadCompleted") : t("buyer.reportLead")}
+          label={t("buyer.reportLabel")}
+          submit={t("buyer.report")}
+          kind="text"
+          name="problem"
         />
       ) : null}
       {order.status === "PREPARING" && order.cancelRequested ? (

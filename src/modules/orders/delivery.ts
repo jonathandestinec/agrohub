@@ -6,6 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
 import { ensureBuyerThread, postSystemMessage } from "@/modules/messaging/service";
 import { completeOrder } from "./complete";
+import { closeTimeout } from "./disputes";
 import { assertTransition } from "./state";
 
 export const DELIVERY_DATE_MAX_DAYS = 60;
@@ -85,13 +86,17 @@ export async function setDeliveryDate(actor: Actor, orderId: string, date: strin
   });
 }
 
-/** The officer marks the order delivered with the quantity actually delivered. */
+/**
+ * The officer marks the order delivered with the quantity actually delivered. A timed-out order
+ * can still be marked (late), which closes its timeout; a disputed one cannot.
+ */
 export async function markDelivered(actor: Actor, orderId: string, deliveredQuantity: number, now: Date = new Date()): Promise<void> {
   const order = await loadManagedOrder(actor, orderId);
   if (!Number.isSafeInteger(deliveredQuantity) || deliveredQuantity < 1 || deliveredQuantity > order.quantity) {
     throw new ValidationError("Delivered quantity out of range", "DELIVERED_RANGE");
   }
-  await moveOrder(order, ["PAID_HELD", "PREPARING"], "DELIVERED_MARKED", { deliveredQuantity, deliveredMarkedAt: now });
+  await moveOrder(order, ["PAID_HELD", "PREPARING", "TIMED_OUT"], "DELIVERED_MARKED", { deliveredQuantity, deliveredMarkedAt: now });
+  if (order.status === "TIMED_OUT") await closeTimeout(prisma, orderId, now);
   const lot = await prisma.lot.findUniqueOrThrow({ where: { id: order.lotId }, select: { unit: { select: { name: true } } } });
   await postToOrderThread(order, actor.userId, `Marked delivered: ${deliveredQuantity} of ${order.quantity} ${lot.unit.name}`, now);
   await recordAudit({

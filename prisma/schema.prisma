@@ -756,6 +756,7 @@ model Order {
   payments               Payment[]
   refunds                Refund[]
   payouts                Payout[]
+  disputes               Dispute[]
 
   @@index([lotId, status])
   @@index([cooperativeId, status])
@@ -935,4 +936,39 @@ model PayoutAttempt {
   @@unique([payoutId, attempt])
   @@index([status, createdAt])
   @@map("payout_attempt")
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+enum DisputeOutcome {
+  RELEASE
+  REFUND_ALL
+  REFUND_UNITS
+  NOTE
+}
+
+// Something about an order an admin must decide: a buyer's report (REPORT, or AFTER_COMPLETION
+// with no money action), a delivery timeout (TIMEOUT) or a suspended cooperative (SUSPENSION).
+// openedByUserId is null for disputes the timers job opens.
+model Dispute {
+  id              String          @id @default(cuid())
+  orderId         String
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  openedByUserId  String?
+  kind            String
+  reason          String
+  status          DisputeStatus   @default(OPEN)
+  outcome         DisputeOutcome?
+  unitsRefunded   Int?
+  decisionNote    String?
+  decidedByUserId String?
+  decidedAt       DateTime?
+  createdAt       DateTime        @default(now())
+
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@map("dispute")
 }

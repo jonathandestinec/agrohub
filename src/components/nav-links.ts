@@ -24,7 +24,8 @@ export type NavLabelKey =
   | "orders"
   | "myOrders"
   | "nameChanges"
-  | "payouts";
+  | "payouts"
+  | "orderQueue";
 export type NavLink = { href: string; labelKey: NavLabelKey };
 
 const LINKS: Partial<Record<Role, NavLink[]>> = {
@@ -42,6 +43,7 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
     { href: "/admin/names", labelKey: "nameChanges" },
     { href: "/admin/lots", labelKey: "lotQueue" },
     { href: "/admin/settings", labelKey: "platformSettings" },
+    { href: "/admin/orders", labelKey: "orderQueue" },
     { href: "/admin/payouts", labelKey: "payouts" },
   ],
   FARMER: [
