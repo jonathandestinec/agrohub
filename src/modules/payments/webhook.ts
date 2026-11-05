@@ -4,6 +4,7 @@ import { UnavailableError } from "@/lib/errors";
 import { verifyWebhookSignature, webhookSecret } from "@/lib/paystack";
 import { confirmPayment } from "./payments";
 import { settleRefund } from "./refunds";
+import { settleTransferEvent } from "./sending";
 import { webhookBody, type WebhookBody } from "./webhook-schema";
 
 // Paystack's webhook bodies are small; anything larger is refused before parsing.
@@ -38,8 +39,12 @@ async function dispatch(body: WebhookBody): Promise<string> {
         },
         body.event === "refund.processed" ? "PROCESSED" : "FAILED",
       );
+    case "transfer.success":
+    case "transfer.failed":
+    case "transfer.reversed":
+      return body.data.reference ? settleTransferEvent(body.data.reference) : "NO_REFERENCE";
     default:
-      // Transfers arrive with Phase 5b; every other event is recorded and ignored.
+      // Every other event is recorded and ignored.
       return "IGNORED";
   }
 }

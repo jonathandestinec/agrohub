@@ -82,8 +82,3 @@ export async function createPayouts(
   return created;
 }
 
-/** System function: sends every queued payout that is due. Filled in by the payout gateway task. */
-export async function sendDuePayouts(options: { orderId?: string; now?: Date } = {}): Promise<{ sent: number; deferred: number }> {
-  void options;
-  return { sent: 0, deferred: 0 };
-}

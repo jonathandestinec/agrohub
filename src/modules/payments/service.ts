@@ -2,7 +2,9 @@
 // the ledger. Every function here is a system function: Paystack, jobs and order services call
 // them after their own checks.
 export { alertAdmins, type AdminAlert } from "./alerts";
-export { createPayouts, PAYOUT_CLEARING_HOURS, payoutReference, sendDuePayouts, type CreatedPayout, type PayoutShare } from "./payouts";
+export { createPayouts, PAYOUT_CLEARING_HOURS, payoutReference, type CreatedPayout, type PayoutShare } from "./payouts";
+export { payoutGateway, paystackTransferGateway, type CheckOutcome, type PayoutGateway, type SendOutcome } from "./payout-gateway";
+export { sendDuePayouts, settleAttempt, settleTransferEvent, type SettleResult } from "./sending";
 export { confirmPayment, type ConfirmOutcome } from "./payments";
 export { ledgerBalance, postLedger, type LedgerKind, type LedgerLine } from "./ledger";
 export { issueRefund, resendPendingRefunds, settleRefund } from "./refunds";

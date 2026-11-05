@@ -11,13 +11,15 @@ import { koboFromDb } from "@/lib/money";
 //   refund.processed   REFUND_PAYABLE +R, PAYSTACK_BALANCE -R
 //   order.released     HELD +(T-R), COOPERATIVE_PAYABLE -c, FARMER_PAYABLE -f each, PLATFORM_FEE -fee
 //   payout.paid        COOPERATIVE_PAYABLE or FARMER_PAYABLE +p, PAYSTACK_BALANCE -p
+//   payout.reversed    PAYSTACK_BALANCE +p, COOPERATIVE_PAYABLE or FARMER_PAYABLE -p (a paid transfer taken back)
 export type LedgerKind =
   | "payment.captured"
   | "paystack.fee"
   | "refund.issued"
   | "refund.processed"
   | "order.released"
-  | "payout.paid";
+  | "payout.paid"
+  | "payout.reversed";
 
 export type LedgerLine = { account: LedgerAccount; amountKobo: number; recipientRef?: string };
 
