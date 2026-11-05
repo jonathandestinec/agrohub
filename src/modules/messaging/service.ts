@@ -261,3 +261,13 @@ export async function postSystemMessage(threadId: string, causedByUserId: string
     await tx.thread.update({ where: { id: threadId }, data: { lastMessageAt: now } });
   });
 }
+
+/** Who a thread is between, for order services that act on a thread an actor has opened. */
+export async function threadParties(
+  threadId: string,
+): Promise<{ kind: ThreadKind; lotId: string; cooperativeId: string; counterpartUserId: string } | null> {
+  return prisma.thread.findUnique({
+    where: { id: threadId },
+    select: { kind: true, lotId: true, cooperativeId: true, counterpartUserId: true },
+  });
+}

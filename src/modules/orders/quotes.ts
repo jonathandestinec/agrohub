@@ -5,7 +5,7 @@ import { formatNaira, koboFromDb, koboToDb } from "@/lib/money";
 import { recordAudit } from "@/modules/audit/audit";
 import { lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
-import { assertMessageAllowed, buyerThreadIdOf, writeComposedMessage } from "@/modules/messaging/service";
+import { assertMessageAllowed, buyerThreadIdOf, threadParties, writeComposedMessage } from "@/modules/messaging/service";
 
 export const QUOTE_TTL_HOURS = 48;
 // A delivery cost is at most ₦10,000,000, so the cooperative's payout never needs more than
@@ -80,4 +80,18 @@ export async function listUsableQuotes(actor: Actor, lotId: string, now: Date = 
     note: q.note,
     expiresAt: q.expiresAt.toISOString(),
   }));
+}
+
+// The officer quotes from the buyer thread they are reading.
+export async function quoteDeliveryInThread(
+  actor: Actor,
+  threadId: string,
+  input: { amountKobo: number; note?: string },
+  now: Date = new Date(),
+): Promise<{ quoteId: string }> {
+  const thread = await threadParties(threadId);
+  if (!thread || thread.kind !== "BUYER_COOPERATIVE" || !can(actor, "quote:make", { cooperativeId: thread.cooperativeId })) {
+    throw new NotFoundError("THREAD_NOT_FOUND");
+  }
+  return quoteDelivery(actor, { lotId: thread.lotId, buyerUserId: thread.counterpartUserId, ...input }, now);
 }

@@ -5,13 +5,15 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { OpenThreadButton } from "@/components/messages/open-thread-button";
+import { CheckoutForm } from "@/components/orders/checkout-form";
 import { ButtonLink, Card, Chip, PageHeading } from "@/components/ui";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { formatNaira } from "@/lib/money";
-import { getPublicLot, type PublicLot } from "@/modules/catalog/service";
+import { availableQuantity, getPublicLot, type PublicLot } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { listMemberships } from "@/modules/identity/service";
 import { currentUser, getActor } from "@/modules/identity/session";
+import { listUsableQuotes } from "@/modules/orders/service";
 import { OfferForm } from "./offer-form";
 
 // Public: one live lot at the asking price. Only PublicLot reaches this page, so no floor,
@@ -131,6 +133,7 @@ async function OfferSlot({ lot }: { lot: PublicLot }) {
   if (actor?.role === "BUYER") {
     return (
       <>
+        <BuyNow lot={lot} actor={actor} />
         <OfferForm
           lotId={lot.id}
           askKobo={lot.askKobo}
@@ -149,5 +152,35 @@ async function OfferSlot({ lot }: { lot: PublicLot }) {
         {t("signUpToOffer")}
       </ButtonLink>
     </div>
+  );
+}
+
+// An active buyer buys at the asking price: as much as is free now, pickup or a delivery quote
+// the cooperative sent them.
+async function BuyNow({ lot, actor }: { lot: PublicLot; actor: Actor }) {
+  const t = await getTranslations("orders");
+  const locale = await getLocale();
+  const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
+  const available = await availableQuantity(lot.id);
+  const quotes = await listUsableQuotes(actor, lot.id);
+  return (
+    <section aria-labelledby="buy-heading" className="flex flex-col gap-2">
+      <h3 id="buy-heading" className="title-2">
+        {t("checkout.heading")}
+      </h3>
+      <p className="body-4">{t("checkout.available", { quantity: available, unit: lot.unit })}</p>
+      {available >= lot.minOrderQty ? (
+        <CheckoutForm
+          source="LOT"
+          lotId={lot.id}
+          unitKobo={lot.askKobo}
+          unit={lot.unit}
+          minQuantity={lot.minOrderQty}
+          maxQuantity={available}
+          pickupLabel={t("checkout.pickup", { lga: lot.pickupLga, state: lot.pickupState })}
+          quotes={quotes.map((q) => ({ id: q.id, amountKobo: q.amountKobo, until: time.format(new Date(q.expiresAt)) }))}
+        />
+      ) : null}
+    </section>
   );
 }

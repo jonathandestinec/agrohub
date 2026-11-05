@@ -43,7 +43,9 @@
     "buyProduce": "Buy produce",
     "messages": "Messages",
     "offers": "Offers",
-    "nameChanges": "Name changes"
+    "nameChanges": "Name changes",
+    "orders": "Orders",
+    "myOrders": "My orders"
   },
   "auth": {
     "fields": {
@@ -1146,7 +1148,6 @@
       "agreed": "Agreed price: {price} per {unit}",
       "expires": "Waiting for an answer until {time}",
       "payBy": "Accepted. The quantity is held for you until {time}.",
-      "paymentLater": "Paying for an accepted offer opens in a later release of AgroHub.",
       "viewLot": "View the lot",
       "acceptCounter": "Accept counter",
       "declineCounter": "Decline counter",
@@ -1307,6 +1308,122 @@
       "FORBIDDEN": "You cannot do this.",
       "UNAUTHENTICATED": "Please sign in again.",
       "INTERNAL": "Something went wrong. Please try again."
+    }
+  },
+  "orders": {
+    "reference": "Order {reference}",
+    "summary": "{quantity} × {unit} of {crop}",
+    "status": {
+      "AWAITING_PAYMENT": "Waiting for payment",
+      "PAYMENT_EXPIRED": "Payment time ran out",
+      "PAID_HELD": "Paid, held until delivery is confirmed",
+      "PREPARING": "Being prepared",
+      "DELIVERED": "Marked delivered",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded",
+      "UNDER_REVIEW": "With AgroHub for review"
+    },
+    "officerStatus": {
+      "PENDING_PAYMENT": "Not paid",
+      "PAID_HELD": "Paid, to prepare",
+      "PREPARING": "Preparing",
+      "DELIVERED_MARKED": "Marked delivered",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded",
+      "DISPUTED": "Problem reported",
+      "TIMED_OUT": "Late: with AgroHub"
+    },
+    "errors": {
+      "INVALID_CHECKOUT": "Check the quantity and try again.",
+      "INVALID_QUANTITY": "Enter a whole number of units.",
+      "LOT_NOT_AVAILABLE": "This lot is no longer on sale.",
+      "OWN_COOPERATIVE_LOT": "You can't buy from your own cooperative.",
+      "BELOW_MIN_ORDER": "That is below the lot's minimum order.",
+      "NOT_ENOUGH_STOCK": "Not enough of this lot is free right now. Someone may be paying for it; try a smaller quantity or come back in 15 minutes.",
+      "OFFER_NOT_FOUND": "This offer was not found.",
+      "OFFER_NOT_PAYABLE": "This offer can no longer be paid. Its time to pay may have run out, or the lot is no longer on sale.",
+      "LOT_TERMS_MISSING": "This lot can't be bought yet. Please try again later.",
+      "QUOTE_NOT_USABLE": "That delivery quote can no longer be used. Ask the cooperative for a new one.",
+      "QUOTE_RANGE": "Enter a delivery cost from ₦0.01 to ₦10,000,000.",
+      "INVALID_AMOUNT": "Enter an amount in naira, like 25000 or 25000.50.",
+      "NO_BUYER_THREAD": "The buyer has not messaged you about this lot.",
+      "PAYSTACK_UNAVAILABLE": "Payments are not available right now. Nothing was charged. Please try again in a few minutes.",
+      "PAYSTACK_REFUSED": "The payment service refused this payment. Nothing was charged. Please try again.",
+      "ORDER_NOT_FOUND": "This order was not found.",
+      "MESSAGE_HAS_CONTACT": "Phone numbers and email addresses can't be shared in messages. Keep the conversation on AgroHub.",
+      "MESSAGE_MENTIONS_FLOOR": "This note names the farmer's private lowest price. Remove it and try again.",
+      "MESSAGE_LENGTH": "The note is too long.",
+      "MESSAGE_RATE_LIMIT": "You have sent many messages in the last hour. Please wait a little.",
+      "UNAUTHENTICATED": "Please sign in again.",
+      "FORBIDDEN": "You can't do that.",
+      "INTERNAL": "Something went wrong. Please try again."
+    },
+    "checkout": {
+      "heading": "Buy now",
+      "available": "{quantity} {unit} available now",
+      "quantity": "Quantity to buy ({unit})",
+      "quantityHint": "From {min} to {max}",
+      "delivery": "Pickup or delivery",
+      "pickup": "Pickup at {lga}, {state}",
+      "deliveryQuote": "Delivery, {amount} (quoted until {time})",
+      "noQuotes": "For delivery, message the cooperative and ask for a delivery quote.",
+      "total": "You pay {total}",
+      "totalUnknown": "Enter a quantity to see the total",
+      "held": "Your payment is held until delivery is confirmed. Then AgroHub pays the cooperative and its farmers.",
+      "submit": "Pay with Paystack",
+      "payOffer": "Pay {total}",
+      "redirecting": "Opening Paystack…",
+      "reserved": "We hold the quantity for 15 minutes while you pay."
+    },
+    "buyer": {
+      "title": "My orders",
+      "lead": "What you bought and where each order stands.",
+      "empty": "No orders yet. Buy a lot, or pay an accepted offer.",
+      "goods": "Goods: {amount}",
+      "deliveryCost": "Delivery: {amount}",
+      "pickup": "Pickup",
+      "total": "Total paid: {amount}",
+      "totalDue": "Total: {amount}",
+      "refunded": "Refunded: {amount}",
+      "reservedUntil": "The quantity is held for you until {time}.",
+      "confirming": "If you have paid, we're confirming your payment with Paystack. This page shows it once Paystack tells us.",
+      "checkAgain": "Check again",
+      "paymentExpired": "Payment time ran out and the quantity was released. If money left your account, it will be paid back automatically.",
+      "held": "Your payment is held until delivery is confirmed.",
+      "deliveryDate": "Delivery or pickup date: {date}",
+      "threadHeading": "Messages with the cooperative",
+      "messageCooperative": "Message the cooperative",
+      "viewLot": "View the lot"
+    },
+    "officer": {
+      "title": "Orders",
+      "lead": "Paid orders to prepare and deliver, by delivery date.",
+      "empty": "No paid orders yet.",
+      "buyer": "Buyer: {name}",
+      "shares": "Farmers' shares",
+      "share": "{name}: {quantity} {unit}, {amount}",
+      "cut": "Cooperative cut: {amount}",
+      "fee": "AgroHub fee: {amount}",
+      "deliveryCost": "Delivery (kept by the cooperative): {amount}",
+      "noDate": "No date yet",
+      "threadHeading": "Messages with the buyer"
+    },
+    "quote": {
+      "heading": "Quote delivery",
+      "lead": "The buyer can choose this delivery cost at checkout for 48 hours. It is added to what they pay and kept by the cooperative.",
+      "amount": "Delivery cost (₦)",
+      "note": "Note for the buyer (optional)",
+      "submit": "Send quote",
+      "sent": "Quote sent."
+    },
+    "dev": {
+      "title": "Test checkout",
+      "lead": "Local development only. No real money moves.",
+      "amount": "Amount: {amount}",
+      "pay": "Pay (test)",
+      "fail": "Payment fails (test)"
     }
   }
 }

@@ -4,6 +4,7 @@ import { verifyTransaction } from "@/lib/paystack";
 import { recordAudit } from "@/modules/audit/audit";
 import { committedQuantity, lockLot, refreshSoldOut } from "@/modules/catalog/service";
 import { markOfferOrdered } from "@/modules/marketplace/service";
+import { ensureBuyerThread } from "@/modules/messaging/service";
 import { assertTransition } from "@/modules/orders/service";
 import { postLedger } from "./ledger";
 import { issueRefund } from "./refunds";
@@ -99,7 +100,7 @@ export async function confirmPayment(reference: string, now: Date = new Date()):
         },
         tx,
       );
-      return { outcome: "PAID" as const, refundId: null };
+      return { outcome: "PAID" as const, refundId: null, lotId: order.lotId, buyerUserId: order.buyerUserId };
     }
 
     // Too late: the stock went to another buyer, or the lot or cooperative stopped selling.
@@ -131,5 +132,8 @@ export async function confirmPayment(reference: string, now: Date = new Date()):
     return { outcome: "REFUNDING" as const, refundId: refund.id };
   });
   if (result.refundId) await issueRefund(result.refundId);
+  // Every paid order has its thread with the cooperative (the order thread), even if the buyer
+  // never wrote before and the lot is now sold out.
+  if (result.outcome === "PAID") await ensureBuyerThread(result.lotId, result.buyerUserId);
   return result.outcome;
 }

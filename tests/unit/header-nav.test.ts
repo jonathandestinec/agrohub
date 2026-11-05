@@ -10,6 +10,7 @@ describe("navLinksFor", () => {
       { href: "/officer/farmers", labelKey: "farmers" },
       { href: "/officer/lots", labelKey: "screenLots" },
       { href: "/officer/offers", labelKey: "offers" },
+      { href: "/officer/orders", labelKey: "orders" },
       { href: "/messages", labelKey: "messages" },
     ]);
   });
@@ -44,6 +45,7 @@ describe("navLinksFor", () => {
     expect(navLinksFor("BUYER")).toEqual([
       { href: "/lots", labelKey: "browseLots" },
       { href: "/buyer", labelKey: "myOffers" },
+      { href: "/buyer/orders", labelKey: "myOrders" },
       { href: "/messages", labelKey: "messages" },
     ]);
   });

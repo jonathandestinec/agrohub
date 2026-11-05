@@ -102,7 +102,7 @@ describe("startCheckout from a lot", () => {
     const json = JSON.stringify(view);
     expect(json).not.toContain("6000000");
     expect(json).not.toContain(w.farmer.userId);
-    expect(json).not.toContain("User u-farmer");
+    expect(json).not.toContain("Farmer u-farmer");
     expect((await getOwnOrder(buyer, orderId, at(16 * MIN))).status).toBe("PAYMENT_EXPIRED");
   });
 });

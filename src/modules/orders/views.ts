@@ -125,3 +125,33 @@ export function toBuyerOrder(row: OrderRowForView, lot: OrderLotSummary, threadI
     threadId,
   };
 }
+
+// What the cooperative sees of an order: the buyer's name (never their email or phone), the raw
+// status, the cut and fee from the copied terms, and each farmer's share (names only).
+export type OfficerOrder = BuyerOrder & {
+  buyerName: string;
+  orderStatus: OrderStatus;
+  cutKobo: number;
+  feeKobo: number;
+  farmerShares: Array<{ farmerName: string; quantity: number; amountKobo: number }>;
+};
+
+export function toOfficerOrder(
+  buyer: BuyerOrder,
+  input: {
+    buyerName: string;
+    orderStatus: OrderStatus;
+    cutKobo: number;
+    feeKobo: number;
+    farmerShares: Array<{ farmerName: string; quantity: number; amountKobo: number }>;
+  },
+): OfficerOrder {
+  return {
+    ...buyer,
+    buyerName: input.buyerName,
+    orderStatus: input.orderStatus,
+    cutKobo: input.cutKobo,
+    feeKobo: input.feeKobo,
+    farmerShares: input.farmerShares.map((s) => ({ farmerName: s.farmerName, quantity: s.quantity, amountKobo: s.amountKobo })),
+  };
+}

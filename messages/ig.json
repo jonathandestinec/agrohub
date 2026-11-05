@@ -43,7 +43,9 @@
     "buyProduce": "",
     "messages": "",
     "offers": "",
-    "nameChanges": ""
+    "nameChanges": "",
+    "orders": "",
+    "myOrders": ""
   },
   "auth": {
     "fields": {
@@ -1146,7 +1148,6 @@
       "agreed": "",
       "expires": "",
       "payBy": "",
-      "paymentLater": "",
       "viewLot": "",
       "acceptCounter": "",
       "declineCounter": "",
@@ -1307,6 +1308,122 @@
       "FORBIDDEN": "",
       "UNAUTHENTICATED": "",
       "INTERNAL": ""
+    }
+  },
+  "orders": {
+    "reference": "",
+    "summary": "",
+    "status": {
+      "AWAITING_PAYMENT": "",
+      "PAYMENT_EXPIRED": "",
+      "PAID_HELD": "",
+      "PREPARING": "",
+      "DELIVERED": "",
+      "COMPLETED": "",
+      "CANCELLED": "",
+      "REFUNDED": "",
+      "UNDER_REVIEW": ""
+    },
+    "officerStatus": {
+      "PENDING_PAYMENT": "",
+      "PAID_HELD": "",
+      "PREPARING": "",
+      "DELIVERED_MARKED": "",
+      "COMPLETED": "",
+      "CANCELLED": "",
+      "REFUNDED": "",
+      "DISPUTED": "",
+      "TIMED_OUT": ""
+    },
+    "errors": {
+      "INVALID_CHECKOUT": "",
+      "INVALID_QUANTITY": "",
+      "LOT_NOT_AVAILABLE": "",
+      "OWN_COOPERATIVE_LOT": "",
+      "BELOW_MIN_ORDER": "",
+      "NOT_ENOUGH_STOCK": "",
+      "OFFER_NOT_FOUND": "",
+      "OFFER_NOT_PAYABLE": "",
+      "LOT_TERMS_MISSING": "",
+      "QUOTE_NOT_USABLE": "",
+      "QUOTE_RANGE": "",
+      "INVALID_AMOUNT": "",
+      "NO_BUYER_THREAD": "",
+      "PAYSTACK_UNAVAILABLE": "",
+      "PAYSTACK_REFUSED": "",
+      "ORDER_NOT_FOUND": "",
+      "MESSAGE_HAS_CONTACT": "",
+      "MESSAGE_MENTIONS_FLOOR": "",
+      "MESSAGE_LENGTH": "",
+      "MESSAGE_RATE_LIMIT": "",
+      "UNAUTHENTICATED": "",
+      "FORBIDDEN": "",
+      "INTERNAL": ""
+    },
+    "checkout": {
+      "heading": "",
+      "available": "",
+      "quantity": "",
+      "quantityHint": "",
+      "delivery": "",
+      "pickup": "",
+      "deliveryQuote": "",
+      "noQuotes": "",
+      "total": "",
+      "totalUnknown": "",
+      "held": "",
+      "submit": "",
+      "payOffer": "",
+      "redirecting": "",
+      "reserved": ""
+    },
+    "buyer": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "goods": "",
+      "deliveryCost": "",
+      "pickup": "",
+      "total": "",
+      "totalDue": "",
+      "refunded": "",
+      "reservedUntil": "",
+      "confirming": "",
+      "checkAgain": "",
+      "paymentExpired": "",
+      "held": "",
+      "deliveryDate": "",
+      "threadHeading": "",
+      "messageCooperative": "",
+      "viewLot": ""
+    },
+    "officer": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "buyer": "",
+      "shares": "",
+      "share": "",
+      "cut": "",
+      "fee": "",
+      "deliveryCost": "",
+      "noDate": "",
+      "threadHeading": ""
+    },
+    "quote": {
+      "heading": "",
+      "lead": "",
+      "amount": "",
+      "note": "",
+      "submit": "",
+      "sent": ""
+    },
+    "dev": {
+      "title": "",
+      "lead": "",
+      "amount": "",
+      "pay": "",
+      "fail": ""
     }
   }
 }
