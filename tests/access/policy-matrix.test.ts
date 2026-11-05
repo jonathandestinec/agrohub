@@ -232,6 +232,12 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["order:admin", "ADMIN", true],
   ["order:admin", "BOARD_ADMIN", false],
 
+  ["payout:manage", "FARMER", false],
+  ["payout:manage", "OFFICER", false],
+  ["payout:manage", "BUYER", false],
+  ["payout:manage", "ADMIN", true],
+  ["payout:manage", "BOARD_ADMIN", false],
+
   ["quote:make", "FARMER", false],
   ["quote:make", "OFFICER", true],
   ["quote:make", "BUYER", false],
@@ -264,7 +270,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(180);
+    expect(matrix).toHaveLength(185);
   });
 });
 

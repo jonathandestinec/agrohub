@@ -50,7 +50,8 @@ export type Action =
   | "order:manage"
   | "order:admin"
   | "quote:make"
-  | "earnings:own";
+  | "earnings:own"
+  | "payout:manage";
 
 export type Resource = {
   cooperativeId?: string;
@@ -86,6 +87,7 @@ export function can(
     case "setting:write":
     case "name:queue":
     case "order:admin":
+    case "payout:manage":
       return actor.role === "ADMIN";
     case "name:decide":
       // Never the admin's own request, nor one about themselves or a cooperative they belong to.

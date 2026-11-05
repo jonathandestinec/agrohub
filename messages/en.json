@@ -45,7 +45,8 @@
     "offers": "Offers",
     "nameChanges": "Name changes",
     "orders": "Orders",
-    "myOrders": "My orders"
+    "myOrders": "My orders",
+    "payouts": "Payouts"
   },
   "auth": {
     "fields": {
@@ -339,7 +340,8 @@
         "UNAUTHENTICATED": "Please sign in again.",
         "FORBIDDEN": "You cannot do that.",
         "INTERNAL": "Something went wrong. Please try again."
-      }
+      },
+      "cancellations": "{count, plural, =0 {No orders cancelled by the cooperative} one {# order cancelled by the cooperative} other {# orders cancelled by the cooperative}}"
     },
     "settings": {
       "title": "Platform settings",
@@ -404,6 +406,29 @@
         "FORBIDDEN": "You cannot do this.",
         "INTERNAL": "Something went wrong. Please try again."
       }
+    },
+    "payouts": {
+      "title": "Payouts",
+      "lead": "Payouts that need you: failed, blocked for a missing account, refused for a low Paystack balance, or awaiting Paystack for more than 3 days.",
+      "empty": "No payout needs attention.",
+      "order": "Order {reference}",
+      "recipient": {
+        "COOPERATIVE": "Cooperative",
+        "FARMER": "Farmer"
+      },
+      "status": {
+        "QUEUED": "Paystack balance too low",
+        "SENT": "Awaiting Paystack",
+        "PAID": "Paid",
+        "FAILED": "Failed",
+        "BLOCKED": "No payout account"
+      },
+      "attempts": "{count, plural, one {# attempt} other {# attempts}}",
+      "lastFailure": "Last failure: {reason}",
+      "awaiting": "Sent {time}, still awaiting Paystack",
+      "retry": "Retry",
+      "retryCurrent": "Retry to current account",
+      "unblock": "Unblock"
     }
   },
   "bank": {
@@ -1361,7 +1386,15 @@
       "INTERNAL": "Something went wrong. Please try again.",
       "ORDER_STATE": "This order can't do that now. Refresh the page to see where it stands.",
       "DELIVERED_RANGE": "Enter a delivered quantity from 1 to the quantity ordered.",
-      "DELIVERY_DATE_RANGE": "Choose a date from today to 60 days from now."
+      "DELIVERY_DATE_RANGE": "Choose a date from today to 60 days from now.",
+      "PAYOUT_NOT_FOUND": "This payout was not found.",
+      "PAYOUT_NOT_FAILED": "Only a failed payout can be retried. Refresh the page.",
+      "PAYOUT_NOT_BLOCKED": "This payout is not blocked any more. Refresh the page.",
+      "PAYOUT_STILL_PENDING": "Paystack is still processing the last transfer, so it can't be sent again yet. Check again later.",
+      "PAYOUT_PAID_AT_PAYSTACK": "Paystack says the last transfer went through, so it was recorded as paid and nothing was sent again.",
+      "NO_RECIPIENT": "The recipient has no payout account yet.",
+      "REASON_REQUIRED": "Give a reason of at least 5 characters.",
+      "NO_CANCEL_REQUEST": "There is no request to cancel this order. Refresh the page."
     },
     "checkout": {
       "heading": "Buy now",
@@ -1403,7 +1436,14 @@
       "deliveredAll": "The cooperative marked all {quantity} {unit} delivered.",
       "shortfall": "{delivered} of {quantity} delivered: confirming refunds {amount} for the rest",
       "confirmLead": "Confirm only once you have the goods. Confirming releases your payment to the cooperative and its farmers. If something is wrong, report a problem instead. If you do nothing, the payment is released 3 days after delivery was marked.",
-      "confirm": "Confirm I received it"
+      "confirm": "Confirm I received it",
+      "cancelHeading": "Cancel the order",
+      "cancelLead": "The cooperative has not started preparing, so you can cancel now and get everything you paid back.",
+      "cancelReason": "Reason (optional)",
+      "cancel": "Cancel and get a full refund",
+      "requestLead": "The cooperative is preparing your order, so you can ask them to cancel. If they agree, you get everything you paid back.",
+      "request": "Ask to cancel",
+      "requested": "You asked to cancel. Waiting for the cooperative to answer."
     },
     "officer": {
       "title": "Orders",
@@ -1426,7 +1466,14 @@
       "deliveredLabel": "Quantity delivered ({unit})",
       "deliveredSubmit": "Mark delivered",
       "deliveredHint": "Ordered: {quantity}. If you delivered less, the buyer gets the rest back when they confirm.",
-      "awaitingBuyer": "Marked delivered: {delivered} of {quantity} {unit}. Waiting for the buyer to confirm. The payment is released after 3 days if they don't."
+      "awaitingBuyer": "Marked delivered: {delivered} of {quantity} {unit}. Waiting for the buyer to confirm. The payment is released after 3 days if they don't.",
+      "cancelHeading": "Cancel the order",
+      "cancelLabel": "Reason (the buyer sees it)",
+      "cancel": "Cancel and refund the buyer",
+      "cancelHint": "The buyer gets everything they paid back. Cancellations by the cooperative are counted.",
+      "requestHeading": "The buyer asked to cancel",
+      "agree": "Agree and refund",
+      "decline": "Decline, keep the order"
     },
     "quote": {
       "heading": "Quote delivery",

@@ -21,6 +21,7 @@ describe("navLinksFor", () => {
       { href: "/admin/names", labelKey: "nameChanges" },
       { href: "/admin/lots", labelKey: "lotQueue" },
       { href: "/admin/settings", labelKey: "platformSettings" },
+      { href: "/admin/payouts", labelKey: "payouts" },
     ]);
   });
 

@@ -45,7 +45,8 @@
     "offers": "",
     "nameChanges": "",
     "orders": "",
-    "myOrders": ""
+    "myOrders": "",
+    "payouts": ""
   },
   "auth": {
     "fields": {
@@ -339,7 +340,8 @@
         "UNAUTHENTICATED": "",
         "FORBIDDEN": "",
         "INTERNAL": ""
-      }
+      },
+      "cancellations": ""
     },
     "settings": {
       "title": "",
@@ -404,6 +406,29 @@
         "FORBIDDEN": "",
         "INTERNAL": ""
       }
+    },
+    "payouts": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "order": "",
+      "recipient": {
+        "COOPERATIVE": "",
+        "FARMER": ""
+      },
+      "status": {
+        "QUEUED": "",
+        "SENT": "",
+        "PAID": "",
+        "FAILED": "",
+        "BLOCKED": ""
+      },
+      "attempts": "",
+      "lastFailure": "",
+      "awaiting": "",
+      "retry": "",
+      "retryCurrent": "",
+      "unblock": ""
     }
   },
   "bank": {
@@ -1361,7 +1386,15 @@
       "INTERNAL": "",
       "ORDER_STATE": "",
       "DELIVERED_RANGE": "",
-      "DELIVERY_DATE_RANGE": ""
+      "DELIVERY_DATE_RANGE": "",
+      "PAYOUT_NOT_FOUND": "",
+      "PAYOUT_NOT_FAILED": "",
+      "PAYOUT_NOT_BLOCKED": "",
+      "PAYOUT_STILL_PENDING": "",
+      "PAYOUT_PAID_AT_PAYSTACK": "",
+      "NO_RECIPIENT": "",
+      "REASON_REQUIRED": "",
+      "NO_CANCEL_REQUEST": ""
     },
     "checkout": {
       "heading": "",
@@ -1403,7 +1436,14 @@
       "deliveredAll": "",
       "shortfall": "",
       "confirmLead": "",
-      "confirm": ""
+      "confirm": "",
+      "cancelHeading": "",
+      "cancelLead": "",
+      "cancelReason": "",
+      "cancel": "",
+      "requestLead": "",
+      "request": "",
+      "requested": ""
     },
     "officer": {
       "title": "",
@@ -1426,7 +1466,14 @@
       "deliveredLabel": "",
       "deliveredSubmit": "",
       "deliveredHint": "",
-      "awaitingBuyer": ""
+      "awaitingBuyer": "",
+      "cancelHeading": "",
+      "cancelLabel": "",
+      "cancel": "",
+      "cancelHint": "",
+      "requestHeading": "",
+      "agree": "",
+      "decline": ""
     },
     "quote": {
       "heading": "",
