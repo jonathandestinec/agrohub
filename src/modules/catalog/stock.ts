@@ -58,3 +58,18 @@ export async function availableQuantity(lotId: string, now: Date = new Date()): 
   if (!lot) return 0;
   return Math.max(0, lot.quantity - (await committedQuantity(prisma, lotId, now)));
 }
+
+// A live lot whose whole quantity is sold becomes SOLD_OUT (no longer on sale). Called under
+// the lot's row lock by payment confirmation.
+export async function refreshSoldOut(tx: Prisma.TransactionClient, lotId: string): Promise<void> {
+  const lot = await tx.lot.findUniqueOrThrow({ where: { id: lotId }, select: { quantity: true, status: true } });
+  if (lot.status !== "LIVE") return;
+  const sold = await tx.order.findMany({
+    where: { lotId, status: { in: [...SOLD_STATUSES] } },
+    select: { quantity: true, deliveredQuantity: true },
+  });
+  const soldQuantity = sold.reduce((sum, o) => sum + (o.deliveredQuantity ?? o.quantity), 0);
+  if (soldQuantity >= lot.quantity) {
+    await tx.lot.updateMany({ where: { id: lotId, status: "LIVE" }, data: { status: "SOLD_OUT" } });
+  }
+}

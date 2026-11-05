@@ -166,5 +166,5 @@ export { decideRevision, requestRevision, withdrawLot } from "./revisions";
 export type { PendingRevision } from "./views";
 export { expireLots, getPublicLot, listLiveLots, publiclyVisibleWhere, searchLiveLots } from "./public";
 export { isPubliclyVisible, lockLot, lotNegotiationFacts, type NegotiationFacts } from "./negotiation";
-export { availableQuantity, committedQuantity, SOLD_STATUSES } from "./stock";
+export { availableQuantity, committedQuantity, refreshSoldOut, SOLD_STATUSES } from "./stock";
 export { parseLotFilters, LOT_SORTS, type LotFilters, type LotSort } from "./search-schema";
