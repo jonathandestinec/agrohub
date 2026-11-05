@@ -45,7 +45,6 @@ const LINKS: Partial<Record<Role, NavLink[]>> = {
     { href: "/admin/lots", labelKey: "lotQueue" },
     { href: "/admin/settings", labelKey: "platformSettings" },
     { href: "/admin/orders", labelKey: "orderQueue" },
-    { href: "/admin/payouts", labelKey: "payouts" },
   ],
   FARMER: [
     { href: "/farmer", labelKey: "farm" },

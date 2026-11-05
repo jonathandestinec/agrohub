@@ -483,7 +483,8 @@
       "refund": "{amount}, {reason} ({status})",
       "thread": "Messages between the buyer and the cooperative",
       "resolveIssue": "Mark resolved",
-      "issueNote": "What you did"
+      "issueNote": "What you did",
+      "payoutsLink": "Payouts that need you"
     }
   },
   "bank": {

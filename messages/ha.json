@@ -483,7 +483,8 @@
       "refund": "",
       "thread": "",
       "resolveIssue": "",
-      "issueNote": ""
+      "issueNote": "",
+      "payoutsLink": ""
     }
   },
   "bank": {

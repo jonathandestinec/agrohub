@@ -98,13 +98,13 @@ Plan: `2026-10-31-agrohub-phase-0-foundation.md`. **Done when:** staging deploys
 - [x] 5.2 Stock reservation under a row lock; 15-minute expiry job.
 - [x] 5.3 Paystack client: initialize, verify, refund; webhook route with signature check.
 - [x] 5.4 Payment records, `PaystackEvent` idempotency, append-only ledger with the zero-sum invariant.
-- [ ] 5.5 Delivery schedule, delivery marking, buyer confirmation, 3-day auto-release, 14-day timeout.
-- [ ] 5.6 `payments/payout-gateway.ts` interface and Paystack transfer implementation; payouts per recipient with unique references; payout waits for cleared funds.
-- [ ] 5.7 Failed payouts: failed state, admin alert, retry; bank-change window rule.
-- [ ] 5.8 Cancellation, shortfall and refunds (pro-rata shrink of farmer shares).
-- [ ] 5.9 Disputes queue for admins; freeze on dispute.
-- [ ] 5.10 Receipts and earnings statements.
-- [ ] 5.11 Daily reconciliation against Paystack; payout and payment failure alerts.
+- [x] 5.5 Delivery schedule, delivery marking, buyer confirmation, 3-day auto-release, 14-day timeout.
+- [x] 5.6 `payments/payout-gateway.ts` interface and Paystack transfer implementation; payouts per recipient with unique references; payout waits for cleared funds.
+- [x] 5.7 Failed payouts: failed state, admin alert, retry; bank-change window rule.
+- [x] 5.8 Cancellation, shortfall and refunds (pro-rata shrink of farmer shares).
+- [x] 5.9 Disputes queue for admins; freeze on dispute.
+- [x] 5.10 Receipts and earnings statements.
+- [x] 5.11 Daily reconciliation against Paystack; payout and payment failure alerts.
 
 **Done when:** in Paystack test mode a buyer pays, the officer delivers, the buyer confirms, and cooperative and farmers are paid exactly once; the Review Focus tests 1, 2 and 5 pass.
 

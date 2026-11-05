@@ -28,7 +28,11 @@ async function Queue() {
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
-      <PageHeading title={t("title")} lead={t("lead")} />
+      <PageHeading title={t("title")} lead={t("lead")}>
+        <Link href="/admin/payouts" className="inline-flex min-h-11 items-center title-4 underline underline-offset-2">
+          {t("payoutsLink")}
+        </Link>
+      </PageHeading>
       {queue.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("empty")}</p>
       ) : (
