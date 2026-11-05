@@ -5,7 +5,7 @@ import { z } from "zod";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { ValidationError } from "@/lib/errors";
 import { requireActor } from "@/modules/identity/session";
-import { startCheckout } from "@/modules/orders/service";
+import { confirmReceipt, startCheckout } from "@/modules/orders/service";
 
 const id = z.string().min(1).max(64);
 
@@ -40,4 +40,22 @@ export async function startCheckoutAction(input: {
     if (error instanceof z.ZodError) return { ok: false, code: "INVALID_CHECKOUT" };
     return toActionResult(error);
   }
+}
+
+async function runOrderAction(orderId: string, work: (orderId: string) => Promise<void>): Promise<ActionResult> {
+  try {
+    const parsed = id.parse(orderId);
+    await work(parsed);
+    revalidatePath(`/buyer/orders/${parsed}`);
+    revalidatePath("/buyer/orders");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { ok: false, code: "ORDER_NOT_FOUND" };
+    return toActionResult(error);
+  }
+}
+
+// The buyer confirms they received a delivered order; the payment is released.
+export async function confirmReceiptAction(orderId: string): Promise<ActionResult> {
+  return runOrderAction(orderId, async (orderId) => confirmReceipt(await requireActor(), orderId));
 }

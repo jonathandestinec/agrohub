@@ -1358,7 +1358,10 @@
       "MESSAGE_RATE_LIMIT": "",
       "UNAUTHENTICATED": "",
       "FORBIDDEN": "",
-      "INTERNAL": ""
+      "INTERNAL": "",
+      "ORDER_STATE": "",
+      "DELIVERED_RANGE": "",
+      "DELIVERY_DATE_RANGE": ""
     },
     "checkout": {
       "heading": "",
@@ -1395,7 +1398,12 @@
       "deliveryDate": "",
       "threadHeading": "",
       "messageCooperative": "",
-      "viewLot": ""
+      "viewLot": "",
+      "deliveredHeading": "",
+      "deliveredAll": "",
+      "shortfall": "",
+      "confirmLead": "",
+      "confirm": ""
     },
     "officer": {
       "title": "",
@@ -1408,7 +1416,17 @@
       "fee": "",
       "deliveryCost": "",
       "noDate": "",
-      "threadHeading": ""
+      "threadHeading": "",
+      "steps": "",
+      "startPreparing": "",
+      "dateHeading": "",
+      "dateLabel": "",
+      "dateSubmit": "",
+      "deliveredHeading": "",
+      "deliveredLabel": "",
+      "deliveredSubmit": "",
+      "deliveredHint": "",
+      "awaitingBuyer": ""
     },
     "quote": {
       "heading": "",

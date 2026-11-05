@@ -8,7 +8,9 @@ import { ThreadPanel } from "@/components/messages/thread-panel";
 import { BUYER_ORDER_TONE, buyerOrderStatusKey } from "@/components/orders/status";
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
-import { formatNaira } from "@/lib/money";
+import { formatNaira, refundForUnits } from "@/lib/money";
+import { OrderActionButton } from "@/components/orders/order-actions";
+import { confirmReceiptAction } from "../actions";
 import { getThread } from "@/modules/messaging/service";
 import { getOwnOrder, type BuyerOrder } from "@/modules/orders/service";
 
@@ -81,6 +83,24 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
           {t("buyer.viewLot")}
         </Link>
       </Card>
+      {order.status === "DELIVERED" && order.deliveredQuantity !== null ? (
+        <Card tone="paper" className="flex flex-col gap-3">
+          <h2 className="title-2">{t("buyer.deliveredHeading")}</h2>
+          {order.deliveredQuantity < order.quantity ? (
+            <p className="body-4 tabular-nums">
+              {t("buyer.shortfall", {
+                delivered: order.deliveredQuantity,
+                quantity: order.quantity,
+                amount: formatNaira(refundForUnits(order.unitKobo, order.quantity - order.deliveredQuantity)),
+              })}
+            </p>
+          ) : (
+            <p className="body-4">{t("buyer.deliveredAll", { quantity: order.quantity, unit: order.lot.unit })}</p>
+          )}
+          <p className="body-6 text-ink-soft">{t("buyer.confirmLead")}</p>
+          <OrderActionButton action={confirmReceiptAction.bind(null, order.id)} label={t("buyer.confirm")} />
+        </Card>
+      ) : null}
       <section aria-labelledby="thread-heading" className="flex flex-col gap-3">
         <h2 id="thread-heading" className="heading-6">
           {t("buyer.threadHeading")}
