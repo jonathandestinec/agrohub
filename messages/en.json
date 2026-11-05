@@ -47,7 +47,8 @@
     "orders": "Orders",
     "myOrders": "My orders",
     "payouts": "Payouts",
-    "orderQueue": "Order queue"
+    "orderQueue": "Order queue",
+    "earnings": "Earnings"
   },
   "auth": {
     "fields": {
@@ -1508,7 +1509,8 @@
       "reportLeadCompleted": "This order is complete and the payment was released. AgroHub will read your report, but it can't move the money back.",
       "reportLabel": "What went wrong",
       "report": "Report the problem",
-      "underReview": "AgroHub is reviewing this order. The payment stays held until a decision."
+      "underReview": "AgroHub is reviewing this order. The payment stays held until a decision.",
+      "receiptLink": "Receipt"
     },
     "officer": {
       "title": "Orders",
@@ -1554,6 +1556,51 @@
       "amount": "Amount: {amount}",
       "pay": "Pay (test)",
       "fail": "Payment fails (test)"
+    },
+    "receipt": {
+      "back": "Back to the order",
+      "title": "Receipt for order {reference}",
+      "lead": "Seller: {seller}. AgroHub is the platform the sale was made on.",
+      "paidAt": "Paid {time}",
+      "item": "{quantity} × {unit} of {crop} at {price} each",
+      "delivered": "Delivered: {delivered} of {quantity} {unit}",
+      "goods": "Goods: {amount}",
+      "delivery": "Delivery: {amount}",
+      "total": "Total paid: {amount}",
+      "refund": "Refund: {amount} ({reason})",
+      "refundPending": "(on its way)",
+      "net": "Net paid: {amount}",
+      "platform": "Payments on AgroHub are held until delivery is confirmed, then paid to the cooperative and its farmers. Print this page to keep a copy.",
+      "reason": {
+        "LATE_PAYMENT": "payment came too late",
+        "BUYER_CANCEL": "you cancelled",
+        "COOPERATIVE_CANCEL": "the cooperative cancelled",
+        "SHORTFALL": "not delivered",
+        "ADMIN_DECISION": "AgroHub decision"
+      }
+    }
+  },
+  "earnings": {
+    "title": "Earnings",
+    "lead": "What you earned from each sale of a lot you contributed to, and when it was paid.",
+    "empty": "No completed sales yet.",
+    "back": "Back to earnings",
+    "sale": "Sale {reference}",
+    "summary": "{quantity} × {unit} of {crop}",
+    "statementTitle": "Earnings statement, sale {reference}",
+    "contributed": "Your contribution: {quantity} {unit} of {crop}",
+    "delivered": "Delivered and paid for: {quantity} {unit} at {price} each",
+    "gross": "Your share of the sale: {amount}",
+    "cut": "Cooperative cut ({percent}): {amount}",
+    "fee": "AgroHub fee ({percent}): {amount}",
+    "takeHome": "Your take-home: {amount}",
+    "payouts": "Payouts to your account",
+    "payout": "Part {part}: {amount}, {status}",
+    "status": {
+      "WAITING": "Waiting",
+      "SENDING": "Being sent",
+      "PAID": "Paid",
+      "PROBLEM": "Delayed: AgroHub is on it"
     }
   }
 }

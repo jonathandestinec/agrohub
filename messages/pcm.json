@@ -47,7 +47,8 @@
     "orders": "",
     "myOrders": "",
     "payouts": "",
-    "orderQueue": ""
+    "orderQueue": "",
+    "earnings": ""
   },
   "auth": {
     "fields": {
@@ -1508,7 +1509,8 @@
       "reportLeadCompleted": "",
       "reportLabel": "",
       "report": "",
-      "underReview": ""
+      "underReview": "",
+      "receiptLink": ""
     },
     "officer": {
       "title": "",
@@ -1554,6 +1556,51 @@
       "amount": "",
       "pay": "",
       "fail": ""
+    },
+    "receipt": {
+      "back": "",
+      "title": "",
+      "lead": "",
+      "paidAt": "",
+      "item": "",
+      "delivered": "",
+      "goods": "",
+      "delivery": "",
+      "total": "",
+      "refund": "",
+      "refundPending": "",
+      "net": "",
+      "platform": "",
+      "reason": {
+        "LATE_PAYMENT": "",
+        "BUYER_CANCEL": "",
+        "COOPERATIVE_CANCEL": "",
+        "SHORTFALL": "",
+        "ADMIN_DECISION": ""
+      }
+    }
+  },
+  "earnings": {
+    "title": "",
+    "lead": "",
+    "empty": "",
+    "back": "",
+    "sale": "",
+    "summary": "",
+    "statementTitle": "",
+    "contributed": "",
+    "delivered": "",
+    "gross": "",
+    "cut": "",
+    "fee": "",
+    "takeHome": "",
+    "payouts": "",
+    "payout": "",
+    "status": {
+      "WAITING": "",
+      "SENDING": "",
+      "PAID": "",
+      "PROBLEM": ""
     }
   }
 }

@@ -102,3 +102,14 @@ describe("BIGINT kobo", () => {
     expect(() => koboToDb(1.5)).toThrow(RangeError);
   });
 });
+
+describe("sumKobo", () => {
+  it("adds safe kobo amounts exactly and refuses anything else", async () => {
+    const { sumKobo } = await import("@/lib/money");
+    expect(sumKobo(65_000_000, 2_500_000)).toBe(67_500_000);
+    expect(sumKobo()).toBe(0);
+    expect(() => sumKobo(Number.MAX_SAFE_INTEGER, 1)).toThrow(RangeError);
+    expect(() => sumKobo(-1)).toThrow(RangeError);
+    expect(() => sumKobo(1.5)).toThrow(RangeError);
+  });
+});

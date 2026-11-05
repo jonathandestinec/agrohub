@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { FormError } from "@/components/auth-ui";
 import { Button } from "@/components/ui";
-import { formatNaira, lineTotalKobo } from "@/lib/money";
+import { formatNaira, lineTotalKobo, sumKobo } from "@/lib/money";
 import { startCheckoutAction } from "@/app/buyer/orders/actions";
 import { orderErrorKey } from "./error-key";
 
@@ -44,7 +44,7 @@ export function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
   const quote = quotes.find((q) => q.id === quoteId);
   const goods = /^\d{1,7}$/.test(quantity.trim()) ? lineTotalKobo(unitKobo, Number(quantity.trim())) : null;
-  const total = goods === null ? null : goods + (quote?.amountKobo ?? 0);
+  const total = goods === null ? null : sumKobo(goods, quote?.amountKobo ?? 0);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

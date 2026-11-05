@@ -205,6 +205,16 @@ function nairaKobo(plain: string): number | null {
   }
 }
 
+/** The sum of non-negative kobo amounts (goods plus delivery, say); RangeError beyond the safe range. */
+export function sumKobo(...amounts: number[]): number {
+  let total = BigInt(0);
+  for (const a of amounts) {
+    assertNonNegativeSafeInt(a, "amount");
+    total += BigInt(a);
+  }
+  return toSafeNumber(total, "sum");
+}
+
 /** A whole quantity at a per-unit price, in kobo; RangeError beyond the safe integer range. */
 export function lineTotalKobo(unitKobo: number, quantity: number): number {
   assertNonNegativeSafeInt(unitKobo, "unitKobo");

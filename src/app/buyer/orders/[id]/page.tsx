@@ -82,6 +82,11 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
         <Link href={`/lots/${order.lot.id}`} className="body-6 underline underline-offset-2">
           {t("buyer.viewLot")}
         </Link>
+        {order.paidAt ? (
+          <Link href={`/buyer/orders/${order.id}/receipt`} className="body-6 underline underline-offset-2">
+            {t("buyer.receiptLink")}
+          </Link>
+        ) : null}
       </Card>
       {order.status === "DELIVERED" && order.deliveredQuantity !== null ? (
         <Card tone="paper" className="flex flex-col gap-3">

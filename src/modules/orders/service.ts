@@ -19,6 +19,7 @@ export {
   type DisputeDecision,
 } from "./disputes";
 export { expireUnpaidOrders } from "./expiry";
+export { getEarningsStatement, getReceipt, listOwnEarnings, type EarningsStatement, type Receipt, type StatementPayoutStatus } from "./statements";
 export { getCooperativeOrder, getOwnOrder, listCooperativeOrders, listOwnOrders } from "./reads";
 export { listUsableQuotes, quoteDelivery, quoteDeliveryInThread, type UsableQuote } from "./quotes";
 export type { StartCheckoutInput } from "./schema";

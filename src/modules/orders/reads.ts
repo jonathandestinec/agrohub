@@ -1,7 +1,7 @@
 import type { OrderStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
-import { orderSplit } from "@/lib/money";
+import { koboFromDb, orderSplit } from "@/lib/money";
 import { can, type Actor } from "@/modules/identity/policies";
 import { buyerThreadIdOf } from "@/modules/messaging/service";
 import { toBuyerOrder, toOfficerOrder, type BuyerOrder, type OfficerOrder } from "./views";
@@ -65,6 +65,13 @@ async function buyerView(order: LoadedOrder, now: Date): Promise<BuyerOrder> {
   return toBuyerOrder(order, lot, await buyerThreadIdOf(order.lotId, order.buyerUserId), now);
 }
 
+async function farmerPayoutTotals(orderId: string): Promise<Map<string, number>> {
+  const rows = await prisma.payout.findMany({ where: { orderId, recipientType: "FARMER" }, select: { recipientId: true, amountKobo: true } });
+  const totals = new Map<string, number>();
+  for (const r of rows) totals.set(r.recipientId, (totals.get(r.recipientId) ?? 0) + koboFromDb(r.amountKobo));
+  return totals;
+}
+
 async function officerView(order: CooperativeOrderRow, now: Date): Promise<OfficerOrder> {
   const contributions = order.lot.contributions;
   const split = orderSplit({
@@ -75,6 +82,8 @@ async function officerView(order: CooperativeOrderRow, now: Date): Promise<Offic
     deliveryKobo: 0,
     contributions: contributions.length > 0 ? contributions.map((c) => c.quantity) : [1],
   });
+  // Once completed, the payouts made at completion are the record of each farmer's share.
+  const paid = order.status === "COMPLETED" ? await farmerPayoutTotals(order.id) : null;
   const farmers = await prisma.user.findMany({
     where: { id: { in: contributions.map((c) => c.farmerUserId) } },
     select: { id: true, name: true },
@@ -85,11 +94,10 @@ async function officerView(order: CooperativeOrderRow, now: Date): Promise<Offic
     orderStatus: order.status,
     cutKobo: split.cutKobo,
     feeKobo: split.feeKobo,
-    farmerShares: contributions.map((c, i) => ({
-      farmerName: nameOf.get(c.farmerUserId) ?? "",
-      quantity: c.quantity,
-      amountKobo: split.farmerKobo[i],
-    })),
+    farmerShares: contributions
+      .map((c, i) => ({ c, amountKobo: paid ? (paid.get(c.farmerUserId) ?? null) : split.farmerKobo[i] }))
+      .filter((s): s is { c: (typeof contributions)[number]; amountKobo: number } => s.amountKobo !== null)
+      .map(({ c, amountKobo }) => ({ farmerName: nameOf.get(c.farmerUserId) ?? "", quantity: c.quantity, amountKobo })),
   });
 }
 
@@ -114,7 +122,8 @@ export async function listOwnOrders(actor: Actor, now: Date = new Date()): Promi
 // A paid order of the officer's own cooperative; any other looks missing.
 export async function getCooperativeOrder(actor: Actor, orderId: string, now: Date = new Date()): Promise<OfficerOrder> {
   const order = await loadCooperativeOrder(orderId);
-  if (!order || !COOPERATIVE_STATUSES.includes(order.status) || !can(actor, "order:manage", { cooperativeId: order.cooperativeId })) {
+  // paidAt: a late payment refunded at once was never the cooperative's sale.
+  if (!order || !order.paidAt || !COOPERATIVE_STATUSES.includes(order.status) || !can(actor, "order:manage", { cooperativeId: order.cooperativeId })) {
     throw new NotFoundError("ORDER_NOT_FOUND");
   }
   return officerView(order, now);
