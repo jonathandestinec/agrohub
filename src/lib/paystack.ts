@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { env, type Env } from "@/lib/env";
 import { ConflictError, UnavailableError, ValidationError } from "@/lib/errors";
@@ -425,7 +425,9 @@ export async function initializeTransactionWith(
       amountKobo: input.amountKobo,
       email: input.email,
       status: "pending",
-      transactionId: String(++fakePaystack.lastId),
+      // Random, like Paystack's ids never repeating: webhook events outlive a restarted dev
+      // server, so a counter would make a new payment look like an old event.
+      transactionId: String(randomInt(1, 2 ** 47)),
       feesKobo: 0,
       paidAt: null,
     });
@@ -490,7 +492,7 @@ export async function refundTransactionWith(
       fakePaystack.failNextRefund = false;
       throw unavailable();
     }
-    const refundId = `fake_refund_${++fakePaystack.lastId}`;
+    const refundId = `fake_refund_${randomBytes(8).toString("hex")}`;
     fakePaystack.refunds.push({ reference: input.reference, amountKobo: input.amountKobo, refundId });
     return { refundId, status: "pending" };
   }

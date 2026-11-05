@@ -218,6 +218,19 @@ describe("fake Paystack (tests run with the fake)", () => {
     ).rejects.toBeInstanceOf(UnavailableError);
   });
 
+  it("never reuses a transaction id after a reset, as a restarted dev server would", async () => {
+    const input = { email: EMAIL, amountKobo: 100, callbackUrl: "http://x", metadata: { orderId: "o" } };
+    await initializeTransaction({ ...input, reference: "pay_before" });
+    const before = fakePaystack.transactions.get("pay_before")!.transactionId;
+    // A restarted server's counter is back where it started.
+    fakePaystack.clear();
+    fakePaystack.lastId = Number(before) - 1;
+    await initializeTransaction({ ...input, reference: "pay_after" });
+    const after = fakePaystack.transactions.get("pay_after")!.transactionId;
+    expect(after).not.toBe(before);
+    expect(Number.isSafeInteger(Number(after))).toBe(true);
+  });
+
   it("signs any body for tests that forge a notification", () => {
     const { rawBody, signature } = fakeWebhook({ event: "charge.success", data: { id: 9, reference: "pay_x" } });
     expect(verifyWebhookSignature(rawBody, signature, FAKE_WEBHOOK_SECRET)).toBe(true);
