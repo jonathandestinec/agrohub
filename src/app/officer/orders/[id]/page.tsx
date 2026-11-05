@@ -11,7 +11,7 @@ import { lagosDateKey } from "@/lib/lagos-date";
 import { formatNaira } from "@/lib/money";
 import { getThread } from "@/modules/messaging/service";
 import { getCooperativeOrder, type OfficerOrder } from "@/modules/orders/service";
-import { markDeliveredAction, setDeliveryDateAction, startPreparingAction } from "../actions";
+import { answerCancelRequestAction, cancelOrderAction, markDeliveredAction, setDeliveryDateAction, startPreparingAction } from "../actions";
 
 // The cooperative's view of one paid order, with its delivery steps.
 export default function OfficerOrderPage({ params }: PageProps<"/officer/orders/[id]">) {
@@ -87,6 +87,24 @@ async function OfficerOrderDetail({ params }: { params: PageProps<"/officer/orde
             kind="number"
             name="deliveredQuantity"
             defaultValue={String(order.quantity)}
+          />
+          {order.cancelRequested ? (
+            <Card tone="paper" className="flex flex-col gap-3">
+              <h2 className="title-2">{t("officer.requestHeading")}</h2>
+              <div className="flex flex-wrap gap-3">
+                <OrderActionButton action={answerCancelRequestAction.bind(null, order.id, true)} label={t("officer.agree")} />
+                <OrderActionButton action={answerCancelRequestAction.bind(null, order.id, false)} label={t("officer.decline")} tone="paper" />
+              </div>
+            </Card>
+          ) : null}
+          <OrderFieldForm
+            action={cancelOrderAction.bind(null, order.id)}
+            heading={t("officer.cancelHeading")}
+            label={t("officer.cancelLabel")}
+            submit={t("officer.cancel")}
+            hint={t("officer.cancelHint")}
+            kind="text"
+            name="cancelReason"
           />
         </section>
       ) : null}

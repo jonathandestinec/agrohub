@@ -5,7 +5,7 @@ import { z } from "zod";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { ValidationError } from "@/lib/errors";
 import { requireActor } from "@/modules/identity/session";
-import { markDelivered, setDeliveryDate, startPreparing } from "@/modules/orders/service";
+import { answerCancelRequest, cancelOrder, markDelivered, setDeliveryDate, startPreparing } from "@/modules/orders/service";
 
 const id = z.string().min(1).max(64);
 
@@ -37,4 +37,12 @@ export async function markDeliveredAction(orderId: string, quantity: string): Pr
     if (!/^\d{1,7}$/.test(text)) throw new ValidationError("Invalid quantity", "INVALID_QUANTITY");
     await markDelivered(await requireActor(), orderId, Number(text));
   });
+}
+
+export async function cancelOrderAction(orderId: string, reason: string): Promise<ActionResult> {
+  return run(orderId, async (orderId) => cancelOrder(await requireActor(), orderId, String(reason ?? "")));
+}
+
+export async function answerCancelRequestAction(orderId: string, agree: boolean): Promise<ActionResult> {
+  return run(orderId, async (orderId) => answerCancelRequest(await requireActor(), orderId, agree === true));
 }

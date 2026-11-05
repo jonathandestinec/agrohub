@@ -5,7 +5,7 @@ import { z } from "zod";
 import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { ValidationError } from "@/lib/errors";
 import { requireActor } from "@/modules/identity/session";
-import { confirmReceipt, startCheckout } from "@/modules/orders/service";
+import { cancelOrder, confirmReceipt, startCheckout } from "@/modules/orders/service";
 
 const id = z.string().min(1).max(64);
 
@@ -58,4 +58,9 @@ async function runOrderAction(orderId: string, work: (orderId: string) => Promis
 // The buyer confirms they received a delivered order; the payment is released.
 export async function confirmReceiptAction(orderId: string): Promise<ActionResult> {
   return runOrderAction(orderId, async (orderId) => confirmReceipt(await requireActor(), orderId));
+}
+
+// Cancels a paid order not yet being prepared (full refund), or asks the cooperative to cancel one it is preparing.
+export async function cancelOrderAction(orderId: string, reason: string): Promise<ActionResult> {
+  return runOrderAction(orderId, async (orderId) => cancelOrder(await requireActor(), orderId, String(reason ?? "")));
 }

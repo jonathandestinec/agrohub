@@ -1,6 +1,7 @@
 // The orders module's public entry: checkout, delivery quotes, order reads and the order state
 // machine.
 export { RESERVATION_MINUTES, UNPAID_ORDER_HOURS, startCheckout } from "./checkout";
+export { answerCancelRequest, cancelOrder, cooperativeCancellations, refundInFull } from "./cancel";
 export { completeOrder, type CompletedBy } from "./complete";
 export { confirmReceipt, DELIVERY_DATE_MAX_DAYS, markDelivered, setDeliveryDate, startPreparing } from "./delivery";
 export { expireUnpaidOrders } from "./expiry";

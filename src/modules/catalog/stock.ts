@@ -1,5 +1,6 @@
 import type { OrderStatus, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
+import { lagosDateKey } from "@/lib/lagos-date";
 
 // Orders whose quantity is sold: paid and not cancelled or refunded. Once the officer records
 // the quantity delivered, that is what counts (undelivered units are refunded, not resold).
@@ -72,4 +73,16 @@ export async function refreshSoldOut(tx: Prisma.TransactionClient, lotId: string
   if (soldQuantity >= lot.quantity) {
     await tx.lot.updateMany({ where: { id: lotId, status: "LIVE" }, data: { status: "SOLD_OUT" } });
   }
+}
+
+/**
+ * After an order is refunded before delivery: a SOLD_OUT lot goes back on sale if stock is free
+ * again and its available-until date (a Lagos day) has not passed.
+ */
+export async function reopenIfFree(tx: Prisma.TransactionClient, lotId: string, now: Date): Promise<void> {
+  const lot = await tx.lot.findUniqueOrThrow({ where: { id: lotId }, select: { quantity: true, status: true, availableUntil: true } });
+  if (lot.status !== "SOLD_OUT") return;
+  if (lot.availableUntil.toISOString().slice(0, 10) < lagosDateKey(now)) return;
+  if ((await committedQuantity(tx, lotId, now)) >= lot.quantity) return;
+  await tx.lot.updateMany({ where: { id: lotId, status: "SOLD_OUT" }, data: { status: "LIVE" } });
 }

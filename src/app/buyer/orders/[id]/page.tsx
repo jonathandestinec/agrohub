@@ -9,8 +9,8 @@ import { BUYER_ORDER_TONE, buyerOrderStatusKey } from "@/components/orders/statu
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { formatNaira, refundForUnits } from "@/lib/money";
-import { OrderActionButton } from "@/components/orders/order-actions";
-import { confirmReceiptAction } from "../actions";
+import { OrderActionButton, OrderFieldForm } from "@/components/orders/order-actions";
+import { cancelOrderAction, confirmReceiptAction } from "../actions";
 import { getThread } from "@/modules/messaging/service";
 import { getOwnOrder, type BuyerOrder } from "@/modules/orders/service";
 
@@ -99,6 +99,35 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
           )}
           <p className="body-6 text-ink-soft">{t("buyer.confirmLead")}</p>
           <OrderActionButton action={confirmReceiptAction.bind(null, order.id)} label={t("buyer.confirm")} />
+        </Card>
+      ) : null}
+      {order.status === "PAID_HELD" ? (
+        <OrderFieldForm
+          action={cancelOrderAction.bind(null, order.id)}
+          heading={t("buyer.cancelHeading")}
+          hint={t("buyer.cancelLead")}
+          label={t("buyer.cancelReason")}
+          submit={t("buyer.cancel")}
+          kind="text"
+          name="reason"
+          optional
+        />
+      ) : null}
+      {order.status === "PREPARING" && !order.cancelRequested ? (
+        <OrderFieldForm
+          action={cancelOrderAction.bind(null, order.id)}
+          heading={t("buyer.cancelHeading")}
+          hint={t("buyer.requestLead")}
+          label={t("buyer.cancelReason")}
+          submit={t("buyer.request")}
+          kind="text"
+          name="reason"
+          optional
+        />
+      ) : null}
+      {order.status === "PREPARING" && order.cancelRequested ? (
+        <Card tone="paper">
+          <p className="body-4">{t("buyer.requested")}</p>
         </Card>
       ) : null}
       <section aria-labelledby="thread-heading" className="flex flex-col gap-3">

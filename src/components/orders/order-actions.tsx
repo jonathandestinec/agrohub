@@ -62,6 +62,7 @@ export function OrderFieldForm({
   defaultValue = "",
   hint,
   name,
+  optional = false,
 }: {
   action: (value: string) => Promise<ActionResult<unknown>>;
   heading?: string;
@@ -71,6 +72,7 @@ export function OrderFieldForm({
   defaultValue?: string;
   hint?: string;
   name: string;
+  optional?: boolean;
 }) {
   const t = useTranslations("orders");
   const router = useRouter();
@@ -98,7 +100,7 @@ export function OrderFieldForm({
       <label className="flex flex-col gap-1 body-6">
         {label}
         {kind === "text" ? (
-          <textarea name={name} value={value} onChange={(e) => setValue(e.target.value)} required maxLength={1000} rows={3} className={`${FIELD} py-2`} />
+          <textarea name={name} value={value} onChange={(e) => setValue(e.target.value)} required={!optional} maxLength={1000} rows={3} className={`${FIELD} py-2`} />
         ) : (
           <input
             name={name}
