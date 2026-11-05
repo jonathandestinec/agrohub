@@ -972,3 +972,22 @@ model Dispute {
   @@index([orderId])
   @@map("dispute")
 }
+
+// A difference the daily reconciliation found and could not settle itself, for the admin
+// order queue. Unique by kind and reference, so a second run records (and emails) nothing new.
+// detail holds ids, amounts and statuses only.
+model ReconciliationIssue {
+  id               String    @id @default(cuid())
+  kind             String
+  reference        String
+  orderId          String?
+  detail           Json
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  resolutionNote   String?
+  createdAt        DateTime  @default(now())
+
+  @@unique([kind, reference])
+  @@index([resolvedAt, createdAt])
+  @@map("reconciliation_issue")
+}

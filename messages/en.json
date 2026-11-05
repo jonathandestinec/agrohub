@@ -1454,7 +1454,9 @@
       "DISPUTE_NOT_FOUND": "This case was not found.",
       "DISPUTE_RESOLVED": "This case is already decided. Refresh the page.",
       "OUTCOME_NOT_ALLOWED": "That decision does not fit this order now. Refresh the page.",
-      "INVALID_DECISION": "Choose a decision and write a note."
+      "INVALID_DECISION": "Choose a decision and write a note.",
+      "ISSUE_NOT_FOUND": "This issue was not found.",
+      "ISSUE_RESOLVED": "This issue is already resolved. Refresh the page."
     },
     "checkout": {
       "heading": "Buy now",

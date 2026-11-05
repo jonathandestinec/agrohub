@@ -6,7 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, buyerThreadIdOf, ensureBuyerThread, getThread, postSystemMessage } from "@/modules/messaging/service";
 import type { ThreadMessage } from "@/modules/messaging/views";
-import { ledgerBalance, listPayoutIssues } from "@/modules/payments/service";
+import { ledgerBalance, listPayoutIssues, listReconciliationIssues } from "@/modules/payments/service";
 import { refundInFull } from "./cancel";
 import { completeOrder } from "./complete";
 import { loadOwnOrder } from "./delivery";
@@ -259,6 +259,9 @@ export async function listOrderQueue(actor: Actor, now: Date = new Date()): Prom
   }));
   for (const p of await listPayoutIssues(actor, now)) {
     items.push({ kind: "PAYOUT", id: p.id, orderId: p.orderId, orderReference: p.orderReference, detail: p.status, since: p.createdAt });
+  }
+  for (const r of await listReconciliationIssues(actor)) {
+    items.push({ kind: "RECONCILIATION", id: r.id, orderId: r.orderId, orderReference: r.orderId ? orderReference(r.orderId) : null, detail: r.kind, since: r.createdAt });
   }
   return items.sort((a, b) => a.since.localeCompare(b.since) || a.id.localeCompare(b.id));
 }

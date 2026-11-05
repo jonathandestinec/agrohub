@@ -6,6 +6,7 @@ import { toActionResult, type ActionResult } from "@/lib/action-result";
 import { ValidationError } from "@/lib/errors";
 import { requireActor } from "@/modules/identity/session";
 import { resolveDispute } from "@/modules/orders/service";
+import { resolveReconciliationIssue } from "@/modules/payments/service";
 
 const id = z.string().min(1).max(64);
 const outcome = z.enum(["RELEASE", "REFUND_ALL", "REFUND_UNITS", "NOTE"]);
@@ -37,3 +38,14 @@ export async function resolveDisputeAction(input: {
   }
 }
 
+export async function resolveIssueAction(issueId: string, note: string): Promise<ActionResult> {
+  try {
+    const actor = await requireActor();
+    await resolveReconciliationIssue(actor, id.parse(issueId), String(note ?? ""));
+    revalidatePath("/admin/orders");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    if (error instanceof z.ZodError) return { ok: false, code: "INVALID_DECISION" };
+    return toActionResult(error);
+  }
+}

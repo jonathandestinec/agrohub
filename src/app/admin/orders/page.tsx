@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { OrderFieldForm } from "@/components/orders/order-actions";
 import { ArrowUpRight, Chip, PageHeading } from "@/components/ui";
 import { listOrderQueue } from "@/modules/orders/service";
+import { resolveIssueAction } from "./actions";
 
 // Everything waiting for an admin, oldest first: disputes, timeouts, suspended cooperatives'
 // orders, payout problems and reconciliation issues.
@@ -57,6 +59,15 @@ async function Queue() {
                 ) : (
                   <div className="flex min-h-11 flex-col gap-1 rounded-inner bg-paper p-4 md:p-6">{body}</div>
                 )}
+                {item.kind === "RECONCILIATION" ? (
+                  <OrderFieldForm
+                    action={resolveIssueAction.bind(null, item.id)}
+                    label={t("issueNote")}
+                    submit={t("resolveIssue")}
+                    kind="text"
+                    name={`issue-${item.id}`}
+                  />
+                ) : null}
               </li>
             );
           })}

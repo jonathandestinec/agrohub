@@ -1454,7 +1454,9 @@
       "DISPUTE_NOT_FOUND": "",
       "DISPUTE_RESOLVED": "",
       "OUTCOME_NOT_ALLOWED": "",
-      "INVALID_DECISION": ""
+      "INVALID_DECISION": "",
+      "ISSUE_NOT_FOUND": "",
+      "ISSUE_RESOLVED": ""
     },
     "checkout": {
       "heading": "",
