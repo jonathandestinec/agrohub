@@ -26,6 +26,7 @@ model User {
   offers            Offer[]
   threads           Thread[]
   messages          Message[]
+  orders            Order[]
 
   phoneConfirmed Boolean @default(false)
 
@@ -148,6 +149,7 @@ model Cooperative {
   lots                 Lot[]
   offers               Offer[]
   threads              Thread[]
+  orders               Order[]
 
   @@map("cooperative")
 }
@@ -450,6 +452,8 @@ model Lot {
   revisions        LotRevision[]
   offers           Offer[]
   threads          Thread[]
+  orders           Order[]
+  deliveryQuotes   DeliveryQuote[]
 
   @@index([cooperativeId, status])
   @@index([status, availableUntil])
@@ -531,6 +535,8 @@ enum OfferStatus {
   REJECTED
   EXPIRED
   WITHDRAWN
+  // Phase 5: the offer's order was paid; the order now holds the stock.
+  ORDERED
 }
 
 // A buyer's offer on a live lot; every kobo value is per unit. Buyers never see the status
@@ -661,4 +667,199 @@ model NameChangeRequest {
   @@index([status, createdAt])
   @@index([subjectType, subjectId])
   @@map("name_change_request")
+}
+
+// Phase 5: orders, payment held until delivery is confirmed, ledger and refunds.
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID_HELD
+  PREPARING
+  DELIVERED_MARKED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  DISPUTED
+  TIMED_OUT
+}
+
+enum DeliveryMethod {
+  PICKUP
+  DELIVERY
+}
+
+enum PaymentStatus {
+  INITIALIZED
+  SUCCEEDED
+  FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum RefundReason {
+  LATE_PAYMENT
+  BUYER_CANCEL
+  COOPERATIVE_CANCEL
+  SHORTFALL
+  ADMIN_DECISION
+}
+
+enum LedgerAccount {
+  PAYSTACK_BALANCE
+  HELD
+  COOPERATIVE_PAYABLE
+  FARMER_PAYABLE
+  PLATFORM_FEE
+  PAYSTACK_FEES
+  REFUND_PAYABLE
+}
+
+// One lot per order. Terms are copied from the lot's LotFeeTerms at checkout and never change.
+// Money that can pass the 32-bit limit is BIGINT kobo (see koboFromDb / koboToDb).
+model Order {
+  id                String             @id @default(cuid())
+  lotId             String
+  lot               Lot                @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  cooperativeId     String
+  cooperative       Cooperative        @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  buyerUserId       String
+  buyer             User               @relation(fields: [buyerUserId], references: [id], onDelete: Restrict)
+  offerId           String?
+  quantity          Int
+  unitKobo          Int
+  cutBps            Int
+  feeBps            Int
+  deliveryMethod    DeliveryMethod
+  deliveryKobo      BigInt             @default(0)
+  deliveryQuoteId   String?            @unique
+  deliveryQuote     DeliveryQuote?     @relation(fields: [deliveryQuoteId], references: [id], onDelete: Restrict)
+  totalKobo         BigInt
+  status            OrderStatus        @default(PENDING_PAYMENT)
+  cancelReason      String?
+  paidAt            DateTime?
+  preparingAt       DateTime?
+  deliveryDate      DateTime?          @db.Date
+  deliveredQuantity Int?
+  deliveredMarkedAt DateTime?
+  completedAt       DateTime?
+  timedOutAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  reservation       StockReservation?
+  payments          Payment[]
+  refunds           Refund[]
+
+  @@index([lotId, status])
+  @@index([cooperativeId, status])
+  @@index([buyerUserId, createdAt])
+  @@index([status, paidAt])
+  @@index([status, deliveredMarkedAt])
+  @@index([offerId])
+  @@map("order")
+}
+
+// countsTowardStock is false for a checkout from an accepted offer: the offer already holds it.
+model StockReservation {
+  id                String   @id @default(cuid())
+  lotId             String
+  orderId           String   @unique
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  quantity          Int
+  countsTowardStock Boolean
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+
+  @@index([lotId, expiresAt])
+  @@map("stock_reservation")
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  orderId               String
+  order                 Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reference             String        @unique
+  amountKobo            BigInt
+  status                PaymentStatus @default(INITIALIZED)
+  paystackTransactionId String?       @unique
+  feesKobo              BigInt?
+  channel               String?
+  confirmedAt           DateTime?
+  createdAt             DateTime      @default(now())
+
+  @@index([orderId])
+  @@map("payment")
+}
+
+// One row per Paystack webhook delivery key (event:data.id). The payload is trimmed to the
+// event, reference, status, amount and currency: no customer, card or bank data.
+model PaystackEvent {
+  id         String   @id @default(cuid())
+  eventKey   String   @unique
+  event      String
+  reference  String?
+  payload    Json
+  outcome    String?
+  receivedAt DateTime @default(now())
+  // When processing last started: a PROCESSING row older than a few minutes was left by a
+  // killed function and may be taken over by a redelivery.
+  claimedAt  DateTime @default(now())
+
+  @@map("paystack_event")
+}
+
+// Append-only (a trigger refuses UPDATE, DELETE and TRUNCATE) and without foreign keys, like
+// audit_log. Positive amounts are debits; each groupId sums to zero.
+model LedgerEntry {
+  id           String        @id @default(cuid())
+  orderId      String
+  groupId      String
+  kind         String
+  account      LedgerAccount
+  recipientRef String?
+  amountKobo   BigInt
+  createdAt    DateTime      @default(now())
+
+  @@index([orderId])
+  @@index([groupId])
+  @@map("ledger_entry")
+}
+
+// One refund per order and purpose ("late", "cancel", "shortfall", "dispute"), so a retried
+// refund never sends twice.
+model Refund {
+  id                String       @id @default(cuid())
+  orderId           String
+  order             Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  purpose           String
+  reason            RefundReason
+  amountKobo        BigInt
+  status            RefundStatus @default(PENDING)
+  paystackRefundId  String?      @unique
+  requestedByUserId String?
+  processedAt       DateTime?
+  createdAt         DateTime     @default(now())
+
+  @@unique([orderId, purpose])
+  @@map("refund")
+}
+
+// A delivery cost an officer quoted a buyer for a lot, valid 48 hours, used by at most one order.
+model DeliveryQuote {
+  id             String   @id @default(cuid())
+  lotId          String
+  lot            Lot      @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  cooperativeId  String
+  buyerUserId    String
+  amountKobo     BigInt
+  note           String?
+  quotedByUserId String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  order          Order?
+
+  @@index([lotId, buyerUserId])
+  @@map("delivery_quote")
 }

@@ -14,6 +14,7 @@ export const BUYER_STATUS_TONE: Record<BuyerOfferStatus, ChipTone> = {
   DECLINED: "paper",
   EXPIRED: "paper",
   WITHDRAWN: "paper",
+  ORDERED: "lime",
 };
 
 // The cooperative sees every status, AWAITING_FARMER included.
@@ -25,4 +26,5 @@ export const OFFICER_STATUS_TONE: Record<OfferStatus, ChipTone> = {
   REJECTED: "paper",
   EXPIRED: "paper",
   WITHDRAWN: "paper",
+  ORDERED: "lime",
 };

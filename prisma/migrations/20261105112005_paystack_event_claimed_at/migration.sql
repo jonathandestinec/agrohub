@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "paystack_event" ADD COLUMN     "claimedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

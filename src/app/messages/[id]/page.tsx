@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { ThreadPanel } from "@/components/messages/thread-panel";
+import { QuoteForm } from "@/components/orders/quote-form";
 import { PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { getThread, type ThreadView } from "@/modules/messaging/service";
@@ -36,6 +37,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
         </Link>
       </PageHeading>
       <ThreadPanel thread={thread} />
+      {actor.role === "OFFICER" && thread.kind === "BUYER_COOPERATIVE" ? <QuoteForm threadId={thread.id} /> : null}
     </main>
   );
 }

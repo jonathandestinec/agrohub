@@ -5,12 +5,16 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { OpenThreadButton } from "@/components/messages/open-thread-button";
 import { ThreadPanel } from "@/components/messages/thread-panel";
+import { CheckoutForm } from "@/components/orders/checkout-form";
 import { BUYER_STATUS_TONE, buyerStatusLabelKey } from "@/components/offers/status";
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { formatNaira } from "@/lib/money";
+import { getPublicLot } from "@/modules/catalog/service";
+import type { Actor } from "@/modules/identity/policies";
 import { getOwnOffer, type BuyerOffer } from "@/modules/marketplace/service";
 import { findBuyerThreadId, getThread } from "@/modules/messaging/service";
+import { listUsableQuotes } from "@/modules/orders/service";
 import { BuyerOfferActions } from "./counter-response";
 
 export default function BuyerOfferPage({ params }: PageProps<"/buyer/offers/[id]">) {
@@ -66,13 +70,13 @@ async function BuyerOfferDetail({ params }: { params: PageProps<"/buyer/offers/[
         {offer.status === "ACCEPTED" && offer.payByAt ? (
           <>
             <p className="body-4">{t("buyer.payBy", { time: time.format(new Date(offer.payByAt)) })}</p>
-            <p className="body-6 text-ink-soft">{t("buyer.paymentLater")}</p>
           </>
         ) : null}
         <Link href={`/lots/${offer.lot.id}`} className="body-6 underline underline-offset-2">
           {t("buyer.viewLot")}
         </Link>
       </Card>
+      {offer.status === "ACCEPTED" ? <PayOffer offer={offer} actor={actor} /> : null}
       {live ? <BuyerOfferActions offerId={offer.id} countered={offer.status === "COUNTERED"} /> : null}
       <section aria-labelledby="thread-heading" className="flex flex-col gap-3">
         <h2 id="thread-heading" className="heading-6">
@@ -81,5 +85,33 @@ async function BuyerOfferDetail({ params }: { params: PageProps<"/buyer/offers/[
         {thread ? <ThreadPanel thread={thread} /> : <OpenThreadButton lotId={offer.lot.id} label={t("buyer.messageCooperative")} />}
       </section>
     </main>
+  );
+}
+
+// An accepted offer is paid at its agreed price for its quantity, with pickup or a delivery quote.
+async function PayOffer({ offer, actor }: { offer: BuyerOffer; actor: Actor }) {
+  const t = await getTranslations("orders");
+  const locale = await getLocale();
+  const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
+  let lot;
+  try {
+    lot = await getPublicLot(offer.lot.id);
+  } catch (error) {
+    if (error instanceof NotFoundError) return null;
+    throw error;
+  }
+  const quotes = await listUsableQuotes(actor, offer.lot.id);
+  return (
+    <CheckoutForm
+      source="OFFER"
+      offerId={offer.id}
+      unitKobo={offer.agreedKobo ?? offer.offeredKobo}
+      unit={offer.lot.unit}
+      minQuantity={offer.quantity}
+      maxQuantity={offer.quantity}
+      fixedQuantity={offer.quantity}
+      pickupLabel={t("checkout.pickup", { lga: lot.pickupLga, state: lot.pickupState })}
+      quotes={quotes.map((q) => ({ id: q.id, amountKobo: q.amountKobo, until: time.format(new Date(q.expiresAt)) }))}
+    />
   );
 }

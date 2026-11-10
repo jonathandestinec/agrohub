@@ -71,6 +71,15 @@ DATABASE_URL=<production-direct-database-url> npx prisma migrate deploy
 
 Start each command with a space under `HISTCONTROL=ignorespace` to keep the URL out of shell history. Never `prisma db push` or `prisma migrate dev` against staging or production.
 
+### Paystack webhook and payments (Phase 5)
+
+Payments need no new variable: the webhook signature is checked with `PAYSTACK_SECRET_KEY`, and Paystack sends the buyer back to `<BETTER_AUTH_URL>/buyer/orders/<order>` (on previews, the Vercel branch URL).
+
+1. Paystack dashboard, **Test mode**, Settings, API Keys & Webhooks: set **Test Webhook URL** to `https://<staging-url>/api/paystack/webhook`, where `<staging-url>` is the stable staging address (the branch alias or a custom domain, not a per-deployment hash URL). Paystack keeps one test webhook URL per account. Production later gets the **Live Webhook URL** on its own domain.
+2. If Vercel Deployment Protection is on for previews, Paystack's webhook gets 401 and no order is ever marked paid. Either turn protection off for the staging deployment, or under Project, Settings, Deployment Protection, create a **Protection Bypass for Automation** secret and add `?x-vercel-protection-bypass=<that secret>` to the webhook URL in step 1. Never put that secret in the repo.
+3. Test mode, Settings, Preferences, **Payment channels**: card, bank transfer and USSD on (bulk orders can exceed card limits).
+4. An order is marked paid only by a signed `charge.success` that Paystack's verify call confirms (status success, exact amount in kobo, NGN). Returning from Paystack's page never marks anything paid, so a blocked webhook shows as "We're confirming your payment" for ever.
+
 ### First admin on staging
 
 Sign up on the staging preview with the admin's own email and verify it, then run the `admin:grant` procedure below with the staging direct URL. On first opening an admin page they are sent to `/two-factor` to enrol.
@@ -106,6 +115,7 @@ DATABASE_URL=<database-url> npm run admin:grant -- <email> <ADMIN|BOARD_ADMIN>
 
 `vercel.json` lists the cron jobs; each calls `GET /api/cron/<job>` with `Authorization: Bearer $CRON_SECRET`.
 
+- `order-expiry`, daily at 04:45 UTC: checkouts still unpaid 24 hours after they started are cancelled (`PAYMENT_EXPIRED`). Their 15-minute reservations already stopped counting; a payment that still lands later is accepted if the stock is free and refunded in full if not.
 - `bank-change-apply`, daily at 05:00 UTC (`0 5 * * *`; Vercel Hobby allows only daily crons): copies confirmed bank account changes whose 48-hour wait has passed onto the cooperative. Payout code reads the effective account through `effectiveRecipientCode`, so a change counts at its effective time even before the job runs.
 
 ## Local development pages
@@ -113,6 +123,7 @@ DATABASE_URL=<database-url> npm run admin:grant -- <email> <ADMIN|BOARD_ADMIN>
 - With `PAYSTACK_SECRET_KEY` empty and `APP_ENV=local`, Paystack calls use an in-memory fake (`fakePaystack` in `src/lib/paystack.ts`) with five banks and no accounts; an account check fails with `BANK_ACCOUNT_NOT_FOUND` until a test adds one. Bank change confirmation links appear in the fake outbox.
 - `GET /api/dev/outbox` returns the fake outbox (emails "sent" locally) as JSON. It answers only when `APP_ENV=local` and returns 404 everywhere else. The e2e tests read verification links from it.
 - `POST /api/dev/paystack/accounts` with JSON `{ "bankCode", "accountNumber", "accountName" }` adds an account to the running server's fake Paystack (201; 400 for a bad body). Same guards as the outbox: 404 unless `APP_ENV=local` and `NODE_ENV` is not `production`. The e2e journey uses it so bank account checks resolve.
+- `/dev/paystack/checkout?reference=<pay_...>` stands in for Paystack's checkout page while the fake is in use: "Pay (test)" settles the fake transaction and delivers its signed `charge.success` through the real webhook handler, then returns to the order. It is a 404 unless `APP_ENV=local`, `NODE_ENV` is not `production` and the fake is selected.
 - `npx playwright test` starts its own `next dev` on port 3100 against `agrohub_test`, so a dev server on :3000 is never touched. Integration tests clean that same database, so never run the two at the same time.
 
 ## Operational notes

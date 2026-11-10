@@ -94,10 +94,10 @@ Plan: `2026-10-31-agrohub-phase-0-foundation.md`. **Done when:** staging deploys
 ## Phase 5: Orders, payment hold, delivery and payouts
 
 **Depends on:** Phase 4. **Gate:** Paystack's written answer on holding funds and manual settlement is in hand, and you have confirmed the payment method. Spec 5.2, 6.6 to 6.8, 7, 13.
-- [ ] 5.1 Order state machine (`orders/state.ts`) with legal transitions only.
-- [ ] 5.2 Stock reservation under a row lock; 15-minute expiry job.
-- [ ] 5.3 Paystack client: initialize, verify, refund; webhook route with signature check.
-- [ ] 5.4 Payment records, `PaystackEvent` idempotency, append-only ledger with the zero-sum invariant.
+- [x] 5.1 Order state machine (`orders/state.ts`) with legal transitions only.
+- [x] 5.2 Stock reservation under a row lock; 15-minute expiry job.
+- [x] 5.3 Paystack client: initialize, verify, refund; webhook route with signature check.
+- [x] 5.4 Payment records, `PaystackEvent` idempotency, append-only ledger with the zero-sum invariant.
 - [ ] 5.5 Delivery schedule, delivery marking, buyer confirmation, 3-day auto-release, 14-day timeout.
 - [ ] 5.6 `payments/payout-gateway.ts` interface and Paystack transfer implementation; payouts per recipient with unique references; payout waits for cleared funds.
 - [ ] 5.7 Failed payouts: failed state, admin alert, retry; bank-change window rule.

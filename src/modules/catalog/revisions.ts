@@ -5,8 +5,10 @@ import type { Actor } from "@/modules/identity/policies";
 import { getPlatformSettings } from "@/modules/settings/service";
 import { revisionInput, type RevisionInput } from "./lot-schema";
 import { assertFloorAtMostAsk, checkAgainstBoard, loadLot, loadOwnLot, photoUrlsOf } from "./lots";
+import { lockLot } from "./negotiation";
 import { hasOpenOrders } from "./orders-guard";
 import { assertMayScreen } from "./screening";
+import { committedQuantity } from "./stock";
 import { toFarmerLot, type FarmerLot } from "./views";
 
 const REASON_MIN = 3;
@@ -101,6 +103,11 @@ export async function decideRevision(
     });
     if (count === 0) throw new ConflictError("Change already answered", "REVISION_NOT_PENDING");
     if (approve) {
+      // Checkouts and acceptances lock the lot too, so the committed count cannot move under us.
+      await lockLot(tx, lot.id);
+      if (revision.quantity < (await committedQuantity(tx, lot.id, now))) {
+        throw new ConflictError("Some of this lot is already sold or held", "QUANTITY_BELOW_COMMITTED");
+      }
       const updated = await tx.lot.updateMany({
         where: { id: lot.id, status: "LIVE" },
         data: {

@@ -1,5 +1,5 @@
 // The marketplace module's public entry: offers and negotiation over live lots.
-export { expireOffers, getOwnOffer, listOwnOffers, makeOffer } from "./offers";
+export { checkoutFactsForOffer, expireOffers, getOwnOffer, listOwnOffers, makeOffer, markOfferOrdered } from "./offers";
 export {
   farmerRespondToOffer,
   getCooperativeOffer,
