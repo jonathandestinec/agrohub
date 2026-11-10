@@ -6,6 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { committedQuantity, isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
+import { buyer as buyerRecipient, farmersOfLot, notify, officersOf } from "@/modules/notifications/service";
 import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, REFERRAL_MIN_HOURS, hoursAfter } from "./limits";
 import { LIVE_OFFER, buyerViewOf, loadOwnOffer } from "./offers";
 import { respondToOfferInput, type RespondToOfferInput } from "./schema";
@@ -68,6 +69,51 @@ async function loadOfferForOfficer(actor: Actor, offerId: string): Promise<Coope
     throw new NotFoundError("OFFER_NOT_FOUND");
   }
   return row;
+}
+
+// What an offer alert needs. Quantity, crop and unit only: never a price.
+type AlertOffer = {
+  id: string;
+  cooperativeId: string;
+  buyerUserId: string;
+  quantity: number;
+  lot: { crop: { name: string }; unit: { name: string } };
+};
+
+function alertData(offer: AlertOffer) {
+  return { crop: offer.lot.crop.name, quantity: offer.quantity, unit: offer.lot.unit.name };
+}
+
+// Tell the buyer how their offer was answered, inside the transaction that answered it.
+async function tellBuyer(
+  tx: Prisma.TransactionClient,
+  kind: "OFFER_ACCEPTED" | "OFFER_COUNTERED" | "OFFER_DECLINED",
+  offer: AlertOffer,
+  actorId: string,
+): Promise<void> {
+  await notify(tx, {
+    kind,
+    subject: { type: "OFFER", id: offer.id },
+    data: alertData(offer),
+    to: [buyerRecipient(offer.buyerUserId)],
+    exclude: actorId,
+  });
+}
+
+// Tell the cooperative's officers what the buyer or the farmer did with an offer.
+async function tellOfficers(
+  tx: Prisma.TransactionClient,
+  kind: "OFFER_COUNTER_ANSWERED" | "OFFER_FARMER_ANSWERED" | "OFFER_WITHDRAWN",
+  offer: AlertOffer,
+  actorId: string,
+): Promise<void> {
+  await notify(tx, {
+    kind,
+    subject: { type: "OFFER", id: offer.id },
+    data: alertData(offer),
+    to: await officersOf(tx, offer.cooperativeId),
+    exclude: actorId,
+  });
 }
 
 function assertNotExpired(expiresAt: Date, now: Date): void {
@@ -189,6 +235,7 @@ export async function respondToOffer(
   await prisma.$transaction(async (tx) => {
     if (decision === "ACCEPT" && !referral) {
       await accept(tx, row, "OPEN", row.offeredKobo, actor.userId, "offer.accept", now);
+      await tellBuyer(tx, "OFFER_ACCEPTED", row, actor.userId);
     } else if (decision === "ACCEPT") {
       await move(
         tx,
@@ -199,6 +246,14 @@ export async function respondToOffer(
         "OFFER_NOT_OPEN",
         now,
       );
+      // The buyer is told nothing yet (their view must not move); the farmer is asked.
+      await notify(tx, {
+        kind: "OFFER_NEEDS_FARMER",
+        subject: { type: "LOT", id: row.lotId },
+        data: alertData(row),
+        to: await farmersOfLot(tx, row.lotId),
+        exclude: actor.userId,
+      });
     } else if (decision === "REJECT") {
       await move(
         tx,
@@ -209,6 +264,7 @@ export async function respondToOffer(
         "OFFER_NOT_OPEN",
         now,
       );
+      await tellBuyer(tx, "OFFER_DECLINED", row, actor.userId);
     } else {
       await move(
         tx,
@@ -219,6 +275,7 @@ export async function respondToOffer(
         "OFFER_NOT_OPEN",
         now,
       );
+      await tellBuyer(tx, "OFFER_COUNTERED", row, actor.userId);
     }
   });
   if (note) await postToBuyerThread(actor, row.lotId, row.buyerUserId, note, now);
@@ -244,6 +301,7 @@ export async function farmerRespondToOffer(
   await prisma.$transaction(async (tx) => {
     if (agree) {
       await accept(tx, row, "AWAITING_FARMER", row.offeredKobo, actor.userId, "offer.farmer_agree", now);
+      await tellBuyer(tx, "OFFER_ACCEPTED", row, actor.userId);
     } else {
       await move(
         tx,
@@ -254,7 +312,9 @@ export async function farmerRespondToOffer(
         "OFFER_NOT_AWAITING_FARMER",
         now,
       );
+      await tellBuyer(tx, "OFFER_DECLINED", row, actor.userId);
     }
+    await tellOfficers(tx, "OFFER_FARMER_ANSWERED", row, actor.userId);
   });
   return farmerViewOf((await loadCooperativeOffer(row.id)) as CooperativeOfferRow, now);
 }
@@ -285,6 +345,7 @@ export async function respondToCounter(
         now,
       );
     }
+    await tellOfficers(tx, "OFFER_COUNTER_ANSWERED", offer, actor.userId);
   });
   return buyerViewOf(await loadOwnOffer(actor, offerId), now);
 }
@@ -296,8 +357,8 @@ export async function withdrawOffer(actor: Actor, offerId: string, now: Date = n
   }
   assertNotExpired(offer.expiresAt, now);
   if (!isPubliclyVisible(offer.lot, now)) throw notAvailable();
-  await prisma.$transaction((tx) =>
-    move(
+  await prisma.$transaction(async (tx) => {
+    await move(
       tx,
       offer,
       LIVE_OFFER,
@@ -305,8 +366,9 @@ export async function withdrawOffer(actor: Actor, offerId: string, now: Date = n
       { actorId: actor.userId, action: "offer.withdraw", meta: { offerId: offer.id } },
       "OFFER_NOT_LIVE",
       now,
-    ),
-  );
+    );
+    await tellOfficers(tx, "OFFER_WITHDRAWN", offer, actor.userId);
+  });
   return buyerViewOf(await loadOwnOffer(actor, offerId), now);
 }
 

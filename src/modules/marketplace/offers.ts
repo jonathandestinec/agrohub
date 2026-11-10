@@ -13,6 +13,7 @@ import {
 import { can, type Actor } from "@/modules/identity/policies";
 import { holdsCooperativeRole } from "@/modules/identity/service";
 import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
+import { buyer, notify, officersOf } from "@/modules/notifications/service";
 import {
   HOUR_MS,
   OFFER_TTL_HOURS,
@@ -157,6 +158,14 @@ export async function makeOffer(
       },
       tx,
     );
+    // A replaced earlier offer raises no withdrawal alert: this one covers it.
+    await notify(tx, {
+      kind: "OFFER_RECEIVED",
+      subject: { type: "OFFER", id: created.id },
+      data: { crop: created.lot.crop.name, quantity, unit: created.lot.unit.name },
+      to: await officersOf(tx, created.cooperativeId),
+      exclude: actor.userId,
+    });
     return created;
   });
   if (note) await postToBuyerThread(actor, lotId, actor.userId, note, now);
@@ -221,6 +230,21 @@ export async function expireOffers(now: Date = new Date()): Promise<number> {
         },
         tx,
       );
+      // Only on the branch where this run moved the offer, so a second run adds nothing.
+      const row = await tx.offer.findUniqueOrThrow({
+        where: { id: offer.id },
+        select: {
+          buyerUserId: true,
+          quantity: true,
+          lot: { select: { crop: { select: { name: true } }, unit: { select: { name: true } } } },
+        },
+      });
+      await notify(tx, {
+        kind: "OFFER_EXPIRED",
+        subject: { type: "OFFER", id: offer.id },
+        data: { crop: row.lot.crop.name, quantity: row.quantity, unit: row.lot.unit.name },
+        to: [buyer(row.buyerUserId)],
+      });
     });
   }
   return expired;
