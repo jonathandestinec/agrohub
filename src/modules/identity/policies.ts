@@ -51,7 +51,8 @@ export type Action =
   | "order:admin"
   | "quote:make"
   | "earnings:own"
-  | "payout:manage";
+  | "payout:manage"
+  | "notification:own";
 
 export type Resource = {
   cooperativeId?: string;
@@ -172,6 +173,12 @@ export function can(
       // A farmer's own earnings statements, on lots they contributed to.
       return (
         actor.role === "FARMER" &&
+        resource?.ownerUserId !== undefined &&
+        resource.ownerUserId === actor.userId
+      );
+    case "notification:own":
+      // Any role, but only the alerts that belong to the actor.
+      return (
         resource?.ownerUserId !== undefined &&
         resource.ownerUserId === actor.userId
       );

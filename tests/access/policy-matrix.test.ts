@@ -250,6 +250,13 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["earnings:own", "BUYER", false],
   ["earnings:own", "ADMIN", false],
   ["earnings:own", "BOARD_ADMIN", false],
+
+  // notification:own needs the owner to be the actor; the matrix resource has no owner.
+  ["notification:own", "FARMER", false],
+  ["notification:own", "OFFICER", false],
+  ["notification:own", "BUYER", false],
+  ["notification:own", "ADMIN", false],
+  ["notification:own", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -270,7 +277,22 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(185);
+    expect(matrix).toHaveLength(190);
+  });
+});
+
+describe("notification:own", () => {
+  it.each(["FARMER", "OFFICER", "BUYER", "ADMIN", "BOARD_ADMIN"] as const)(
+    "allows_%s_to_read_their_own_alerts",
+    (role) => {
+      expect(can(actor(role, COOP), "notification:own", { ownerUserId: "user-1" })).toBe(true);
+    },
+  );
+  it("denies_another_persons_alerts", () => {
+    expect(can(actor("ADMIN"), "notification:own", { ownerUserId: "someone-else" })).toBe(false);
+  });
+  it("denies_when_no_owner_is_given", () => {
+    expect(can(actor("BUYER"), "notification:own")).toBe(false);
   });
 });
 
