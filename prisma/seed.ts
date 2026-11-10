@@ -4,7 +4,8 @@
 // Creates one admin and one board admin (two-factor off, so /two-factor enrolment shows),
 // one VERIFIED cooperative with an ACTIVE officer, one PENDING farmer with a profile, the
 // crop and unit lists, and real October 2026 market prices on the board (board data only into
-// an empty crop list). Re-running it adds nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
+// an empty crop list). It also builds the demo journey (seedJourney below): an ACTIVE grower
+// with four live lots, an accepted offer, and orders at every stage. Re-running it adds nothing. tsx never loads .env, so the database is DATABASE_URL or local Docker.
 import { randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import type { SignUpEmailBody } from "@/lib/auth";
@@ -19,6 +20,20 @@ export const SEED = {
   officer: { name: "Seed Officer", email: "seed-officer@example.com" },
   farmer: { name: "Seed Farmer", email: "seed-farmer@example.com" },
   buyer: { name: "Seed Buyer", email: "seed-buyer@example.com" },
+  // The demo journey's second buyer and the ACTIVE farmer who owns its lots (the PENDING
+  // farmer above stays pending, for the officer's approval screen).
+  buyerTwo: { name: "Seed Buyer Two", email: "seed-buyer2@example.com" },
+  grower: { name: "Seed Grower", email: "seed-grower@example.com" },
+  // Obviously fake payout accounts: no bank data of any kind.
+  bank: { grower: "RCP_seed_grower", cooperative: "RCP_seed_cooperative" },
+  // The lots of the demo journey, all from the seeded cooperative and its grower, priced
+  // within 20% of the newest board price of the same crop and unit.
+  lots: [
+    { key: "maize", crop: "Maize", unit: "100kg bag", quantity: 200, askKobo: 3_300_000, floorKobo: 3_100_000, minOrderQty: 10 },
+    { key: "rice", crop: "Paddy rice", unit: "100kg bag", quantity: 80, askKobo: 4_200_000, floorKobo: 3_900_000, minOrderQty: 5 },
+    { key: "soybeans", crop: "Soybeans", unit: "100kg bag", quantity: 60, askKobo: 5_200_000, floorKobo: 4_900_000, minOrderQty: 5 },
+    { key: "sorghum", crop: "Sorghum", unit: "100kg bag", quantity: 50, askKobo: 3_900_000, floorKobo: 3_600_000, minOrderQty: 5 },
+  ],
   phone: "+2348000000000",
   cooperative: {
     name: "Seed Demo Farmers Cooperative",
@@ -183,6 +198,8 @@ export async function seed(): Promise<{ password: string | null; created: string
   const officerId = await ensureUser(SEED.officer);
   const farmerId = await ensureUser(SEED.farmer);
   const buyerId = await ensureUser(SEED.buyer);
+  const growerId = await ensureUser(SEED.grower);
+  const buyerTwoId = await ensureUser(SEED.buyerTwo);
 
   const now = new Date();
   const cooperative = await prisma.cooperative.upsert({
@@ -219,13 +236,12 @@ export async function seed(): Promise<{ password: string | null; created: string
 
   await ensureMembership({ userId: boardId, role: "BOARD_ADMIN", status: "ACTIVE" });
   await ensureMembership({ userId: buyerId, role: "BUYER", status: "ACTIVE" });
+  await ensureMembership({ userId: buyerTwoId, role: "BUYER", status: "ACTIVE" });
+  await ensureMembership({ userId: growerId, role: "FARMER", cooperativeId: cooperative.id, status: "ACTIVE" });
   // Board data is seeded once, into an empty crop list. After that it belongs to the board
   // admins: a re-run never re-creates a renamed crop, prices a hidden one, or reverts a
   // corrected price.
-  if ((await prisma.crop.count()) > 0) {
-    return { password: created.length > 0 ? password : null, created };
-  }
-
+  async function seedBoard(): Promise<void> {
   // Crops, units and prices go through the services, as the seeded board admin would.
   const board = { userId: boardId, role: "BOARD_ADMIN", cooperativeId: null, twoFactorEnabled: true } as const;
   async function ensureItem(kind: "crop" | "unit", name: string): Promise<string> {
@@ -258,8 +274,191 @@ export async function seed(): Promise<{ password: string | null; created: string
       priceKobo,
     });
   }
+  }
+  if ((await prisma.crop.count()) === 0) await seedBoard();
+
+  await seedJourney({ cooperativeId: cooperative.id, officerId, growerId, buyerId, buyerTwoId });
 
   return { password: created.length > 0 ? password : null, created };
+}
+
+// The Phase 3-5 demo journey: four live lots, an accepted offer, and one order at each stage.
+// Everything goes through the module services with the right Actor and an explicit `now` in the
+// past, so the rows cannot drift from the business rules. Written directly (no service exists
+// for them, or it would call a real provider): the farmer's and the cooperative's fake payout
+// account codes, each lot's createdAt (submitLot stamps the real time), the accepted offer's
+// 7-day pay-by (the service gives 24 hours), and the payment confirmation, which calls
+// confirmPayment as the webhook does but without a PaystackEvent row (the webhook handler
+// cannot be given a past time). Each piece is created once: a re-run finds it and adds nothing.
+async function seedJourney(ids: {
+  cooperativeId: string;
+  officerId: string;
+  growerId: string;
+  buyerId: string;
+  buyerTwoId: string;
+}): Promise<void> {
+  const [{ prisma }, catalog, marketplace, orders, payments, { fakeSettle }, { addDays, lagosDateKey }] =
+    await Promise.all([
+      import("@/lib/db"),
+      import("@/modules/catalog/service"),
+      import("@/modules/marketplace/service"),
+      import("@/modules/orders/service"),
+      import("@/modules/payments/service"),
+      import("@/lib/paystack"),
+      import("@/lib/lagos-date"),
+    ]);
+  type Actor = import("@/modules/identity/policies").Actor;
+  const T = new Date();
+  const DAY = 86_400_000;
+  // A moment `days` ago, plus some minutes.
+  const ago = (days: number, minutes = 0) => new Date(T.getTime() - days * DAY + minutes * 60_000);
+
+  const farmer: Actor = { userId: ids.growerId, role: "FARMER", cooperativeId: ids.cooperativeId, twoFactorEnabled: false };
+  const officer: Actor = { userId: ids.officerId, role: "OFFICER", cooperativeId: ids.cooperativeId, twoFactorEnabled: true };
+  const buyer1: Actor = { userId: ids.buyerId, role: "BUYER", cooperativeId: null, twoFactorEnabled: false };
+  const buyer2: Actor = { userId: ids.buyerTwoId, role: "BUYER", cooperativeId: null, twoFactorEnabled: false };
+
+  // Fake payout accounts, set once (an account an officer or farmer already set is kept).
+  await prisma.cooperative.updateMany({
+    where: { id: ids.cooperativeId, recipientCode: null },
+    data: { recipientCode: SEED.bank.cooperative, accountName: "SEED DEMO COOPERATIVE", bankName: "Seed Demo Bank" },
+  });
+  await prisma.farmerProfile.upsert({
+    where: { userId: ids.growerId },
+    create: {
+      userId: ids.growerId,
+      cooperativeId: ids.cooperativeId,
+      farmSizeHectares: "4.00",
+      state: SEED.profile.state,
+      lga: SEED.profile.lga,
+      recipientCode: SEED.bank.grower,
+      accountName: "SEED GROWER",
+      crops: { connect: SEED.lots.map((l) => ({ nameKey: l.crop.toLowerCase() })) },
+    },
+    update: {},
+  });
+
+  // JPEG magic bytes only; the seed has no bucket to put a picture in (see the pull request).
+  const photo = { body: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]), contentType: "image/jpeg" };
+  const lotIds = new Map<string, string>();
+  for (const spec of SEED.lots) {
+    const crop = await prisma.crop.findUnique({ where: { nameKey: spec.crop.toLowerCase() } });
+    const unit = await prisma.unit.findUnique({ where: { nameKey: spec.unit.toLowerCase() } });
+    if (!crop || !unit) continue; // a board admin renamed or removed it: skip rather than invent
+    const existing = await prisma.lot.findFirst({
+      where: { cooperativeId: ids.cooperativeId, farmerUserId: ids.growerId, cropId: crop.id, unitId: unit.id },
+    });
+    if (existing) {
+      lotIds.set(spec.key, existing.id);
+      continue;
+    }
+    const submitted = await catalog.submitLot(
+      farmer,
+      {
+        cropId: crop.id,
+        unitId: unit.id,
+        quantity: spec.quantity,
+        grade: "A",
+        pickupState: "Kaduna",
+        pickupLga: "Zaria",
+        pickupNote: "Collect at the cooperative store in Zaria",
+        askKobo: spec.askKobo,
+        floorKobo: spec.floorKobo,
+        note: `Dry, cleaned ${spec.crop.toLowerCase()} from this season's harvest.`,
+        availableUntil: addDays(lagosDateKey(T), 45),
+      },
+      [photo],
+      ago(12),
+    );
+    await prisma.lot.update({ where: { id: submitted.id }, data: { createdAt: ago(12) } });
+    await catalog.approveLot(officer, submitted.id, { minOrderQty: spec.minOrderQty }, ago(12, -60));
+    lotIds.set(spec.key, submitted.id);
+  }
+
+  // An accepted offer, ready to be checked out: the buyer offers below the ask, above the floor.
+  const maizeId = lotIds.get("maize");
+  if (maizeId && !(await prisma.offer.findFirst({ where: { lotId: maizeId, buyerUserId: ids.buyerId } }))) {
+    const offer = await marketplace.makeOffer(buyer1, { lotId: maizeId, quantity: 20, offeredKobo: 3_200_000 }, T);
+    await marketplace.respondToOffer(officer, offer.id, { decision: "ACCEPT" }, T);
+    // The service holds an accepted offer 24 hours; the demo keeps it open for a week.
+    await prisma.offer.update({ where: { id: offer.id }, data: { payByAt: new Date(T.getTime() + 7 * DAY) } });
+  }
+
+  // Checks out `quantity` of a lot at `at`, and has the buyer pay on Paystack's (fake) page.
+  async function checkout(actor: Actor, lotId: string, quantity: number, at: Date): Promise<string> {
+    const { orderId } = await orders.startCheckout(actor, { source: "LOT", lotId, quantity }, at);
+    return orderId;
+  }
+  async function pay(orderId: string, at: Date): Promise<void> {
+    const payment = await prisma.payment.findFirstOrThrow({ where: { orderId } });
+    fakeSettle(payment.reference, "success", undefined, at);
+    await payments.confirmPayment(payment.reference, at);
+  }
+  // A stage is created once per buyer and lot: any order of that pair means it is there.
+  async function missing(lotKey: string, actor: Actor): Promise<string | null> {
+    const lotId = lotIds.get(lotKey);
+    if (!lotId) return null;
+    return (await prisma.order.count({ where: { lotId, buyerUserId: actor.userId } })) === 0 ? lotId : null;
+  }
+
+  // Awaiting payment. Its 15-minute reservation has lapsed by the time anyone looks, which only
+  // means it no longer holds stock. Created now, not back-dated, because the unpaid-order job
+  // cancels checkouts 24 hours old; if it did, a re-run puts a fresh one in its place.
+  if (maizeId) {
+    const placed = await prisma.order.findMany({ where: { lotId: maizeId, buyerUserId: ids.buyerTwoId } });
+    if (placed.every((o) => o.status === "CANCELLED" && o.cancelReason === "PAYMENT_EXPIRED")) {
+      await checkout(buyer2, maizeId, 10, T);
+    }
+  }
+
+  // Paid, payment held until delivery is confirmed.
+  let lotId = await missing("rice", buyer1);
+  if (lotId) await pay(await checkout(buyer1, lotId, 10, ago(2)), ago(2, 10));
+
+  // Preparing, with a delivery date.
+  lotId = await missing("rice", buyer2);
+  if (lotId) {
+    const orderId = await checkout(buyer2, lotId, 8, ago(3));
+    await pay(orderId, ago(3, 10));
+    await orders.startPreparing(officer, orderId, ago(2, 30));
+    await orders.setDeliveryDate(officer, orderId, addDays(lagosDateKey(T), 2), ago(2, 31));
+  }
+
+  // Delivered, waiting for the buyer: marked a day ago, well inside the 72 hours to auto-release.
+  lotId = await missing("soybeans", buyer1);
+  if (lotId) {
+    const orderId = await checkout(buyer1, lotId, 12, ago(4));
+    await pay(orderId, ago(4, 10));
+    await orders.markDelivered(officer, orderId, 12, ago(1));
+  }
+
+  // Completed: delivered, confirmed by the buyer, and both payouts sent through the fake Paystack.
+  lotId = await missing("soybeans", buyer2);
+  if (lotId) {
+    const orderId = await checkout(buyer2, lotId, 15, ago(9));
+    await pay(orderId, ago(9, 10));
+    await orders.markDelivered(officer, orderId, 15, ago(6));
+    await orders.confirmReceipt(buyer2, orderId, ago(5));
+  }
+
+  // Refunded: the buyer cancelled the paid order and the refund was settled.
+  lotId = await missing("sorghum", buyer1);
+  if (lotId) {
+    const orderId = await checkout(buyer1, lotId, 10, ago(6));
+    await pay(orderId, ago(6, 10));
+    await orders.cancelOrder(buyer1, orderId, "Changed my plans", ago(6, 60));
+    const refund = await prisma.refund.findFirstOrThrow({ where: { orderId } });
+    await payments.settleRefund({ refundId: refund.paystackRefundId ?? undefined }, "PROCESSED", ago(6, 90));
+  }
+
+  // In dispute: delivered, then reported by the buyer; the money stays held for an admin.
+  lotId = await missing("sorghum", buyer2);
+  if (lotId) {
+    const orderId = await checkout(buyer2, lotId, 12, ago(3));
+    await pay(orderId, ago(3, 10));
+    await orders.markDelivered(officer, orderId, 12, ago(2));
+    await orders.reportProblem(buyer2, orderId, "Some of the bags arrived damp and torn.", ago(1, 5));
+  }
 }
 
 async function main(argv: string[]): Promise<number> {
