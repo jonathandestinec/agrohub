@@ -6,8 +6,9 @@ import {
   enrolTwoFactor,
   fillSignIn,
   HOME,
-  nav,
+  LANDING,
   newPage,
+  openNav,
   PDF,
   signIn,
   uniqueEmail,
@@ -115,7 +116,9 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await addFakeBankAccount(request, { bankCode: "058", accountNumber, accountName });
     await clickNav(page, "My cooperative");
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
-    await expect(nav(page, "My cooperative")).toHaveAttribute("aria-current", "page");
+    // The link sits in the Cooperative group: open it, check it, close it again.
+    await expect(await openNav(page, "My cooperative")).toHaveAttribute("aria-current", "page");
+    await page.keyboard.press("Escape");
     await saveBankAccount(page, "Guaranty Trust Bank", accountNumber);
     await expect(page.getByText(`Saved. The name on the account is ${accountName}.`)).toBeVisible();
     await expect(
@@ -131,15 +134,13 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await grantAdmin(admin.email);
 
     await signIn(page, admin.email);
-    await expect(page).toHaveURL(HOME);
     // An admin without two-factor is sent to enrol before the queue opens.
-    await clickNav(page, "Review cooperatives");
-    await expect(page).toHaveURL(/\/two-factor$/);
+    await expect(page).toHaveURL(LANDING.twoFactor);
     await enrolTwoFactor(page);
 
     // Clicked, not loaded with goto: pins that enrolling clears the client router's
     // cached redirect to /two-factor (it used to bounce the admin back home).
-    await clickNav(page, "Review cooperatives");
+    await clickNav(page, "Cooperatives");
     await expect(page.getByRole("heading", { name: "Cooperatives awaiting review" })).toBeVisible();
     await page.getByRole("link", { name: new RegExp(cooperativeName) }).click();
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
@@ -188,7 +189,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     // Pending approval, so no ACTIVE membership: the header links to the farm page.
     // (Scrolled up first: the pinned nav hides its links while the page is scrolled down.)
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(nav(page, "Your farm")).toBeVisible();
+    await expect(page.getByRole("navigation").getByRole("link", { name: "Your farm", exact: true })).toBeVisible();
 
     const accountNumber = uniqueAccountNumber();
     const accountName = `MUSA ${tag} ABUBAKAR`;

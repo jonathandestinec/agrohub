@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { grantRole } from "./grant";
-import { clickNav, completeSignUp, enrolTwoFactor, HOME, newPage, signIn, uniqueEmail, uniqueTag } from "./journey";
+import { clickNav, completeSignUp, enrolTwoFactor, HOME, LANDING, newPage, signIn, uniqueEmail, uniqueTag } from "./journey";
 import { setUpLotWorld } from "./lot-world";
 
 // Phase 5b: a buyer pays for 10 bags; the officer prepares, proposes a date and marks 8 of 10
@@ -68,9 +68,9 @@ test("delivery, a shortfall, confirmation, payouts and an admin refund", async (
     });
     await grantRole(admin.email, "ADMIN");
     await signIn(officerPage, officer.email);
-    await expect(officerPage).toHaveURL(HOME);
+    await expect(officerPage).toHaveURL(LANDING.officer);
     await signIn(farmerPage, farmer.email);
-    await expect(farmerPage).toHaveURL(HOME);
+    await expect(farmerPage).toHaveURL(LANDING.farmer);
     await buyerPage.goto("/sign-up");
     await completeSignUp(buyerPage, request, buyer);
     await signIn(buyerPage, buyer.email);
@@ -148,8 +148,8 @@ test("delivery, a shortfall, confirmation, payouts and an admin refund", async (
   await test.step("6. an admin with two-factor refunds it in full", async () => {
     const page = adminPage;
     await signIn(page, admin.email);
-    await clickNav(page, "Order queue");
-    await expect(page).toHaveURL(/\/two-factor$/);
+    // An admin without two-factor is sent to enrol before the queue opens.
+    await expect(page).toHaveURL(LANDING.twoFactor);
     await enrolTwoFactor(page);
     await clickNav(page, "Order queue");
     await expect(page.getByRole("heading", { name: "Order queue" })).toBeVisible();

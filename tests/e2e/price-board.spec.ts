@@ -63,7 +63,7 @@ test("a board admin records a price and a visitor sees it on the board", async (
     await page.getByLabel("Email address").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await clickNav(page, "Crops and units");
+    // A board admin without two-factor lands on /board, which sends them to enrol first.
     await expect(page).toHaveURL(/\/two-factor$/);
     await expect(
       page.getByRole("heading", { name: "Set up two-factor authentication" }),
@@ -73,8 +73,8 @@ test("a board admin records a price and a visitor sees it on the board", async (
     const secret = (await page.getByTestId("totp-secret").textContent())?.trim() ?? "";
     await page.getByLabel("6-digit code").fill(totp(secret));
     await page.getByRole("button", { name: "Verify" }).click();
-    // Verifying sends the admin home; wait for it before using the nav.
-    await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/$/);
+    // Verifying sends the board admin to the price entry page; wait for it before using the nav.
+    await expect(page).toHaveURL(/\/board$/);
   });
 
   await test.step("add a crop and a unit", async () => {

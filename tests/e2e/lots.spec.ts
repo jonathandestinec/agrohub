@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   clickNav,
   completeSignUp,
-  HOME,
+  LANDING,
   newPage,
   signIn,
   uniqueEmail,
@@ -53,12 +53,12 @@ test("a farmer's lot goes live after officer approval, with locked terms and no 
       await completeSignUp(page, request, user);
     }
     await setUpLotWorld({ tag, cooperative, crop, unit, officerEmail: officer.email, farmerEmail: farmer.email });
-    for (const [page, user] of [
-      [officerPage, officer],
-      [farmerPage, farmer],
+    for (const [page, user, landing] of [
+      [officerPage, officer, LANDING.officer],
+      [farmerPage, farmer, LANDING.farmer],
     ] as const) {
       await signIn(page, user.email);
-      await expect(page).toHaveURL(HOME);
+      await expect(page).toHaveURL(landing);
     }
   });
 

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clickNav, completeSignUp, HOME, newPage, signIn, uniqueEmail, uniqueTag } from "./journey";
+import { clickNav, completeSignUp, HOME, LANDING, newPage, signIn, uniqueEmail, uniqueTag } from "./journey";
 import { setUpLotWorld } from "./lot-world";
 
 // Phase 5a: a buyer asks for delivery, the officer quotes it in the thread, the buyer buys 10
@@ -49,7 +49,7 @@ test("a buyer pays for a lot with a quoted delivery cost, and pays an accepted o
       liveLot: { quantity: 30, askKobo: 6_500_000, floorKobo: 6_000_000, minOrderQty: 5 },
     });
     await signIn(officerPage, officer.email);
-    await expect(officerPage).toHaveURL(HOME);
+    await expect(officerPage).toHaveURL(LANDING.officer);
     await buyerPage.goto("/sign-up");
     await completeSignUp(buyerPage, request, buyer);
     await signIn(buyerPage, buyer.email);

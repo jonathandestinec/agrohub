@@ -6,6 +6,17 @@ type OutboxMessage = { to: string; subject: string; html: string };
 const password = "correct-horse-battery-staple";
 const HOME = /:3100\/$/;
 
+// Who is signed in is the account button; Profile and Sign out sit in its dropdown.
+const accountButton = (page: Page) => page.getByRole("button", { name: /^Account:/ });
+async function signOutFromMenu(page: Page) {
+  const account = accountButton(page);
+  await expect(async () => {
+    if ((await account.getAttribute("aria-expanded")) !== "true") await account.click();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Sign out" }).click();
+}
+
 function uniqueEmail(): string {
   return `e2e-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
 }
@@ -90,30 +101,62 @@ test("a verified user signs in, then signing out clears the session cookie", asy
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  const signOut = page.getByRole("button", { name: "Sign out" });
-  await expect(signOut).toBeVisible();
+  await expect(accountButton(page)).toBeVisible();
   const sessionCookie = async () =>
     (await context.cookies()).find((c) => c.name.endsWith("better-auth.session_token"));
   expect(await sessionCookie()).toBeDefined();
 
-  await signOut.click();
+  await signOutFromMenu(page);
   await expect(page).toHaveURL(/\/sign-in$/);
   await expect.poll(sessionCookie).toBeUndefined();
 });
 
-test("signing out works before the page has hydrated", async ({ page, request, context }) => {
+test("the account menu opens with the keyboard, shows who is signed in, and signs out", async ({
+  page,
+  request,
+  context,
+}) => {
   // Sign-up and sign-in on a cold dev server can use most of the 30s default.
   test.setTimeout(60_000);
   const email = uniqueEmail();
   await signUpAndVerify(page, request, email);
   await signIn(page, email);
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  const account = accountButton(page);
+  await expect(account).toBeVisible();
+  // A round avatar: only the initials in the bar (Amina Bello), no name, role or arrow.
+  await expect(account).toHaveText("AB");
+  const box = (await account.boundingBox())!;
+  expect(Math.round(box.width)).toBe(44);
+  expect(Math.round(box.height)).toBe(44);
+  await expect(account).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByText("Amina Bello", { exact: true })).toHaveCount(0);
 
-  // Hold back the app's script bundles so React never hydrates: the same as a tap that lands
-  // before it does. Inline scripts still run, so the streamed header with the button appears.
-  await page.route("**/_next/static/chunks/**/*.js", (route) => route.abort());
-  await page.goto("/");
-  await page.getByRole("button", { name: "Sign out" }).click();
+  // Enter opens it, ArrowDown walks to the first item, Escape closes it and returns focus.
+  await account.focus();
+  await page.keyboard.press("Enter");
+  await expect(account).toHaveAttribute("aria-expanded", "true");
+  // The dropdown opens with who is signed in, as plain text the arrow keys skip.
+  await expect(page.getByText("Amina Bello", { exact: true })).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("link", { name: "Profile" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(account).toHaveAttribute("aria-expanded", "false");
+  await expect(account).toBeFocused();
+
+  // A click outside closes it too.
+  await account.click();
+  await expect(account).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("main").click({ position: { x: 5, y: 5 } });
+  await expect(account).toHaveAttribute("aria-expanded", "false");
+
+  // Profile shows the person's details.
+  await account.click();
+  await page.getByRole("link", { name: "Profile" }).click();
+  await expect(page).toHaveURL(/\/account$/);
+  await expect(page.getByRole("heading", { name: "Your profile" })).toBeVisible();
+  await expect(page.getByRole("main").getByText(email)).toBeVisible();
+
+  await signOutFromMenu(page);
   await expect(page).toHaveURL(/\/sign-in$/);
   const cookies = await context.cookies();
   expect(cookies.find((c) => c.name.endsWith("better-auth.session_token"))).toBeUndefined();
@@ -128,7 +171,7 @@ test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", 
   const email = uniqueEmail();
   await signUpAndVerify(page, request, email);
   await signIn(page, email);
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await expect(accountButton(page)).toBeVisible();
 
   // Enrol: confirm the password, read the setup key, answer with a code.
   await page.goto("/two-factor");
@@ -150,7 +193,7 @@ test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", 
   await expect(page).toHaveURL(HOME);
 
   // The next sign-in is challenged: a wrong code is refused, the right one signs in.
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await signOutFromMenu(page);
   await expect(page).toHaveURL(/\/sign-in$/);
   await signIn(page, email);
   await expect(page).toHaveURL(/\/two-factor$/);
@@ -161,5 +204,5 @@ test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", 
   await page.getByLabel("6-digit code").fill(totp(secret));
   await page.getByRole("button", { name: "Verify" }).click();
   await expect(page).toHaveURL(HOME);
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await expect(accountButton(page)).toBeVisible();
 });

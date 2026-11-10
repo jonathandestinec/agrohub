@@ -26,7 +26,7 @@ test("the nav narrows on scroll down and comes back on scroll up", async ({ page
 });
 
 // With two memberships the header also carries the role switcher. Nothing in it may overlap
-// at any width: not the wordmark, the links, the switcher, Sign out nor the menu toggle.
+// at any width: not the wordmark, the links, the switcher, the account button nor the menu toggle.
 type OutboxMessage = { to: string; subject: string; html: string };
 const password = "correct-horse-battery-staple";
 
@@ -110,7 +110,25 @@ test("with the role switcher shown, nothing in the header overlaps", async ({ pa
   await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
   await switched;
   await page.reload();
-  await expect(page.locator('.nav-bar a[href="/officer/farmers"]')).toBeAttached();
+  // The officer's bar: Cooperative and Selling groups, and the Messages link.
+  await expect(page.locator('.nav-bar a[href="/messages"]')).toBeAttached();
+  const cooperative = page.getByRole("navigation").getByRole("button", { name: "Cooperative", exact: true });
+  await cooperative.click();
+  await expect(cooperative).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Farmers", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(cooperative).toHaveAttribute("aria-expanded", "false");
+  await expect(cooperative).toBeFocused();
+
+  // Who is signed in: initials (Ngozi Okafor) in the bar; name and role in the dropdown.
+  const account = page.getByRole("button", { name: /^Account:/ });
+  await expect(account).toHaveText("NO");
+  await account.click();
+  const panel = account.locator("xpath=..");
+  await expect(panel.getByText("Ngozi Okafor", { exact: true })).toBeVisible();
+  await expect(panel.getByText("Cooperative officer", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(account).toHaveAttribute("aria-expanded", "false");
 
   for (const width of [1600, 1440, 1280, 1100, 1024, 768, 375]) {
     await page.setViewportSize({ width, height: 900 });

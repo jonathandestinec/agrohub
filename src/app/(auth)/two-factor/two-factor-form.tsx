@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
 import { AuthCard, Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { OtpInput } from "@/components/otp-input";
+import { resolveLanding } from "@/app/actions/landing";
 import { authClient } from "@/lib/auth-client";
 import { buttonClass } from "@/components/ui/button";
 
@@ -81,7 +82,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
     }
     // A full load, not router.replace: the client router cache still holds the
     // pre-2FA redirects (an admin page that sent this user here would send them again).
-    window.location.replace("/");
+    window.location.replace(await resolveLanding("/"));
   }
 
   async function copySecret() {

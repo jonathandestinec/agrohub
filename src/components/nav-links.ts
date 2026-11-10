@@ -6,6 +6,7 @@ export type NavLabelKey =
   | "invites"
   | "farmers"
   | "reviewCooperatives"
+  | "adminCooperatives"
   | "farm"
   | "registerCooperative"
   | "yourFarm"
@@ -27,51 +28,109 @@ export type NavLabelKey =
   | "payouts"
   | "orderQueue"
   | "earnings";
-export type NavLink = { href: string; labelKey: NavLabelKey };
 
-const LINKS: Partial<Record<Role, NavLink[]>> = {
-  OFFICER: [
-    { href: "/officer/onboarding", labelKey: "cooperative" },
-    { href: "/officer/invites", labelKey: "invites" },
-    { href: "/officer/farmers", labelKey: "farmers" },
-    { href: "/officer/lots", labelKey: "screenLots" },
-    { href: "/officer/offers", labelKey: "offers" },
-    { href: "/officer/orders", labelKey: "orders" },
-    { href: "/messages", labelKey: "messages" },
-  ],
+// Names of the dropdown groups in the bar.
+export type NavGroupKey =
+  | "groupReview"
+  | "groupOrders"
+  | "groupMore"
+  | "groupCooperative"
+  | "groupSelling"
+  | "groupBuying";
+
+export type NavLink = { href: string; labelKey: NavLabelKey };
+// One item in the bar: a plain link, or a labelled group that opens a dropdown of links.
+export type NavItem =
+  | { kind: "link"; href: string; labelKey: NavLabelKey }
+  | { kind: "group"; labelKey: NavGroupKey; links: NavLink[] };
+
+const link = (href: string, labelKey: NavLabelKey): NavItem => ({ kind: "link", href, labelKey });
+const group = (labelKey: NavGroupKey, links: Array<[string, NavLabelKey]>): NavItem => ({
+  kind: "group",
+  labelKey,
+  links: links.map(([href, key]) => ({ href, labelKey: key })),
+});
+
+// At most three items a role, so the bar stays clear. Every list or queue page a role can
+// open is in here, either as an item or inside a group.
+const ITEMS: Partial<Record<Role, NavItem[]>> = {
   ADMIN: [
-    { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
-    { href: "/admin/names", labelKey: "nameChanges" },
-    { href: "/admin/lots", labelKey: "lotQueue" },
-    { href: "/admin/settings", labelKey: "platformSettings" },
-    { href: "/admin/orders", labelKey: "orderQueue" },
+    group("groupReview", [
+      ["/admin/cooperatives", "adminCooperatives"],
+      ["/admin/names", "nameChanges"],
+      ["/admin/lots", "lotQueue"],
+    ]),
+    group("groupOrders", [
+      ["/admin/orders", "orderQueue"],
+      ["/admin/payouts", "payouts"],
+    ]),
+    group("groupMore", [
+      ["/messages", "messages"],
+      ["/admin/settings", "platformSettings"],
+    ]),
+  ],
+  OFFICER: [
+    group("groupCooperative", [
+      ["/officer/onboarding", "cooperative"],
+      ["/officer/farmers", "farmers"],
+      ["/officer/invites", "invites"],
+    ]),
+    group("groupSelling", [
+      ["/officer/lots", "screenLots"],
+      ["/officer/offers", "offers"],
+      ["/officer/orders", "orders"],
+      ["/prices", "prices"],
+    ]),
+    link("/messages", "messages"),
   ],
   FARMER: [
-    { href: "/farmer", labelKey: "farm" },
-    { href: "/farmer/lots", labelKey: "myLots" },
-    { href: "/farmer/earnings", labelKey: "earnings" },
-    { href: "/messages", labelKey: "messages" },
-    { href: "/prices", labelKey: "prices" },
+    link("/farmer", "farm"),
+    group("groupSelling", [
+      ["/farmer/lots", "myLots"],
+      ["/farmer/earnings", "earnings"],
+    ]),
+    group("groupMore", [
+      ["/messages", "messages"],
+      ["/prices", "prices"],
+    ]),
   ],
   BUYER: [
-    { href: "/lots", labelKey: "browseLots" },
-    { href: "/buyer", labelKey: "myOffers" },
-    { href: "/buyer/orders", labelKey: "myOrders" },
-    { href: "/messages", labelKey: "messages" },
+    link("/lots", "browseLots"),
+    group("groupBuying", [
+      ["/buyer", "myOffers"],
+      ["/buyer/orders", "myOrders"],
+    ]),
+    group("groupMore", [
+      ["/messages", "messages"],
+      ["/prices", "prices"],
+    ]),
   ],
-  BOARD_ADMIN: [
-    { href: "/board", labelKey: "priceEntry" },
-    { href: "/board/crops", labelKey: "cropsUnits" },
-    { href: "/prices", labelKey: "prices" },
-  ],
+  BOARD_ADMIN: [link("/board", "priceEntry"), link("/board/crops", "cropsUnits"), link("/prices", "prices")],
 };
 
-// Pure: the header links for the active role. Convenience only: every page checks access itself.
-export function navLinksFor(role: Role | null): NavLink[] {
-  return role ? (LINKS[role] ?? []) : [];
+// Pure: the bar items for the active role. Convenience only: every page checks access itself.
+export function navItemsFor(role: Role | null): NavItem[] {
+  return role ? (ITEMS[role] ?? []) : [];
 }
 
-// Pure: the header links for a signed-in user with no ACTIVE membership. A farmer waiting
+// Pure: what a signed-out visitor is offered besides "Sign in".
+export function navItemsSignedOut(): NavItem[] {
+  return [link("/lots", "browseLots"), link("/prices", "prices")];
+}
+
+// Pure: every link in the items, groups opened out, in bar order.
+export function flattenNav(items: NavItem[]): NavLink[] {
+  return items.flatMap((item) =>
+    item.kind === "link" ? [{ href: item.href, labelKey: item.labelKey }] : item.links,
+  );
+}
+
+// Pure: the same links as a flat list, for the active role.
+export function navLinksFor(role: Role | null): NavLink[] {
+  return flattenNav(navItemsFor(role));
+}
+
+// Pure: the bar items for a signed-in user with no ACTIVE membership. A farmer waiting
 // for approval gets their farm page; a user with no officer or farmer membership at all
 // (in any status) is offered to register a cooperative or to start buying.
 export function navLinksWithoutActiveMembership(

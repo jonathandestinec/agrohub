@@ -16,7 +16,9 @@
   },
   "header": {
     "signIn": "",
-    "signOut": ""
+    "signOut": "",
+    "profile": "",
+    "accountMenu": ""
   },
   "nav": {
     "label": "",
@@ -24,6 +26,13 @@
     "invites": "",
     "farmers": "",
     "reviewCooperatives": "",
+    "adminCooperatives": "",
+    "groupReview": "",
+    "groupOrders": "",
+    "groupMore": "",
+    "groupCooperative": "",
+    "groupSelling": "",
+    "groupBuying": "",
     "farm": "",
     "registerCooperative": "",
     "yourFarm": "",
@@ -430,7 +439,22 @@
       "awaiting": "",
       "retry": "",
       "retryCurrent": "",
-      "unblock": ""
+      "unblock": "",
+      "actionFailed": "",
+      "outcome": {
+        "PAID": "",
+        "SENT": "",
+        "QUEUED": "",
+        "FAILED": "",
+        "BLOCKED": ""
+      },
+      "reason": {
+        "NO_FUNDS": "",
+        "REFUSED": "",
+        "FAILED": "",
+        "REVERSED": "",
+        "OTHER": ""
+      }
     },
     "orders": {
       "title": "",
@@ -1605,5 +1629,18 @@
       "PAID": "",
       "PROBLEM": ""
     }
+  },
+  "profile": {
+    "title": "",
+    "lead": "",
+    "name": "",
+    "email": "",
+    "phone": "",
+    "noPhone": "",
+    "roles": "",
+    "noRoles": "",
+    "cooperative": "",
+    "waiting": "",
+    "changeName": ""
   }
 }

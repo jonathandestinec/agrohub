@@ -151,3 +151,19 @@ export async function unblockPayout(actor: Actor, payoutId: string, now: Date = 
   await recordAudit({ actorId: actor.userId, action: "payout.unblock", entity: "payout", entityId: payoutId, meta: { payoutId } });
   await sendDuePayouts({ orderId: payout.orderId, now, gateway });
 }
+
+// What an admin's action left the payout as: its status, and for a failed or reversed last
+// attempt the reason stored on it (Paystack's own text is never stored).
+export type PayoutOutcome = { status: PayoutStatus; failureReason: string | null };
+
+export async function payoutOutcome(actor: Actor, payoutId: string): Promise<PayoutOutcome> {
+  assertManage(actor);
+  const payout = await prisma.payout.findUnique({
+    where: { id: payoutId },
+    select: { status: true, attempts: { orderBy: { attempt: "desc" }, take: 1, select: { status: true, failureReason: true } } },
+  });
+  if (!payout) throw new NotFoundError("PAYOUT_NOT_FOUND");
+  const last = payout.attempts[0];
+  const failed = last && (last.status === "FAILED" || last.status === "REVERSED");
+  return { status: payout.status, failureReason: failed ? (last.failureReason ?? last.status) : null };
+}

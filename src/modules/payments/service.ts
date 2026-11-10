@@ -4,7 +4,7 @@
 export { alertAdmins, type AdminAlert } from "./alerts";
 export { createPayouts, PAYOUT_CLEARING_HOURS, payoutReference, type CreatedPayout, type PayoutShare } from "./payouts";
 export { payoutGateway, paystackTransferGateway, type CheckOutcome, type PayoutGateway, type SendOutcome } from "./payout-gateway";
-export { listPayoutIssues, retryPayout, STALE_TRANSFER_HOURS, unblockPayout, type AdminPayout } from "./admin";
+export { listPayoutIssues, payoutOutcome, retryPayout, STALE_TRANSFER_HOURS, unblockPayout, type AdminPayout, type PayoutOutcome } from "./admin";
 export { listReconciliationIssues, reconcile, resolveReconciliationIssue, type AdminReconciliationIssue, type IssueKind } from "./reconcile";
 export { sendDuePayouts, settleAttempt, settleTransferEvent, type SettleResult } from "./sending";
 export { confirmPayment, type ConfirmOutcome } from "./payments";
