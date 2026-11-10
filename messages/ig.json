@@ -439,7 +439,22 @@
       "awaiting": "",
       "retry": "",
       "retryCurrent": "",
-      "unblock": ""
+      "unblock": "",
+      "actionFailed": "",
+      "outcome": {
+        "PAID": "",
+        "SENT": "",
+        "QUEUED": "",
+        "FAILED": "",
+        "BLOCKED": ""
+      },
+      "reason": {
+        "NO_FUNDS": "",
+        "REFUSED": "",
+        "FAILED": "",
+        "REVERSED": "",
+        "OTHER": ""
+      }
     },
     "orders": {
       "title": "",

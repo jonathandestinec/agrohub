@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
-import { OrderActionButton } from "@/components/orders/order-actions";
+import { PayoutActionButton, PayoutFeedback } from "@/components/payout-feedback";
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { formatNaira } from "@/lib/money";
 import { listPayoutIssues } from "@/modules/payments/service";
@@ -28,6 +28,7 @@ async function Issues() {
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
       <PageHeading title={t("title")} lead={t("lead")} />
+      <PayoutFeedback>
       {issues.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("empty")}</p>
       ) : (
@@ -48,16 +49,17 @@ async function Issues() {
                 {p.sentAt ? <p className="body-6">{t("awaiting", { time: time.format(new Date(p.sentAt)) })}</p> : null}
                 {p.status === "FAILED" ? (
                   <div className="flex flex-wrap gap-3">
-                    <OrderActionButton action={retryPayoutAction.bind(null, p.id)} label={t("retry")} />
-                    <OrderActionButton action={retryToCurrentAccountAction.bind(null, p.id)} label={t("retryCurrent")} tone="paper" />
+                    <PayoutActionButton action={retryPayoutAction.bind(null, p.id)} label={t("retry")} who={p.recipientName} />
+                    <PayoutActionButton action={retryToCurrentAccountAction.bind(null, p.id)} label={t("retryCurrent")} who={p.recipientName} tone="paper" />
                   </div>
                 ) : null}
-                {p.status === "BLOCKED" ? <OrderActionButton action={unblockPayoutAction.bind(null, p.id)} label={t("unblock")} /> : null}
+                {p.status === "BLOCKED" ? <PayoutActionButton action={unblockPayoutAction.bind(null, p.id)} label={t("unblock")} who={p.recipientName} /> : null}
               </Card>
             </li>
           ))}
         </ul>
       )}
+      </PayoutFeedback>
     </main>
   );
 }

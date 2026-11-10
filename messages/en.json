@@ -439,7 +439,22 @@
       "awaiting": "Sent {time}, still awaiting Paystack",
       "retry": "Retry",
       "retryCurrent": "Retry to current account",
-      "unblock": "Unblock"
+      "unblock": "Unblock",
+      "actionFailed": "{who}: that did not work. {reason}",
+      "outcome": {
+        "PAID": "Paid. {who}'s payout went through.",
+        "SENT": "Sent. {who}'s payout is with Paystack. It shows as paid once Paystack confirms.",
+        "QUEUED": "Not sent yet. {who}'s payout is waiting for enough money in the Paystack balance and will be tried again tomorrow.",
+        "FAILED": "Failed. {who}'s payout did not go through. {reason}",
+        "BLOCKED": "Still blocked. {who} has no payout account yet."
+      },
+      "reason": {
+        "NO_FUNDS": "The Paystack balance is too low.",
+        "REFUSED": "Paystack refused the transfer.",
+        "FAILED": "Paystack could not complete the transfer.",
+        "REVERSED": "Paystack sent the money back.",
+        "OTHER": "Paystack stopped the transfer."
+      }
     },
     "orders": {
       "title": "Order queue",
