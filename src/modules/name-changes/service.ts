@@ -13,6 +13,7 @@ import { lockNameSubject } from "@/lib/subject-lock";
 import { recordAudit } from "@/modules/audit/audit";
 import { namesMatch, payoutAccountFor } from "@/modules/banking/service";
 import { can, type Actor, type Resource } from "@/modules/identity/policies";
+import { activeAdmins, notify, officersOf, person } from "@/modules/notifications/service";
 import {
   COOPERATIVE_DOCUMENT_KINDS,
   PERSON_DOCUMENT_KINDS,
@@ -122,6 +123,13 @@ async function createRequest(
         },
         tx,
       );
+      await notify(tx, {
+        kind: "NAME_CHANGE_REQUESTED",
+        subject: { type: "NAME_CHANGE", id: created.id },
+        data: {},
+        to: await activeAdmins(tx),
+        exclude: requestedBy,
+      });
       return created;
     });
     return toOwnNameChange(row);
@@ -392,6 +400,25 @@ function decisionAudit(actor: Actor, request: NameChangeRequest, action: string)
   };
 }
 
+// A personal rename is the person's own alert (no role); a cooperative's goes to its officers.
+async function tellRequester(
+  tx: Prisma.TransactionClient,
+  request: NameChangeRequest,
+  kind: "NAME_CHANGE_APPROVED" | "NAME_CHANGE_REJECTED",
+  actorId: string,
+): Promise<void> {
+  await notify(tx, {
+    kind,
+    subject: { type: "NAME_CHANGE", id: request.id },
+    data: {},
+    to:
+      request.subjectType === "USER"
+        ? [person(request.requestedByUserId)]
+        : await officersOf(tx, request.subjectId),
+    exclude: actorId,
+  });
+}
+
 // Changes the name only: the payout account (recipient code, account name, bank name) is
 // never touched, so the next bank change is checked against the new name.
 export async function approveNameChange(
@@ -420,6 +447,7 @@ export async function approveNameChange(
       });
     }
     await recordAudit(decisionAudit(actor, request, "name_change.approve"), tx);
+    await tellRequester(tx, request, "NAME_CHANGE_APPROVED", actor.userId);
   });
   return adminView(actor, await loadRequest(request.id), now);
 }
@@ -445,6 +473,7 @@ export async function rejectNameChange(
     });
     if (count === 0) throw notPending();
     await recordAudit(decisionAudit(actor, request, "name_change.reject"), tx);
+    await tellRequester(tx, request, "NAME_CHANGE_REJECTED", actor.userId);
   });
   return adminView(actor, await loadRequest(request.id), now);
 }
