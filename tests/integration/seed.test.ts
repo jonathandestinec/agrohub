@@ -46,8 +46,10 @@ describe("seed", { timeout: 20_000 }, () => {
     expect(users.map((u) => [u.email, u.emailVerified, u.twoFactorEnabled])).toEqual([
       [SEED.admin.email, true, false],
       [SEED.board.email, true, false],
+      [SEED.buyerTwo.email, true, false],
       [SEED.buyer.email, true, false],
       [SEED.farmer.email, true, false],
+      [SEED.grower.email, true, false],
       [SEED.officer.email, true, false],
     ]);
     for (const u of users) expect(u.email).toMatch(/@example\.com$/);
@@ -69,10 +71,12 @@ describe("seed", { timeout: 20_000 }, () => {
       [SEED.admin.email, "ADMIN", "ACTIVE", null],
       [SEED.board.email, "BOARD_ADMIN", "ACTIVE", null],
       [SEED.buyer.email, "BUYER", "ACTIVE", null],
+      [SEED.buyerTwo.email, "BUYER", "ACTIVE", null],
       [SEED.farmer.email, "FARMER", "PENDING", cooperative.id],
+      [SEED.grower.email, "FARMER", "ACTIVE", cooperative.id],
       [SEED.officer.email, "OFFICER", "ACTIVE", cooperative.id],
     ]);
-    const profile = await prisma.farmerProfile.findFirstOrThrow();
+    const profile = await prisma.farmerProfile.findFirstOrThrow({ where: { user: { email: SEED.farmer.email } } });
     expect(profile.cooperativeId).toBe(cooperative.id);
   });
 
@@ -91,11 +95,11 @@ describe("seed", { timeout: 20_000 }, () => {
 
     expect(await counts()).toEqual(before);
     expect(before).toEqual({
-      users: 5,
-      accounts: 5,
+      users: 7,
+      accounts: 7,
       cooperatives: 1,
-      memberships: 5,
-      profiles: 1,
+      memberships: 7,
+      profiles: 2,
       crops: 12,
       units: 8,
       prices: 28,
@@ -123,6 +127,7 @@ describe("seed", { timeout: 20_000 }, () => {
     });
     expect(cooperative.cutBps).toBe(500);
     const profile = await prisma.farmerProfile.findFirstOrThrow({
+      where: { user: { email: SEED.farmer.email } },
       include: { crops: { orderBy: { nameKey: "asc" } } },
     });
     expect(profile.crops.map((c) => c.name)).toEqual(["Maize", "Sorghum"]);
