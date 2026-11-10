@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
+import { resolveLanding } from "@/app/actions/landing";
 import { authClient } from "@/lib/auth-client";
 import { safeNext, withNext } from "@/lib/safe-next";
 
@@ -37,7 +38,12 @@ export function SignInForm({ next }: { next: string }) {
       return;
     }
     // A user with two-factor gets no session yet: the code is entered on /two-factor.
-    router.replace(data && "twoFactorRedirect" in data ? "/two-factor" : returnTo);
+    if (data && "twoFactorRedirect" in data) {
+      router.replace("/two-factor");
+    } else {
+      // The server picks the page: an explicit next, else the one the active role works from.
+      router.replace(await resolveLanding(returnTo));
+    }
     router.refresh();
   }
 
