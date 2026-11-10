@@ -1,6 +1,7 @@
 import {
   activeAdmins,
   buyer,
+  farmersOfLot,
   notify,
   officersOf,
   type Db,
@@ -15,6 +16,7 @@ type QtyKind =
   | "ORDER_CANCELLED_BY_BUYER"
   | "ORDER_CANCEL_REQUESTED"
   | "DISPUTE_RESOLVED"
+  | "LOT_ORDER_PAID"
   | "PAYMENT_CONFIRMED"
   | "ORDER_PREPARING"
   | "ORDER_DELIVERED"
@@ -23,13 +25,14 @@ type QtyKind =
   | "CANCEL_REQUEST_AGREED"
   | "CANCEL_REQUEST_REFUSED";
 
-export type OrderAudience = "buyer" | "officers" | "admins";
+export type OrderAudience = "buyer" | "officers" | "admins" | "farmers";
 
 async function loadOrderFacts(db: Db, orderId: string) {
   return db.order.findUniqueOrThrow({
     where: { id: orderId },
     select: {
       id: true,
+      lotId: true,
       buyerUserId: true,
       cooperativeId: true,
       quantity: true,
@@ -40,13 +43,14 @@ async function loadOrderFacts(db: Db, orderId: string) {
 
 async function recipientsOf(
   db: Db,
-  order: { buyerUserId: string; cooperativeId: string },
+  order: { lotId: string; buyerUserId: string; cooperativeId: string },
   audience: OrderAudience[],
 ): Promise<Recipient[]> {
   const lists: Recipient[][] = [];
   if (audience.includes("buyer")) lists.push([buyer(order.buyerUserId)]);
   if (audience.includes("officers")) lists.push(await officersOf(db, order.cooperativeId));
   if (audience.includes("admins")) lists.push(await activeAdmins(db));
+  if (audience.includes("farmers")) lists.push(await farmersOfLot(db, order.lotId));
   return lists.flat();
 }
 

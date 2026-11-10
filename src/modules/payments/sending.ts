@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { koboFromDb } from "@/lib/money";
 import { recordAudit } from "@/modules/audit/audit";
 import type { PayoutAlertKind } from "@/modules/notifications/emails";
-import { alertAdmins } from "./alerts";
+import { alertAdmins, notifyPayoutSent } from "./alerts";
 import { postLedger } from "./ledger";
 import { payoutGateway, type PayoutGateway } from "./payout-gateway";
 
@@ -90,6 +90,8 @@ export async function settleAttempt(
             { account: "PAYSTACK_BALANCE", amountKobo: -amountKobo },
           ],
         });
+        // A real repair: the alert goes out here, and only here, so a replay adds nothing.
+        await notifyPayoutSent(tx, payout);
         return "SETTLED";
       }
       return "ALREADY_SETTLED";
@@ -109,6 +111,7 @@ export async function settleAttempt(
           { actorId: null, action: "payout.paid", entity: "payout", entityId: payout.id, meta: { payoutId: payout.id, amountKobo } },
           tx,
         );
+        await notifyPayoutSent(tx, payout);
       }
       return "SETTLED";
     }
