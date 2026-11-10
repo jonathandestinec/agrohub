@@ -123,13 +123,20 @@ test("the account menu opens with the keyboard, shows who is signed in, and sign
   await signIn(page, email);
   const account = accountButton(page);
   await expect(account).toBeVisible();
-  await expect(account).toContainText("Amina");
+  // A round avatar: only the initials in the bar (Amina Bello), no name, role or arrow.
+  await expect(account).toHaveText("AB");
+  const box = (await account.boundingBox())!;
+  expect(Math.round(box.width)).toBe(44);
+  expect(Math.round(box.height)).toBe(44);
   await expect(account).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByText("Amina Bello", { exact: true })).toHaveCount(0);
 
   // Enter opens it, ArrowDown walks to the first item, Escape closes it and returns focus.
   await account.focus();
   await page.keyboard.press("Enter");
   await expect(account).toHaveAttribute("aria-expanded", "true");
+  // The dropdown opens with who is signed in, as plain text the arrow keys skip.
+  await expect(page.getByText("Amina Bello", { exact: true })).toBeVisible();
   await page.keyboard.press("ArrowDown");
   await expect(page.getByRole("link", { name: "Profile" })).toBeFocused();
   await page.keyboard.press("Escape");

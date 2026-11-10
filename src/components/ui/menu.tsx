@@ -16,6 +16,7 @@ export function Menu({
   buttonClassName,
   current = false,
   align = "start",
+  hideChevron = false,
   children,
 }: {
   button: ReactNode;
@@ -25,6 +26,8 @@ export function Menu({
   // The page being shown is inside this menu.
   current?: boolean;
   align?: "start" | "end";
+  // For a trigger that is a round avatar: no arrow beside it.
+  hideChevron?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
@@ -108,7 +111,9 @@ export function Menu({
         className={buttonClassName}
       >
         {button}
-        <Chevron className={`size-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
+        {hideChevron ? null : (
+          <Chevron className={`size-4 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
+        )}
       </button>
       {open ? (
         <div

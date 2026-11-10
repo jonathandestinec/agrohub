@@ -120,6 +120,16 @@ test("with the role switcher shown, nothing in the header overlaps", async ({ pa
   await expect(cooperative).toHaveAttribute("aria-expanded", "false");
   await expect(cooperative).toBeFocused();
 
+  // Who is signed in: initials (Ngozi Okafor) in the bar; name and role in the dropdown.
+  const account = page.getByRole("button", { name: /^Account:/ });
+  await expect(account).toHaveText("NO");
+  await account.click();
+  const panel = account.locator("xpath=..");
+  await expect(panel.getByText("Ngozi Okafor", { exact: true })).toBeVisible();
+  await expect(panel.getByText("Cooperative officer", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(account).toHaveAttribute("aria-expanded", "false");
+
   for (const width of [1600, 1440, 1280, 1100, 1024, 768, 375]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.scrollTo(0, 0));
