@@ -6,6 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, buyerThreadIdOf, threadParties, writeComposedMessage } from "@/modules/messaging/service";
+import { buyer, notify } from "@/modules/notifications/service";
 
 export const QUOTE_TTL_HOURS = 48;
 // A delivery cost is at most ₦10,000,000, so the cooperative's payout never needs more than
@@ -63,6 +64,16 @@ export async function quoteDelivery(
     entity: "delivery_quote",
     entityId: quote.id,
     meta: { quoteId: quote.id, lotId: lot.id, amountKobo: input.amountKobo },
+  });
+  // Covers both quoteDelivery and quoteDeliveryInThread, which calls this. The amount is not
+  // in the alert, and the quote line in the thread raises no message alert on top of it.
+  const named = await prisma.lot.findUniqueOrThrow({ where: { id: lot.id }, select: { crop: { select: { name: true } } } });
+  await notify(prisma, {
+    kind: "DELIVERY_QUOTED",
+    subject: { type: "THREAD", id: threadId },
+    data: { crop: named.crop.name },
+    to: [buyer(input.buyerUserId)],
+    exclude: actor.userId,
   });
   return { quoteId: quote.id };
 }

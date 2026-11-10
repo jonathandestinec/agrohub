@@ -7,6 +7,7 @@ import { lockLot, reopenIfFree } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, ensureBuyerThread, postSystemMessage } from "@/modules/messaging/service";
 import { issueRefund, postLedger } from "@/modules/payments/service";
+import { notifyOrder, type OrderAudience } from "./alerts";
 import { loadManagedOrder, loadOwnOrder } from "./delivery";
 import { assertTransition } from "./state";
 
@@ -22,6 +23,8 @@ export type RefundAllInput = {
   actorUserId: string;
   data?: Prisma.OrderUpdateManyMutationInput;
   now: Date;
+  // The alert to write in the same transaction, so it exists exactly when the refund does.
+  alert?: { kind: "ORDER_CANCELLED_BY_BUYER" | "ORDER_CANCELLED_BY_COOPERATIVE" | "CANCEL_REQUEST_AGREED"; audience: OrderAudience[] };
 };
 
 /**
@@ -73,6 +76,9 @@ export async function refundInFull(input: RefundAllInput): Promise<{ refundId: s
       },
       tx,
     );
+    if (input.alert) {
+      await notifyOrder(tx, order.id, input.alert.kind, input.alert.audience, input.actorUserId);
+    }
     return { refundId: refund.id, amountKobo, lotId: order.lotId, buyerUserId: order.buyerUserId };
   });
   await issueRefund(result.refundId);
@@ -104,7 +110,16 @@ export async function cancelOrder(actor: Actor, orderId: string, reason: string,
     const order = await loadOwnOrder(actor, orderId);
     if (order.status === "PAID_HELD") {
       const text = await checkedReason(actor, order.lotId, reason, false);
-      await refundInFull({ orderId, from: ["PAID_HELD"], reason: "BUYER_CANCEL", purpose: "cancel", by: "BUYER", actorUserId: actor.userId, now });
+      await refundInFull({
+        orderId,
+        from: ["PAID_HELD"],
+        reason: "BUYER_CANCEL",
+        purpose: "cancel",
+        by: "BUYER",
+        actorUserId: actor.userId,
+        now,
+        alert: { kind: "ORDER_CANCELLED_BY_BUYER", audience: ["officers"] },
+      });
       await postLine(order, actor.userId, `The buyer cancelled the order${text ? `: ${text}` : ""}. The payment is refunded in full.`, now);
       return;
     }
@@ -112,6 +127,10 @@ export async function cancelOrder(actor: Actor, orderId: string, reason: string,
       const text = await checkedReason(actor, order.lotId, reason, false);
       const { count } = await prisma.order.updateMany({ where: { id: orderId, status: "PREPARING" }, data: { cancelRequestedAt: now } });
       if (count === 0) throw new ConflictError("The order cannot do that now", "ORDER_STATE");
+      // Only the first request alerts: asking again moves nothing (the line is posted each time).
+      if (order.cancelRequestedAt === null) {
+        await notifyOrder(prisma, orderId, "ORDER_CANCEL_REQUESTED", ["officers"], actor.userId);
+      }
       await postLine(order, actor.userId, `The buyer asked to cancel${text ? `: ${text}` : ""}`, now);
       await recordAudit({ actorId: actor.userId, action: "order.cancel_request", entity: "order", entityId: orderId, meta: { orderId } });
       return;
@@ -131,6 +150,7 @@ export async function cancelOrder(actor: Actor, orderId: string, reason: string,
     actorUserId: actor.userId,
     data: { cancelledByCooperative: true },
     now,
+    alert: { kind: "ORDER_CANCELLED_BY_COOPERATIVE", audience: ["buyer"] },
   });
   await postLine(order, actor.userId, `The cooperative cancelled the order: ${text}. The payment is refunded in full.`, now);
 }
@@ -151,6 +171,7 @@ export async function answerCancelRequest(actor: Actor, orderId: string, agree: 
       actorUserId: actor.userId,
       data: { cancelRequestedAt: null },
       now,
+      alert: { kind: "CANCEL_REQUEST_AGREED", audience: ["buyer"] },
     });
     await postLine(order, actor.userId, "The cooperative agreed to cancel. The payment is refunded in full.", now);
   } else {
@@ -159,6 +180,7 @@ export async function answerCancelRequest(actor: Actor, orderId: string, agree: 
       data: { cancelRequestedAt: null },
     });
     if (count === 0) throw new ConflictError("There is no request to cancel", "NO_CANCEL_REQUEST");
+    await notifyOrder(prisma, orderId, "CANCEL_REQUEST_REFUSED", ["buyer"], actor.userId);
     await postLine(order, actor.userId, "The cooperative declined the request to cancel. The order goes ahead.", now);
   }
   await recordAudit({
