@@ -14,3 +14,6 @@ Read before any task: `docs/superpowers/specs/2026-10-31-agrohub-design.md`, `do
 - When the plan or spec is silent, choose the simpler option, record the choice in the task's commit message, and flag it in the pull request description.
 - Never add Co-Authored-By trailers or “Generated with Claude Code” lines to commits or pull requests.
 - Delegate every repo search and test run to the Haiku 5.5 subagents in `.claude/agents` (`search`, `grep`, `audit`, `test`) to keep the main context small.
+- Before any other work, confirm those four subagents are available in this session. If one is missing, stop and say so.
+- Every final report and pull request description states which subagent ran each search and each test run, and names any that was done without one.
+- Never merge your own pull request. Push the branch, open the pull request and stop: it is reviewed before it reaches `main`.
