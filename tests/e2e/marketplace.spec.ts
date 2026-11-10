@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clickNav, completeSignUp, HOME, newPage, signIn, uniqueEmail, uniqueTag } from "./journey";
+import { clickNav, completeSignUp, HOME, LANDING, newPage, signIn, uniqueEmail, uniqueTag } from "./journey";
 import { setUpLotWorld } from "./lot-world";
 
 // Phase 4: a new buyer signs up, finds a live lot with the filters, and negotiates two offers to
@@ -50,12 +50,12 @@ test("a buyer negotiates a lot to an accepted offer without ever seeing the floo
       farmerEmail: farmer.email,
       liveLot: { quantity: 30, askKobo: 6_500_000, floorKobo: 4_321_987, minOrderQty: 5 },
     });
-    for (const [page, user] of [
-      [officerPage, officer],
-      [farmerPage, farmer],
+    for (const [page, user, landing] of [
+      [officerPage, officer, LANDING.officer],
+      [farmerPage, farmer, LANDING.farmer],
     ] as const) {
       await signIn(page, user.email);
-      await expect(page).toHaveURL(HOME);
+      await expect(page).toHaveURL(landing);
     }
   });
 

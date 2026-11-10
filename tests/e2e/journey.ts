@@ -8,6 +8,16 @@ type OutboxMessage = { to: string; subject: string; html: string };
 
 export const password = "correct-horse-battery-staple";
 export const HOME = /:3100\/$/;
+// Where each role lands after signing in without an explicit next (see landingPath).
+export const LANDING = {
+  admin: /\/admin\/orders$/,
+  boardAdmin: /\/board$/,
+  officer: /\/officer\/orders$/,
+  officerOnboarding: /\/officer\/onboarding$/,
+  farmer: /\/farmer$/,
+  buyer: /\/lots$/,
+  twoFactor: /\/two-factor$/,
+} as const;
 
 // Letters only, so it survives the bank-name match as one whole token.
 export function uniqueTag(): string {
@@ -72,11 +82,51 @@ export function nav(page: Page, name: string): Locator {
   return page.getByRole("navigation").getByRole("link", { name, exact: true });
 }
 
+// The bar holds at most three items; some are groups that open a dropdown. Returns the nav
+// link called `name`, opening the group that holds it first when it is not a top-level item.
+// The group stays open so the caller can click or assert on the link.
+export async function openNav(page: Page, name: string): Promise<Locator> {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const link = nav(page, name);
+  // The header streams in after the page body: wait for the bar to have something in it
+  // before deciding whether the link is at the top level or inside a group.
+  await page.getByRole("navigation").locator("a, button").first().waitFor({ state: "visible" });
+  if (await link.isVisible()) return link;
+  const groups = page.getByRole("navigation").locator("button[aria-expanded]");
+  for (let i = 0; i < (await groups.count()); i++) {
+    const group = groups.nth(i);
+    await group.click();
+    // The dropdown renders on the next tick (and a click before hydration is replayed late):
+    // give the link a moment to show before moving on to the next group.
+    const shown = await link.waitFor({ state: "visible", timeout: 1_500 }).then(
+      () => true,
+      () => false,
+    );
+    if (shown) return link;
+    await group.click();
+  }
+  throw new Error(`No nav link called "${name}", at the top level or in a group`);
+}
+
 // The pinned nav narrows to a pill (links hidden and inert) while scrolled down, and comes
 // back when the reader scrolls up; a person reaching for the nav scrolls up first, so do that.
 export async function clickNav(page: Page, name: string) {
+  await (await openNav(page, name)).click();
+}
+
+// The account button names who is signed in; its dropdown holds Profile and Sign out.
+export function accountButton(page: Page): Locator {
+  return page.getByRole("button", { name: /^Account:/ });
+}
+
+export async function signOutFromMenu(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
-  await nav(page, name).click();
+  const account = accountButton(page);
+  await expect(async () => {
+    if ((await account.getAttribute("aria-expanded")) !== "true") await account.click();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Sign out" }).click();
 }
 
 // A tiny but valid PDF: the upload checks the %PDF magic bytes.
@@ -96,5 +146,6 @@ export async function enrolTwoFactor(page: Page) {
   expect(secret).toMatch(/^[A-Z2-7]+$/);
   await page.getByLabel("6-digit code").fill(totp(secret));
   await page.getByRole("button", { name: "Verify" }).click();
-  await expect(page).toHaveURL(HOME);
+  // Enrolled and signed in: on to the page the role lands on, away from /two-factor.
+  await expect(page).not.toHaveURL(LANDING.twoFactor);
 }

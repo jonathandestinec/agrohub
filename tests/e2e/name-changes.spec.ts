@@ -4,7 +4,7 @@ import {
   clickNav,
   completeSignUp,
   enrolTwoFactor,
-  HOME,
+  LANDING,
   newPage,
   PDF,
   signIn,
@@ -57,13 +57,13 @@ test("an admin approves a farmer's name change and rejects a cooperative rename"
       cooperativeAccountName: `HARVEST ${tag} COOPERATIVE SOCIETY`,
     });
     await grantAdmin(admin.email);
-    for (const [page, user] of [
-      [officerPage, officer],
-      [farmerPage, farmer],
-      [adminPage, admin],
+    for (const [page, user, landing] of [
+      [officerPage, officer, LANDING.officer],
+      [farmerPage, farmer, LANDING.farmer],
+      [adminPage, admin, LANDING.twoFactor],
     ] as const) {
       await signIn(page, user.email);
-      await expect(page).toHaveURL(HOME);
+      await expect(page).toHaveURL(landing);
     }
   });
 
@@ -117,8 +117,7 @@ test("an admin approves a farmer's name change and rejects a cooperative rename"
 
   await test.step("4. the admin approves the farmer's change and rejects the rename", async () => {
     const page = adminPage;
-    await clickNav(page, "Name changes");
-    await expect(page).toHaveURL(/\/two-factor$/);
+    await expect(page).toHaveURL(LANDING.twoFactor);
     await enrolTwoFactor(page);
     await clickNav(page, "Name changes");
     const main = page.getByRole("main");

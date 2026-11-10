@@ -45,7 +45,11 @@ export function Menu({
     const onPointerDown = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node | null)) setOpen(false);
     };
-    const onScroll = () => setOpen(false);
+    // Scrolling away closes it (the pinned bar narrows and goes inert), but not a nudge.
+    const openedAt = window.scrollY;
+    const onScroll = () => {
+      if (Math.abs(window.scrollY - openedAt) > 24) setOpen(false);
+    };
     document.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
