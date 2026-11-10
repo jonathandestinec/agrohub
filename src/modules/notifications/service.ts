@@ -141,3 +141,18 @@ export async function notify<K extends AlertKind>(
     })),
   });
 }
+
+// Callers import the recipient helpers through this file, as modules only import each other
+// through service.ts.
+export {
+  activeAdmins,
+  activeBoardAdmins,
+  buyer,
+  farmer,
+  farmersOfLot,
+  officersOf,
+  person,
+  threadAudience,
+  type Db,
+  type Recipient,
+} from "./recipients";

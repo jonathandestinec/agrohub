@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
+import { activeBoardAdmins, notify, officersOf, person } from "@/modules/notifications/service";
 import { nameInput, nameKeyOf } from "./schema";
 import { createCrop, createUnit, setCropActive, setUnitActive } from "./service";
 import {
@@ -99,6 +100,13 @@ export async function requestCatalogItem(
     data: { kind, name, nameKey, cooperativeId, requestedByUserId: actor.userId },
   });
   await audit(actor, "create", row);
+  await notify(prisma, {
+    kind: "CATALOG_REQUEST_MADE",
+    subject: { type: "CATALOG_REQUEST", id: row.id },
+    data: { itemKind: row.kind, name: row.name },
+    to: await officersOf(prisma, cooperativeId),
+    exclude: actor.userId,
+  });
   return (await views([row]))[0];
 }
 
@@ -143,6 +151,27 @@ async function decideAsOfficer(
   });
   if (count === 0) throw new ConflictError("Request is not open", "REQUEST_NOT_OPEN");
   await audit(actor, action, row, meta);
+  // Forwarding tells the board admins; a decision (decline, or a match to a listed item) tells
+  // the farmer who asked. Only on the branch where this call moved the request.
+  const itemData = { itemKind: row.kind, name: row.name };
+  const subject = { type: "CATALOG_REQUEST", id: row.id } as const;
+  if (data.status === "FORWARDED") {
+    await notify(prisma, {
+      kind: "CATALOG_REQUEST_FORWARDED",
+      subject,
+      data: itemData,
+      to: await activeBoardAdmins(prisma),
+      exclude: actor.userId,
+    });
+  } else {
+    await notify(prisma, {
+      kind: data.status === "APPROVED" ? "CATALOG_REQUEST_APPROVED" : "CATALOG_REQUEST_DECLINED",
+      subject,
+      data: itemData,
+      to: [person(row.requestedByUserId)],
+      exclude: actor.userId,
+    });
+  }
 }
 
 export async function listCooperativeCatalogRequests(actor: Actor): Promise<OfficerCatalogRequestView[]> {
@@ -282,6 +311,13 @@ export async function approveCatalogRequest(
         },
         tx,
       );
+      await notify(tx, {
+        kind: "CATALOG_REQUEST_APPROVED",
+        subject: { type: "CATALOG_REQUEST", id: request.id },
+        data: { itemKind: request.kind, name },
+        to: [person(request.requestedByUserId)],
+        exclude: actor.userId,
+      });
     }
   });
 }
@@ -300,4 +336,11 @@ export async function declineCatalogRequest(
   });
   if (count === 0) throw new ConflictError("Request is not open", "REQUEST_NOT_OPEN");
   await audit(actor, "decline", row);
+  await notify(prisma, {
+    kind: "CATALOG_REQUEST_DECLINED",
+    subject: { type: "CATALOG_REQUEST", id: row.id },
+    data: { itemKind: row.kind, name: row.name },
+    to: [person(row.requestedByUserId)],
+    exclude: actor.userId,
+  });
 }
