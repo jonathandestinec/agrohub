@@ -79,6 +79,7 @@ describe("seed: the Phase 3-5 demo journey", { timeout: 120_000 }, () => {
 
     const live = await prisma.lot.findMany({ where: { status: "LIVE" } });
     expect(live.length).toBeGreaterThanOrEqual(4);
+    for (const l of live) expect(l.approvedAt!.getTime()).toBeGreaterThan(l.createdAt.getTime());
   });
 
   it("has an accepted offer from the seeded buyer that is still open to pay", async () => {

@@ -371,7 +371,7 @@ async function seedJourney(ids: {
       ago(12),
     );
     await prisma.lot.update({ where: { id: submitted.id }, data: { createdAt: ago(12) } });
-    await catalog.approveLot(officer, submitted.id, { minOrderQty: spec.minOrderQty }, ago(12, -60));
+    await catalog.approveLot(officer, submitted.id, { minOrderQty: spec.minOrderQty }, ago(12, 60));
     lotIds.set(spec.key, submitted.id);
   }
 
