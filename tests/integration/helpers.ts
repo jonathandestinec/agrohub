@@ -37,6 +37,10 @@ export async function createTestUser(
 // Children before parents: profiles, documents and memberships, then cooperatives, then users.
 export async function cleanDatabase(): Promise<void> {
   // Ledger rows are append-only and never deleted; tests scope them by orderId.
+  await prisma.reconciliationIssue.deleteMany();
+  await prisma.dispute.deleteMany();
+  await prisma.payoutAttempt.deleteMany();
+  await prisma.payout.deleteMany();
   await prisma.refund.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.stockReservation.deleteMany();

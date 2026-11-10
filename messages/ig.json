@@ -45,7 +45,10 @@
     "offers": "",
     "nameChanges": "",
     "orders": "",
-    "myOrders": ""
+    "myOrders": "",
+    "payouts": "",
+    "orderQueue": "",
+    "earnings": ""
   },
   "auth": {
     "fields": {
@@ -339,7 +342,8 @@
         "UNAUTHENTICATED": "",
         "FORBIDDEN": "",
         "INTERNAL": ""
-      }
+      },
+      "cancellations": ""
     },
     "settings": {
       "title": "",
@@ -404,6 +408,83 @@
         "FORBIDDEN": "",
         "INTERNAL": ""
       }
+    },
+    "payouts": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "order": "",
+      "recipient": {
+        "COOPERATIVE": "",
+        "FARMER": ""
+      },
+      "status": {
+        "QUEUED": "",
+        "SENT": "",
+        "PAID": "",
+        "FAILED": "",
+        "BLOCKED": ""
+      },
+      "attempts": "",
+      "lastFailure": "",
+      "awaiting": "",
+      "retry": "",
+      "retryCurrent": "",
+      "unblock": ""
+    },
+    "orders": {
+      "title": "",
+      "lead": "",
+      "empty": "",
+      "order": "",
+      "noOrder": "",
+      "waiting": "",
+      "back": "",
+      "summary": "",
+      "total": "",
+      "unit": "",
+      "delivered": "",
+      "paidAt": "",
+      "markedAt": "",
+      "kind": {
+        "REPORT": "",
+        "TIMEOUT": "",
+        "SUSPENSION": "",
+        "AFTER_COMPLETION": "",
+        "PAYOUT": "",
+        "RECONCILIATION": ""
+      },
+      "status": {
+        "PENDING_PAYMENT": "",
+        "PAID_HELD": "",
+        "PREPARING": "",
+        "DELIVERED_MARKED": "",
+        "COMPLETED": "",
+        "CANCELLED": "",
+        "REFUNDED": "",
+        "DISPUTED": "",
+        "TIMED_OUT": ""
+      },
+      "decide": "",
+      "outcome": {
+        "RELEASE": "",
+        "REFUND_ALL": "",
+        "REFUND_UNITS": "",
+        "NOTE": ""
+      },
+      "units": "",
+      "note": "",
+      "submit": "",
+      "decided": "",
+      "ledger": "",
+      "payouts": "",
+      "payout": "",
+      "refunds": "",
+      "refund": "",
+      "thread": "",
+      "resolveIssue": "",
+      "issueNote": "",
+      "payoutsLink": ""
     }
   },
   "bank": {
@@ -1358,7 +1439,25 @@
       "MESSAGE_RATE_LIMIT": "",
       "UNAUTHENTICATED": "",
       "FORBIDDEN": "",
-      "INTERNAL": ""
+      "INTERNAL": "",
+      "ORDER_STATE": "",
+      "DELIVERED_RANGE": "",
+      "DELIVERY_DATE_RANGE": "",
+      "PAYOUT_NOT_FOUND": "",
+      "PAYOUT_NOT_FAILED": "",
+      "PAYOUT_NOT_BLOCKED": "",
+      "PAYOUT_STILL_PENDING": "",
+      "PAYOUT_PAID_AT_PAYSTACK": "",
+      "NO_RECIPIENT": "",
+      "REASON_REQUIRED": "",
+      "NO_CANCEL_REQUEST": "",
+      "UNITS_RANGE": "",
+      "DISPUTE_NOT_FOUND": "",
+      "DISPUTE_RESOLVED": "",
+      "OUTCOME_NOT_ALLOWED": "",
+      "INVALID_DECISION": "",
+      "ISSUE_NOT_FOUND": "",
+      "ISSUE_RESOLVED": ""
     },
     "checkout": {
       "heading": "",
@@ -1395,7 +1494,26 @@
       "deliveryDate": "",
       "threadHeading": "",
       "messageCooperative": "",
-      "viewLot": ""
+      "viewLot": "",
+      "deliveredHeading": "",
+      "deliveredAll": "",
+      "shortfall": "",
+      "confirmLead": "",
+      "confirm": "",
+      "cancelHeading": "",
+      "cancelLead": "",
+      "cancelReason": "",
+      "cancel": "",
+      "requestLead": "",
+      "request": "",
+      "requested": "",
+      "reportHeading": "",
+      "reportLead": "",
+      "reportLeadCompleted": "",
+      "reportLabel": "",
+      "report": "",
+      "underReview": "",
+      "receiptLink": ""
     },
     "officer": {
       "title": "",
@@ -1408,7 +1526,24 @@
       "fee": "",
       "deliveryCost": "",
       "noDate": "",
-      "threadHeading": ""
+      "threadHeading": "",
+      "steps": "",
+      "startPreparing": "",
+      "dateHeading": "",
+      "dateLabel": "",
+      "dateSubmit": "",
+      "deliveredHeading": "",
+      "deliveredLabel": "",
+      "deliveredSubmit": "",
+      "deliveredHint": "",
+      "awaitingBuyer": "",
+      "cancelHeading": "",
+      "cancelLabel": "",
+      "cancel": "",
+      "cancelHint": "",
+      "requestHeading": "",
+      "agree": "",
+      "decline": ""
     },
     "quote": {
       "heading": "",
@@ -1424,6 +1559,51 @@
       "amount": "",
       "pay": "",
       "fail": ""
+    },
+    "receipt": {
+      "back": "",
+      "title": "",
+      "lead": "",
+      "paidAt": "",
+      "item": "",
+      "delivered": "",
+      "goods": "",
+      "delivery": "",
+      "total": "",
+      "refund": "",
+      "refundPending": "",
+      "net": "",
+      "platform": "",
+      "reason": {
+        "LATE_PAYMENT": "",
+        "BUYER_CANCEL": "",
+        "COOPERATIVE_CANCEL": "",
+        "SHORTFALL": "",
+        "ADMIN_DECISION": ""
+      }
+    }
+  },
+  "earnings": {
+    "title": "",
+    "lead": "",
+    "empty": "",
+    "back": "",
+    "sale": "",
+    "summary": "",
+    "statementTitle": "",
+    "contributed": "",
+    "delivered": "",
+    "gross": "",
+    "cut": "",
+    "fee": "",
+    "takeHome": "",
+    "payouts": "",
+    "payout": "",
+    "status": {
+      "WAITING": "",
+      "SENDING": "",
+      "PAID": "",
+      "PROBLEM": ""
     }
   }
 }

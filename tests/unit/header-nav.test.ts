@@ -21,6 +21,7 @@ describe("navLinksFor", () => {
       { href: "/admin/names", labelKey: "nameChanges" },
       { href: "/admin/lots", labelKey: "lotQueue" },
       { href: "/admin/settings", labelKey: "platformSettings" },
+      { href: "/admin/orders", labelKey: "orderQueue" },
     ]);
   });
 
@@ -28,6 +29,7 @@ describe("navLinksFor", () => {
     expect(navLinksFor("FARMER")).toEqual([
       { href: "/farmer", labelKey: "farm" },
       { href: "/farmer/lots", labelKey: "myLots" },
+      { href: "/farmer/earnings", labelKey: "earnings" },
       { href: "/messages", labelKey: "messages" },
       { href: "/prices", labelKey: "prices" },
     ]);

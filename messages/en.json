@@ -45,7 +45,10 @@
     "offers": "Offers",
     "nameChanges": "Name changes",
     "orders": "Orders",
-    "myOrders": "My orders"
+    "myOrders": "My orders",
+    "payouts": "Payouts",
+    "orderQueue": "Order queue",
+    "earnings": "Earnings"
   },
   "auth": {
     "fields": {
@@ -339,7 +342,8 @@
         "UNAUTHENTICATED": "Please sign in again.",
         "FORBIDDEN": "You cannot do that.",
         "INTERNAL": "Something went wrong. Please try again."
-      }
+      },
+      "cancellations": "{count, plural, =0 {No orders cancelled by the cooperative} one {# order cancelled by the cooperative} other {# orders cancelled by the cooperative}}"
     },
     "settings": {
       "title": "Platform settings",
@@ -404,6 +408,83 @@
         "FORBIDDEN": "You cannot do this.",
         "INTERNAL": "Something went wrong. Please try again."
       }
+    },
+    "payouts": {
+      "title": "Payouts",
+      "lead": "Payouts that need you: failed, blocked for a missing account, refused for a low Paystack balance, or awaiting Paystack for more than 3 days.",
+      "empty": "No payout needs attention.",
+      "order": "Order {reference}",
+      "recipient": {
+        "COOPERATIVE": "Cooperative",
+        "FARMER": "Farmer"
+      },
+      "status": {
+        "QUEUED": "Paystack balance too low",
+        "SENT": "Awaiting Paystack",
+        "PAID": "Paid",
+        "FAILED": "Failed",
+        "BLOCKED": "No payout account"
+      },
+      "attempts": "{count, plural, one {# attempt} other {# attempts}}",
+      "lastFailure": "Last failure: {reason}",
+      "awaiting": "Sent {time}, still awaiting Paystack",
+      "retry": "Retry",
+      "retryCurrent": "Retry to current account",
+      "unblock": "Unblock"
+    },
+    "orders": {
+      "title": "Order queue",
+      "lead": "Everything waiting for you, oldest first: problems buyers reported, late deliveries, orders of suspended cooperatives, payout problems and reconciliation differences.",
+      "empty": "Nothing is waiting.",
+      "order": "Order {reference}",
+      "noOrder": "No order",
+      "waiting": "Waiting",
+      "back": "Back to the order queue",
+      "summary": "{quantity} × {unit} of {crop}",
+      "total": "Paid: {amount}",
+      "unit": "Unit price: {amount}",
+      "delivered": "Marked delivered: {delivered} of {quantity} {unit}",
+      "paidAt": "Paid {time}",
+      "markedAt": "Marked delivered {time}",
+      "kind": {
+        "REPORT": "The buyer reported a problem",
+        "TIMEOUT": "No delivery within 14 days",
+        "SUSPENSION": "The cooperative is suspended",
+        "AFTER_COMPLETION": "Report after completion (no money action)",
+        "PAYOUT": "Payout problem",
+        "RECONCILIATION": "Reconciliation difference"
+      },
+      "status": {
+        "PENDING_PAYMENT": "Not paid",
+        "PAID_HELD": "Paid, held",
+        "PREPARING": "Preparing",
+        "DELIVERED_MARKED": "Marked delivered",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled",
+        "REFUNDED": "Refunded",
+        "DISPUTED": "Frozen for a decision",
+        "TIMED_OUT": "Late: frozen for a decision"
+      },
+      "decide": "Decision",
+      "outcome": {
+        "RELEASE": "Release the payment in full",
+        "REFUND_ALL": "Refund the buyer in full",
+        "REFUND_UNITS": "Refund some units and release the rest",
+        "NOTE": "Record a note (no money moves)"
+      },
+      "units": "Units to refund",
+      "note": "Note (kept with the decision)",
+      "submit": "Decide",
+      "decided": "Decided: {outcome}. {note}",
+      "ledger": "Ledger totals",
+      "payouts": "Payouts",
+      "payout": "{recipient} part {part}: {amount} ({status})",
+      "refunds": "Refunds",
+      "refund": "{amount}, {reason} ({status})",
+      "thread": "Messages between the buyer and the cooperative",
+      "resolveIssue": "Mark resolved",
+      "issueNote": "What you did",
+      "payoutsLink": "Payouts that need you"
     }
   },
   "bank": {
@@ -1358,7 +1439,25 @@
       "MESSAGE_RATE_LIMIT": "You have sent many messages in the last hour. Please wait a little.",
       "UNAUTHENTICATED": "Please sign in again.",
       "FORBIDDEN": "You can't do that.",
-      "INTERNAL": "Something went wrong. Please try again."
+      "INTERNAL": "Something went wrong. Please try again.",
+      "ORDER_STATE": "This order can't do that now. Refresh the page to see where it stands.",
+      "DELIVERED_RANGE": "Enter a delivered quantity from 1 to the quantity ordered.",
+      "DELIVERY_DATE_RANGE": "Choose a date from today to 60 days from now.",
+      "PAYOUT_NOT_FOUND": "This payout was not found.",
+      "PAYOUT_NOT_FAILED": "Only a failed payout can be retried. Refresh the page.",
+      "PAYOUT_NOT_BLOCKED": "This payout is not blocked any more. Refresh the page.",
+      "PAYOUT_STILL_PENDING": "Paystack is still processing the last transfer, so it can't be sent again yet. Check again later.",
+      "PAYOUT_PAID_AT_PAYSTACK": "Paystack says the last transfer went through, so it was recorded as paid and nothing was sent again.",
+      "NO_RECIPIENT": "The recipient has no payout account yet.",
+      "REASON_REQUIRED": "Give a reason of at least 5 characters.",
+      "NO_CANCEL_REQUEST": "There is no request to cancel this order. Refresh the page.",
+      "UNITS_RANGE": "Enter a number of units from 1 to one less than the quantity delivered.",
+      "DISPUTE_NOT_FOUND": "This case was not found.",
+      "DISPUTE_RESOLVED": "This case is already decided. Refresh the page.",
+      "OUTCOME_NOT_ALLOWED": "That decision does not fit this order now. Refresh the page.",
+      "INVALID_DECISION": "Choose a decision and write a note.",
+      "ISSUE_NOT_FOUND": "This issue was not found.",
+      "ISSUE_RESOLVED": "This issue is already resolved. Refresh the page."
     },
     "checkout": {
       "heading": "Buy now",
@@ -1395,7 +1494,26 @@
       "deliveryDate": "Delivery or pickup date: {date}",
       "threadHeading": "Messages with the cooperative",
       "messageCooperative": "Message the cooperative",
-      "viewLot": "View the lot"
+      "viewLot": "View the lot",
+      "deliveredHeading": "Delivered",
+      "deliveredAll": "The cooperative marked all {quantity} {unit} delivered.",
+      "shortfall": "{delivered} of {quantity} delivered: confirming refunds {amount} for the rest",
+      "confirmLead": "Confirm only once you have the goods. Confirming releases your payment to the cooperative and its farmers. If something is wrong, report a problem instead. If you do nothing, the payment is released 3 days after delivery was marked.",
+      "confirm": "Confirm I received it",
+      "cancelHeading": "Cancel the order",
+      "cancelLead": "The cooperative has not started preparing, so you can cancel now and get everything you paid back.",
+      "cancelReason": "Reason (optional)",
+      "cancel": "Cancel and get a full refund",
+      "requestLead": "The cooperative is preparing your order, so you can ask them to cancel. If they agree, you get everything you paid back.",
+      "request": "Ask to cancel",
+      "requested": "You asked to cancel. Waiting for the cooperative to answer.",
+      "reportHeading": "Report a problem",
+      "reportLead": "Tell AgroHub what went wrong. The payment stays held while AgroHub reviews it, and nothing is released until a decision.",
+      "reportLeadCompleted": "This order is complete and the payment was released. AgroHub will read your report, but it can't move the money back.",
+      "reportLabel": "What went wrong",
+      "report": "Report the problem",
+      "underReview": "AgroHub is reviewing this order. The payment stays held until a decision.",
+      "receiptLink": "Receipt"
     },
     "officer": {
       "title": "Orders",
@@ -1408,7 +1526,24 @@
       "fee": "AgroHub fee: {amount}",
       "deliveryCost": "Delivery (kept by the cooperative): {amount}",
       "noDate": "No date yet",
-      "threadHeading": "Messages with the buyer"
+      "threadHeading": "Messages with the buyer",
+      "steps": "Delivery",
+      "startPreparing": "Start preparing",
+      "dateHeading": "Propose a delivery or pickup date",
+      "dateLabel": "Date",
+      "dateSubmit": "Propose this date",
+      "deliveredHeading": "Mark delivered",
+      "deliveredLabel": "Quantity delivered ({unit})",
+      "deliveredSubmit": "Mark delivered",
+      "deliveredHint": "Ordered: {quantity}. If you delivered less, the buyer gets the rest back when they confirm.",
+      "awaitingBuyer": "Marked delivered: {delivered} of {quantity} {unit}. Waiting for the buyer to confirm. The payment is released after 3 days if they don't.",
+      "cancelHeading": "Cancel the order",
+      "cancelLabel": "Reason (the buyer sees it)",
+      "cancel": "Cancel and refund the buyer",
+      "cancelHint": "The buyer gets everything they paid back. Cancellations by the cooperative are counted.",
+      "requestHeading": "The buyer asked to cancel",
+      "agree": "Agree and refund",
+      "decline": "Decline, keep the order"
     },
     "quote": {
       "heading": "Quote delivery",
@@ -1424,6 +1559,51 @@
       "amount": "Amount: {amount}",
       "pay": "Pay (test)",
       "fail": "Payment fails (test)"
+    },
+    "receipt": {
+      "back": "Back to the order",
+      "title": "Receipt for order {reference}",
+      "lead": "Seller: {seller}. AgroHub is the platform the sale was made on.",
+      "paidAt": "Paid {time}",
+      "item": "{quantity} × {unit} of {crop} at {price} each",
+      "delivered": "Delivered: {delivered} of {quantity} {unit}",
+      "goods": "Goods: {amount}",
+      "delivery": "Delivery: {amount}",
+      "total": "Total paid: {amount}",
+      "refund": "Refund: {amount} ({reason})",
+      "refundPending": "(on its way)",
+      "net": "Net paid: {amount}",
+      "platform": "Payments on AgroHub are held until delivery is confirmed, then paid to the cooperative and its farmers. Print this page to keep a copy.",
+      "reason": {
+        "LATE_PAYMENT": "payment came too late",
+        "BUYER_CANCEL": "you cancelled",
+        "COOPERATIVE_CANCEL": "the cooperative cancelled",
+        "SHORTFALL": "not delivered",
+        "ADMIN_DECISION": "AgroHub decision"
+      }
+    }
+  },
+  "earnings": {
+    "title": "Earnings",
+    "lead": "What you earned from each sale of a lot you contributed to, and when it was paid.",
+    "empty": "No completed sales yet.",
+    "back": "Back to earnings",
+    "sale": "Sale {reference}",
+    "summary": "{quantity} × {unit} of {crop}",
+    "statementTitle": "Earnings statement, sale {reference}",
+    "contributed": "Your contribution: {quantity} {unit} of {crop}",
+    "delivered": "Delivered and paid for: {quantity} {unit} at {price} each",
+    "gross": "Your share of the sale: {amount}",
+    "cut": "Cooperative cut ({percent}): {amount}",
+    "fee": "AgroHub fee ({percent}): {amount}",
+    "takeHome": "Your take-home: {amount}",
+    "payouts": "Payouts to your account",
+    "payout": "Part {part}: {amount}, {status}",
+    "status": {
+      "WAITING": "Waiting",
+      "SENDING": "Being sent",
+      "PAID": "Paid",
+      "PROBLEM": "Delayed: AgroHub is on it"
     }
   }
 }

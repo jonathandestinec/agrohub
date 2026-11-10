@@ -78,7 +78,18 @@ Payments need no new variable: the webhook signature is checked with `PAYSTACK_S
 1. Paystack dashboard, **Test mode**, Settings, API Keys & Webhooks: set **Test Webhook URL** to `https://<staging-url>/api/paystack/webhook`, where `<staging-url>` is the stable staging address (the branch alias or a custom domain, not a per-deployment hash URL). Paystack keeps one test webhook URL per account. Production later gets the **Live Webhook URL** on its own domain.
 2. If Vercel Deployment Protection is on for previews, Paystack's webhook gets 401 and no order is ever marked paid. Either turn protection off for the staging deployment, or under Project, Settings, Deployment Protection, create a **Protection Bypass for Automation** secret and add `?x-vercel-protection-bypass=<that secret>` to the webhook URL in step 1. Never put that secret in the repo.
 3. Test mode, Settings, Preferences, **Payment channels**: card, bank transfer and USSD on (bulk orders can exceed card limits).
-4. An order is marked paid only by a signed `charge.success` that Paystack's verify call confirms (status success, exact amount in kobo, NGN). Returning from Paystack's page never marks anything paid, so a blocked webhook shows as "We're confirming your payment" for ever.
+4. An order is marked paid only by a signed `charge.success` that Paystack's verify call confirms (status success, exact amount in kobo, NGN). Returning from Paystack's page never marks anything paid, so a blocked webhook shows as "We're confirming your payment" for ever (the daily reconciliation confirms it the next morning).
+
+### Payouts by transfer (Phase 5b)
+
+Payouts need no new variable either: they are Paystack transfers from AgroHub's balance (`source: balance`) to the recipient codes made when accounts are added.
+
+5. Test mode, Settings, Preferences, **Transfers**: turn off "Confirm transfers before sending" (OTP). With it on, every test payout stays "Awaiting Paystack" on `/admin/payouts` and is never sent again. Live mode needs the same, once Paystack's conditions are met.
+6. Test transfers draw on the test balance. If `/admin/payouts` shows "Paystack balance too low", check the test balance on the Paystack dashboard; such payouts are tried again daily and admins are emailed after three refusals.
+7. The transfer webhooks (`transfer.success`, `transfer.failed`, `transfer.reversed`) arrive at the same webhook URL; nothing else to set.
+8. Vercel crons come from `vercel.json` on deploy: `order-expiry` 04:45, `order-timers` 05:30, `payouts` 06:30, `reconciliation` 07:00 (UTC, once a day, within the Hobby limit).
+
+Not needed for test mode, needed before live money (Paystack, 4 November 2026): a Registered Business with compliance approved, a Manual Payout Account with Paystack's banking partner, transfer OTP off in live mode, a lawyer's view, and live keys only in production.
 
 ### First admin on staging
 

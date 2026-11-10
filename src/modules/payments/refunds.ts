@@ -4,6 +4,7 @@ import { ConflictError, UnavailableError } from "@/lib/errors";
 import { koboFromDb } from "@/lib/money";
 import { refundTransaction } from "@/lib/paystack";
 import { recordAudit } from "@/modules/audit/audit";
+import { alertAdmins } from "./alerts";
 import { postLedger } from "./ledger";
 
 const CLAIM = "claim:";
@@ -88,7 +89,7 @@ export async function settleRefund(
   const refund = await findRefund(event);
   if (!refund) return "UNKNOWN_REFUND";
   const amountKobo = koboFromDb(refund.amountKobo);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const { count } = await tx.refund.updateMany({
       where: { id: refund.id, status: "PENDING" },
       data: { status: outcome, processedAt: outcome === "PROCESSED" ? now : null },
@@ -104,7 +105,6 @@ export async function settleRefund(
         ],
       });
     }
-    // Admin alert emails for a failed refund arrive with Phase 5b's payout alerts.
     await recordAudit(
       {
         actorId: null,
@@ -117,4 +117,9 @@ export async function settleRefund(
     );
     return "SETTLED" as const;
   });
+  // A refund Paystack could not complete must be paid back by hand: tell the admins.
+  if (result === "SETTLED" && outcome === "FAILED") {
+    await alertAdmins({ kind: "REFUND_FAILED", orderId: refund.orderId, amountKobo, recipientType: "BUYER" });
+  }
+  return result;
 }

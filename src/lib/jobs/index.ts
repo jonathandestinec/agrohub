@@ -5,3 +5,4 @@ import "@/modules/cooperatives/job";
 import "@/modules/catalog/job";
 import "@/modules/marketplace/job";
 import "@/modules/orders/job";
+import "@/modules/payments/job";

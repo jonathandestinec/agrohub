@@ -1,5 +1,7 @@
 // Email copy is English-only for now and lives here, not in messages/*.json, which are for UI.
 
+import { formatNaira } from "@/lib/money";
+
 export type StatusEmailKind =
   | "verified"
   | "rejected"
@@ -175,5 +177,36 @@ export function certificateExpiryDigestEmail(input: {
   return {
     subject: "AgroHub certificate expiry digest",
     html: `${lapsed}${reminded}`,
+  };
+}
+
+// ---- Payment and payout alerts for admins. Ids, amounts and kinds only: never an account,
+// a recipient code or a person's name. ----
+
+export type PayoutAlertKind = "FAILED" | "BLOCKED" | "NO_FUNDS" | "STALE" | "RECONCILIATION" | "REFUND_FAILED";
+
+const ALERT_LINES: Record<PayoutAlertKind, { subject: string; body: string }> = {
+  FAILED: { subject: "a payout failed", body: "Paystack reported a payout transfer as failed. It will not be sent again until an admin retries it." },
+  BLOCKED: { subject: "a payout is blocked", body: "A payout could not be queued because the recipient has no payout account. It waits for an admin." },
+  NO_FUNDS: { subject: "the Paystack balance is too low for payouts", body: "Paystack refused a payout three times for insufficient balance. It is tried again daily." },
+  STALE: { subject: "a payout is still awaiting Paystack", body: "A transfer has been awaiting Paystack for more than 3 days. Check it on the Paystack dashboard." },
+  RECONCILIATION: { subject: "reconciliation found a mismatch", body: "The daily reconciliation found a difference between AgroHub and Paystack." },
+  REFUND_FAILED: { subject: "a refund failed", body: "Paystack reported a refund to a buyer as failed. Refund the buyer by hand and record it." },
+};
+
+export function payoutAlertEmail(input: {
+  kind: PayoutAlertKind;
+  orderReference: string;
+  amountKobo: number;
+  recipientType: string;
+  detail?: string;
+}): { subject: string; text: string; html: string } {
+  const line = ALERT_LINES[input.kind];
+  const amount = formatNaira(input.amountKobo);
+  const facts = `Order ${input.orderReference} · ${amount} · ${input.recipientType}${input.detail ? ` · ${input.detail}` : ""}`;
+  return {
+    subject: `AgroHub alert: ${line.subject}`,
+    text: `${line.body}\n${facts}\nOpen the admin order queue to act on it.`,
+    html: `<p>${escapeHtml(line.body)}</p><p>${escapeHtml(facts)}</p><p>Open the admin order queue to act on it.</p>`,
   };
 }

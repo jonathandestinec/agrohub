@@ -7,6 +7,7 @@ import { ArrowUpRight, Card, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { getCooperativeBankAccount } from "@/modules/banking/service";
 import { formatEffectiveAt } from "@/modules/banking/views";
+import { cooperativeCancellations } from "@/modules/orders/service";
 import { DOCUMENT_KINDS } from "@/modules/cooperatives/schema";
 import {
   getCooperativeForReview,
@@ -80,6 +81,7 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
   }
   // Bank and account name only; the recipient code never leaves the server.
   const payout = await getCooperativeBankAccount(actor, cooperative.id, new Date());
+  const cancellations = await cooperativeCancellations(actor, cooperative.id);
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
@@ -89,7 +91,7 @@ async function Review({ params }: { params: Promise<{ id: string }> }) {
       >
         {t("back")}
       </Link>
-      <PageHeading title={cooperative.name} />
+      <PageHeading title={cooperative.name} lead={t("cancellations", { count: cancellations })} />
       <div className="grid gap-2 md:grid-cols-12">
         <div className="flex flex-col gap-2 md:col-span-8">
           <Card tone="paper">

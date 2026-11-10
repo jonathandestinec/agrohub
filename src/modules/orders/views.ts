@@ -74,6 +74,8 @@ export type BuyerOrder = {
   createdAt: string;
   paidAt: string | null;
   threadId: string | null;
+  // The buyer asked to cancel an order being prepared; the cooperative has not answered yet.
+  cancelRequested: boolean;
 };
 
 export type OrderRowForView = {
@@ -89,6 +91,7 @@ export type OrderRowForView = {
   deliveryDate: Date | null;
   createdAt: Date;
   paidAt: Date | null;
+  cancelRequestedAt: Date | null;
   reservation: { expiresAt: Date } | null;
   refunds: Array<{ amountKobo: bigint; status: string }>;
 };
@@ -123,6 +126,7 @@ export function toBuyerOrder(row: OrderRowForView, lot: OrderLotSummary, threadI
     createdAt: row.createdAt.toISOString(),
     paidAt: row.paidAt?.toISOString() ?? null,
     threadId,
+    cancelRequested: row.cancelRequestedAt !== null && row.status === "PREPARING",
   };
 }
 

@@ -69,14 +69,14 @@ describe("committedQuantity", () => {
     expect(await committed()).toBe(12);
   });
 
-  it("counts a paid order, by the delivered quantity once it is set, and never a cancelled or refunded one", async () => {
+  it("counts a paid order by the quantity ordered, even when less was delivered, and never a cancelled or refunded one", async () => {
     const orderId = await seedOrder({ lotId, buyerUserId: other.userId, quantity: 8, status: "PAID_HELD" });
     expect(await committed()).toBe(8);
     await prisma.order.update({ where: { id: orderId }, data: { deliveredQuantity: 6, status: "DELIVERED_MARKED" } });
-    expect(await committed()).toBe(6);
+    expect(await committed()).toBe(8);
     await seedOrder({ lotId, buyerUserId: other.userId, quantity: 5, status: "REFUNDED" });
     await seedOrder({ lotId, buyerUserId: other.userId, quantity: 5, status: "CANCELLED" });
-    expect(await committed()).toBe(6);
+    expect(await committed()).toBe(8);
   });
 
   it("an offer cannot take stock already committed", async () => {

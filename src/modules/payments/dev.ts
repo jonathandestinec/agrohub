@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { koboFromDb } from "@/lib/money";
 import { fakeSettle, selectPaystack } from "@/lib/paystack";
+import { sendDuePayouts } from "./sending";
 import { handlePaystackWebhook } from "./webhook";
 
 // Local development only: the fake Paystack's checkout page. Every function returns null (and
@@ -27,4 +28,16 @@ export async function settleFakeCheckout(reference: string, outcome: "success" |
   const { rawBody, signature } = fakeSettle(reference, outcome);
   if (outcome === "success") await handlePaystackWebhook(rawBody, signature);
   return { orderId: details.orderId };
+}
+
+/**
+ * Local e2e only: runs the payouts of one order as the daily job would the day after payment
+ * (now = paidAt + 25 h), since an end-to-end test cannot move the clock. Null unless the fake
+ * Paystack is in use.
+ */
+export async function runFakePayouts(orderId: string): Promise<{ sent: number; deferred: number } | null> {
+  if (!fakeInUse()) return null;
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { paidAt: true } });
+  if (!order?.paidAt) return null;
+  return sendDuePayouts({ orderId, now: new Date(order.paidAt.getTime() + 25 * 3_600_000) });
 }

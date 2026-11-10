@@ -18,6 +18,7 @@ import { matchesSignature } from "@/lib/file-type";
 import { putPrivate, signedUrl } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
 import { getPlatformSettings } from "@/modules/settings/service";
+import { freezeOrdersOfCooperative } from "@/modules/orders/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import {
   cooperativeStatusEmail,
@@ -578,12 +579,11 @@ export async function suspendCooperative(
   reason: string,
   now: Date = new Date(),
 ): Promise<Cooperative> {
-  void now;
   requireAdminAction(actor, "cooperative:suspend", id);
   const note = cleanReason(reason);
   const cooperative = await loadForReview(id);
   if (cooperative.status !== "VERIFIED") throw illegalTransition();
-  return transition(
+  const suspended = await transition(
     actor,
     cooperative,
     { action: "suspend", email: "suspended", from: "VERIFIED", to: "SUSPENDED" },
@@ -591,6 +591,9 @@ export async function suspendCooperative(
     {},
     note,
   );
+  // Its paid orders wait for an admin: nothing is released to a suspended cooperative.
+  await freezeOrdersOfCooperative(id, actor.userId, now);
+  return suspended;
 }
 
 export async function reinstateCooperative(

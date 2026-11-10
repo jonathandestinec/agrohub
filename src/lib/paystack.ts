@@ -31,10 +31,15 @@ type FakePaystack = {
   transactions: Map<string, FakeTransaction>;
   refunds: Array<{ reference: string; amountKobo: number; refundId: string }>;
   failNextRefund: boolean;
+  // Phase 5b: transfers by reference, and how the next new transfer is answered.
+  transfers: Map<string, FakeTransfer>;
+  transferMode: "success" | "pending" | "otp" | "fail" | "insufficient";
   down: boolean;
   lastId: number;
   clear(): void;
 };
+
+type FakeTransfer = { amountKobo: number; recipientCode: string; status: string; transferCode: string };
 
 type FakeTransaction = {
   amountKobo: number;
@@ -54,6 +59,8 @@ export const fakePaystack: FakePaystack = (globalForPaystack.agrohubFakePaystack
   transactions: new Map(),
   refunds: [],
   failNextRefund: false,
+  transfers: new Map(),
+  transferMode: "success",
   down: false,
   lastId: 1000,
   clear() {
@@ -62,6 +69,8 @@ export const fakePaystack: FakePaystack = (globalForPaystack.agrohubFakePaystack
     this.transactions.clear();
     this.refunds.length = 0;
     this.failNextRefund = false;
+    this.transfers.clear();
+    this.transferMode = "success";
     this.down = false;
   },
 });
@@ -69,6 +78,8 @@ export const fakePaystack: FakePaystack = (globalForPaystack.agrohubFakePaystack
 fakePaystack.transactions ??= new Map();
 fakePaystack.refunds ??= [];
 fakePaystack.lastId ??= 1000;
+fakePaystack.transfers ??= new Map();
+fakePaystack.transferMode ??= "success";
 
 const FAKE_BANKS: Bank[] = [
   { name: "Access Bank", code: "044" },
@@ -365,9 +376,12 @@ function assertReference(reference: string): void {
 
 // Paystack messages worth showing an admin. Anything else is dropped: it can echo an email.
 const REFUSAL_MESSAGES = ["insufficient balance", "already refunded", "transaction not found"];
+// Paystack words a low balance on /transfer this way.
+const LOW_BALANCE = ["balance is not enough", "insufficient balance", "not enough balance"];
 
 function refused(message: unknown): ConflictError {
   const text = typeof message === "string" ? message.toLowerCase() : "";
+  if (LOW_BALANCE.some((m) => text.includes(m))) return new ConflictError("insufficient balance", "PAYSTACK_REFUSED");
   const known = REFUSAL_MESSAGES.find((m) => text.includes(m));
   return new ConflictError(known ?? "Paystack refused the request", "PAYSTACK_REFUSED");
 }
@@ -540,6 +554,110 @@ export async function listTransactionsWith(
   return found;
 }
 
+// ---- Transfers (Phase 5b payouts): from AgroHub's Paystack balance to a recipient code. ----
+
+export type TransferInput = { amountKobo: number; recipientCode: string; reference: string; reason: string };
+
+// Paystack transfer references: lowercase letters, digits, "-" and "_".
+const TRANSFER_REFERENCE = /^[a-z0-9_-]{1,100}$/;
+
+function assertTransferReference(reference: string): void {
+  if (!TRANSFER_REFERENCE.test(reference)) throw new ValidationError("Invalid reference", "INVALID_REFERENCE");
+}
+
+const transferResponse = z.object({
+  status: z.literal(true),
+  data: z.object({ transfer_code: z.string().min(1), status: z.string() }),
+});
+
+const transferVerifyResponse = z.object({
+  status: z.literal(true),
+  data: z.object({ status: z.string(), transfer_code: z.string().nullable().optional() }),
+});
+
+export async function initiateTransferWith(
+  config: PaystackConfig,
+  input: TransferInput,
+): Promise<{ transferCode: string; status: string }> {
+  assertTransferReference(input.reference);
+  if (!Number.isSafeInteger(input.amountKobo) || input.amountKobo < 1) throw new ValidationError("Invalid amount", "INVALID_AMOUNT");
+  if (selectPaystack(config) === "fake") {
+    fakeUnavailable();
+    const existing = fakePaystack.transfers.get(input.reference);
+    if (existing) return { transferCode: existing.transferCode, status: existing.status };
+    if (fakePaystack.transferMode === "insufficient") throw refused("Your balance is not enough to fulfil this request");
+    const status =
+      fakePaystack.transferMode === "fail" ? "failed" : fakePaystack.transferMode === "success" ? "success" : fakePaystack.transferMode;
+    const transferCode = `TRF_fake${randomBytes(6).toString("hex")}`;
+    fakePaystack.transfers.set(input.reference, {
+      amountKobo: input.amountKobo,
+      recipientCode: input.recipientCode,
+      status,
+      transferCode,
+    });
+    return { transferCode, status };
+  }
+  const body = await call(config, "/transfer", {
+    body: {
+      source: "balance",
+      amount: input.amountKobo,
+      recipient: input.recipientCode,
+      reference: input.reference,
+      reason: input.reason,
+    },
+    refusal: true,
+  });
+  const { data } = parse(transferResponse, body, "/transfer");
+  return { transferCode: data.transfer_code, status: data.status };
+}
+
+/** A reference Paystack does not know reads as status "not_found". */
+export async function verifyTransferWith(
+  config: PaystackConfig,
+  reference: string,
+): Promise<{ status: string; transferCode: string | null }> {
+  assertTransferReference(reference);
+  if (selectPaystack(config) === "fake") {
+    fakeUnavailable();
+    const transfer = fakePaystack.transfers.get(reference);
+    return transfer ? { status: transfer.status, transferCode: transfer.transferCode } : { status: "not_found", transferCode: null };
+  }
+  let body: unknown;
+  try {
+    body = await call(config, `/transfer/verify/${encodeURIComponent(reference)}`, { refusal: true });
+  } catch (error) {
+    if (error instanceof ConflictError) return { status: "not_found", transferCode: null };
+    throw error;
+  }
+  const { data } = parse(transferVerifyResponse, body, "/transfer/verify");
+  return { status: data.status, transferCode: data.transfer_code ?? null };
+}
+
+/**
+ * Test and dev helper: settles a fake transfer and returns the signed transfer webhook Paystack
+ * would send for it.
+ */
+export function fakeTransferWebhook(
+  reference: string,
+  outcome: "success" | "failed" | "reversed",
+): { rawBody: string; signature: string } {
+  const transfer = fakePaystack.transfers.get(reference);
+  if (!transfer) throw new Error(`No fake transfer ${reference}`);
+  transfer.status = outcome;
+  return fakeWebhook({
+    event: `transfer.${outcome}`,
+    data: {
+      id: Number.parseInt(transfer.transferCode.slice(-8), 16),
+      reference,
+      transfer_code: transfer.transferCode,
+      status: outcome,
+      amount: transfer.amountKobo,
+      currency: "NGN",
+      recipient: { recipient_code: transfer.recipientCode },
+    },
+  });
+}
+
 /** Paystack signs each webhook with HMAC-SHA512 of the raw body, keyed by the secret key. */
 export function verifyWebhookSignature(rawBody: string, signature: string | null, secret: string): boolean {
   if (!signature || !secret) return false;
@@ -610,4 +728,12 @@ export function refundTransaction(input: { reference: string; amountKobo: number
 
 export function listTransactions(input: { from: Date; to: Date }): Promise<Array<{ reference: string; amountKobo: number; transactionId: string }>> {
   return listTransactionsWith(currentConfig(), input);
+}
+
+export function initiateTransfer(input: TransferInput): Promise<{ transferCode: string; status: string }> {
+  return initiateTransferWith(currentConfig(), input);
+}
+
+export function verifyTransfer(reference: string): Promise<{ status: string; transferCode: string | null }> {
+  return verifyTransferWith(currentConfig(), reference);
 }

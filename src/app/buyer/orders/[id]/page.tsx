@@ -8,7 +8,9 @@ import { ThreadPanel } from "@/components/messages/thread-panel";
 import { BUYER_ORDER_TONE, buyerOrderStatusKey } from "@/components/orders/status";
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
-import { formatNaira } from "@/lib/money";
+import { formatNaira, refundForUnits } from "@/lib/money";
+import { OrderActionButton, OrderFieldForm } from "@/components/orders/order-actions";
+import { cancelOrderAction, confirmReceiptAction, reportProblemAction } from "../actions";
 import { getThread } from "@/modules/messaging/service";
 import { getOwnOrder, type BuyerOrder } from "@/modules/orders/service";
 
@@ -80,7 +82,75 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
         <Link href={`/lots/${order.lot.id}`} className="body-6 underline underline-offset-2">
           {t("buyer.viewLot")}
         </Link>
+        {order.paidAt ? (
+          <Link href={`/buyer/orders/${order.id}/receipt`} className="body-6 underline underline-offset-2">
+            {t("buyer.receiptLink")}
+          </Link>
+        ) : null}
       </Card>
+      {order.status === "DELIVERED" && order.deliveredQuantity !== null ? (
+        <Card tone="paper" className="flex flex-col gap-3">
+          <h2 className="title-2">{t("buyer.deliveredHeading")}</h2>
+          {order.deliveredQuantity < order.quantity ? (
+            <p className="body-4 tabular-nums">
+              {t("buyer.shortfall", {
+                delivered: order.deliveredQuantity,
+                quantity: order.quantity,
+                amount: formatNaira(refundForUnits(order.unitKobo, order.quantity - order.deliveredQuantity)),
+              })}
+            </p>
+          ) : (
+            <p className="body-4">{t("buyer.deliveredAll", { quantity: order.quantity, unit: order.lot.unit })}</p>
+          )}
+          <p className="body-6 text-ink-soft">{t("buyer.confirmLead")}</p>
+          <OrderActionButton action={confirmReceiptAction.bind(null, order.id)} label={t("buyer.confirm")} />
+        </Card>
+      ) : null}
+      {order.status === "PAID_HELD" ? (
+        <OrderFieldForm
+          action={cancelOrderAction.bind(null, order.id)}
+          heading={t("buyer.cancelHeading")}
+          hint={t("buyer.cancelLead")}
+          label={t("buyer.cancelReason")}
+          submit={t("buyer.cancel")}
+          kind="text"
+          name="reason"
+          optional
+        />
+      ) : null}
+      {order.status === "PREPARING" && !order.cancelRequested ? (
+        <OrderFieldForm
+          action={cancelOrderAction.bind(null, order.id)}
+          heading={t("buyer.cancelHeading")}
+          hint={t("buyer.requestLead")}
+          label={t("buyer.cancelReason")}
+          submit={t("buyer.request")}
+          kind="text"
+          name="reason"
+          optional
+        />
+      ) : null}
+      {order.status === "UNDER_REVIEW" ? (
+        <Card tone="paper">
+          <p className="body-4">{t("buyer.underReview")}</p>
+        </Card>
+      ) : null}
+      {["PAID_HELD", "PREPARING", "DELIVERED", "COMPLETED"].includes(order.status) ? (
+        <OrderFieldForm
+          action={reportProblemAction.bind(null, order.id)}
+          heading={t("buyer.reportHeading")}
+          hint={order.status === "COMPLETED" ? t("buyer.reportLeadCompleted") : t("buyer.reportLead")}
+          label={t("buyer.reportLabel")}
+          submit={t("buyer.report")}
+          kind="text"
+          name="problem"
+        />
+      ) : null}
+      {order.status === "PREPARING" && order.cancelRequested ? (
+        <Card tone="paper">
+          <p className="body-4">{t("buyer.requested")}</p>
+        </Card>
+      ) : null}
       <section aria-labelledby="thread-heading" className="flex flex-col gap-3">
         <h2 id="thread-heading" className="heading-6">
           {t("buyer.threadHeading")}

@@ -8,16 +8,16 @@ datasource db {
 }
 
 model User {
-  id                String       @id
+  id                String         @id
   name              String
   email             String
-  emailVerified     Boolean      @default(false)
+  emailVerified     Boolean        @default(false)
   image             String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   phone             String
   consentAcceptedAt DateTime
-  locale            String       @default("en")
+  locale            String         @default("en")
   sessions          Session[]
   accounts          Account[]
   memberships       Membership[]
@@ -290,12 +290,12 @@ model FarmerProfile {
 // price points reference them. nameKey is the normalized name lower-cased, so names are
 // unique regardless of case and spacing.
 model Crop {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   name      String
-  nameKey   String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  nameKey   String          @unique
+  active    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
   prices    PricePoint[]
   farmers   FarmerProfile[] @relation("FarmerCrops")
   lots      Lot[]
@@ -304,12 +304,12 @@ model Crop {
 }
 
 model Unit {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   name      String
-  nameKey   String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  nameKey   String       @unique
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   prices    PricePoint[]
   lots      Lot[]
 
@@ -720,37 +720,43 @@ enum LedgerAccount {
 // One lot per order. Terms are copied from the lot's LotFeeTerms at checkout and never change.
 // Money that can pass the 32-bit limit is BIGINT kobo (see koboFromDb / koboToDb).
 model Order {
-  id                String             @id @default(cuid())
-  lotId             String
-  lot               Lot                @relation(fields: [lotId], references: [id], onDelete: Restrict)
-  cooperativeId     String
-  cooperative       Cooperative        @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
-  buyerUserId       String
-  buyer             User               @relation(fields: [buyerUserId], references: [id], onDelete: Restrict)
-  offerId           String?
-  quantity          Int
-  unitKobo          Int
-  cutBps            Int
-  feeBps            Int
-  deliveryMethod    DeliveryMethod
-  deliveryKobo      BigInt             @default(0)
-  deliveryQuoteId   String?            @unique
-  deliveryQuote     DeliveryQuote?     @relation(fields: [deliveryQuoteId], references: [id], onDelete: Restrict)
-  totalKobo         BigInt
-  status            OrderStatus        @default(PENDING_PAYMENT)
-  cancelReason      String?
-  paidAt            DateTime?
-  preparingAt       DateTime?
-  deliveryDate      DateTime?          @db.Date
-  deliveredQuantity Int?
-  deliveredMarkedAt DateTime?
-  completedAt       DateTime?
-  timedOutAt        DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  reservation       StockReservation?
-  payments          Payment[]
-  refunds           Refund[]
+  id                     String            @id @default(cuid())
+  lotId                  String
+  lot                    Lot               @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  cooperativeId          String
+  cooperative            Cooperative       @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  buyerUserId            String
+  buyer                  User              @relation(fields: [buyerUserId], references: [id], onDelete: Restrict)
+  offerId                String?
+  quantity               Int
+  unitKobo               Int
+  cutBps                 Int
+  feeBps                 Int
+  deliveryMethod         DeliveryMethod
+  deliveryKobo           BigInt            @default(0)
+  deliveryQuoteId        String?           @unique
+  deliveryQuote          DeliveryQuote?    @relation(fields: [deliveryQuoteId], references: [id], onDelete: Restrict)
+  totalKobo              BigInt
+  status                 OrderStatus       @default(PENDING_PAYMENT)
+  cancelReason           String?
+  paidAt                 DateTime?
+  preparingAt            DateTime?
+  deliveryDate           DateTime?         @db.Date
+  deliveredQuantity      Int?
+  deliveredMarkedAt      DateTime?
+  completedAt            DateTime?
+  timedOutAt             DateTime?
+  // A buyer asked to cancel an order the cooperative is preparing; the officer answers.
+  cancelRequestedAt      DateTime?
+  // The cooperative cancelled (counted on its admin page).
+  cancelledByCooperative Boolean           @default(false)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  reservation            StockReservation?
+  payments               Payment[]
+  refunds                Refund[]
+  payouts                Payout[]
+  disputes               Dispute[]
 
   @@index([lotId, status])
   @@index([cooperativeId, status])
@@ -862,4 +868,126 @@ model DeliveryQuote {
 
   @@index([lotId, buyerUserId])
   @@map("delivery_quote")
+}
+
+enum PayoutStatus {
+  QUEUED
+  SENT
+  PAID
+  FAILED
+  BLOCKED
+}
+
+enum PayoutRecipient {
+  COOPERATIVE
+  FARMER
+}
+
+enum AttemptStatus {
+  SENT
+  SUCCEEDED
+  FAILED
+  REVERSED
+}
+
+// One transfer part owed to one recipient of a completed order, created only by server code on
+// completion. recipientId is the cooperative id or the farmer's user id; bankOwnerId is the
+// cooperative id or the farmer's profile id (null when the farmer has no profile). The account
+// (recipientCode) is fixed at release; null means BLOCKED until an admin unblocks it.
+model Payout {
+  id              String          @id @default(cuid())
+  orderId         String
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  recipientType   PayoutRecipient
+  recipientId     String
+  bankOwnerId     String?
+  part            Int
+  amountKobo      BigInt
+  recipientCode   String?
+  reference       String          @unique
+  status          PayoutStatus    @default(QUEUED)
+  sendableAt      DateTime
+  balanceRefusals Int             @default(0)
+  paidAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  attempts        PayoutAttempt[]
+
+  @@unique([orderId, recipientType, recipientId, part])
+  @@index([status, sendableAt])
+  @@index([recipientType, recipientId])
+  @@map("payout")
+}
+
+// One Paystack transfer of a payout, with its own reference (<payout reference>-<attempt>). A new
+// attempt is made only after Paystack confirmed the last one failed or was reversed.
+model PayoutAttempt {
+  id                String        @id @default(cuid())
+  payoutId          String
+  payout            Payout        @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  attempt           Int
+  transferReference String        @unique
+  transferCode      String?
+  status            AttemptStatus
+  failureReason     String?
+  createdAt         DateTime      @default(now())
+  settledAt         DateTime?
+
+  @@unique([payoutId, attempt])
+  @@index([status, createdAt])
+  @@map("payout_attempt")
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+enum DisputeOutcome {
+  RELEASE
+  REFUND_ALL
+  REFUND_UNITS
+  NOTE
+}
+
+// Something about an order an admin must decide: a buyer's report (REPORT, or AFTER_COMPLETION
+// with no money action), a delivery timeout (TIMEOUT) or a suspended cooperative (SUSPENSION).
+// openedByUserId is null for disputes the timers job opens.
+model Dispute {
+  id              String          @id @default(cuid())
+  orderId         String
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  openedByUserId  String?
+  kind            String
+  reason          String
+  status          DisputeStatus   @default(OPEN)
+  outcome         DisputeOutcome?
+  unitsRefunded   Int?
+  decisionNote    String?
+  decidedByUserId String?
+  decidedAt       DateTime?
+  createdAt       DateTime        @default(now())
+
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@map("dispute")
+}
+
+// A difference the daily reconciliation found and could not settle itself, for the admin
+// order queue. Unique by kind and reference, so a second run records (and emails) nothing new.
+// detail holds ids, amounts and statuses only.
+model ReconciliationIssue {
+  id               String    @id @default(cuid())
+  kind             String
+  reference        String
+  orderId          String?
+  detail           Json
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  resolutionNote   String?
+  createdAt        DateTime  @default(now())
+
+  @@unique([kind, reference])
+  @@index([resolvedAt, createdAt])
+  @@map("reconciliation_issue")
 }
