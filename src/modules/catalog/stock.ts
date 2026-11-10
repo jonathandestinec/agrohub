@@ -2,8 +2,8 @@ import type { OrderStatus, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { lagosDateKey } from "@/lib/lagos-date";
 
-// Orders whose quantity is sold: paid and not cancelled or refunded. Once the officer records
-// the quantity delivered, that is what counts (undelivered units are refunded, not resold).
+// Orders whose quantity is sold: paid and not cancelled or refunded. The whole ordered quantity
+// counts even when less was delivered: undelivered units are refunded, never resold.
 export const SOLD_STATUSES: readonly OrderStatus[] = [
   "PAID_HELD",
   "PREPARING",
@@ -29,9 +29,9 @@ export async function committedQuantity(
   const notOrder = exclude.orderId ? { id: { not: exclude.orderId } } : {};
   const sold = await tx.order.findMany({
     where: { lotId, status: { in: [...SOLD_STATUSES] }, ...notOrder },
-    select: { quantity: true, deliveredQuantity: true },
+    select: { quantity: true },
   });
-  const soldQuantity = sold.reduce((sum, o) => sum + (o.deliveredQuantity ?? o.quantity), 0);
+  const soldQuantity = sold.reduce((sum, o) => sum + o.quantity, 0);
   const reserved = await tx.stockReservation.aggregate({
     where: {
       lotId,
@@ -67,9 +67,9 @@ export async function refreshSoldOut(tx: Prisma.TransactionClient, lotId: string
   if (lot.status !== "LIVE") return;
   const sold = await tx.order.findMany({
     where: { lotId, status: { in: [...SOLD_STATUSES] } },
-    select: { quantity: true, deliveredQuantity: true },
+    select: { quantity: true },
   });
-  const soldQuantity = sold.reduce((sum, o) => sum + (o.deliveredQuantity ?? o.quantity), 0);
+  const soldQuantity = sold.reduce((sum, o) => sum + o.quantity, 0);
   if (soldQuantity >= lot.quantity) {
     await tx.lot.updateMany({ where: { id: lotId, status: "LIVE" }, data: { status: "SOLD_OUT" } });
   }
