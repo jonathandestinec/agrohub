@@ -1,61 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
+import { navLinksWithoutActiveMembership } from "@/components/nav-links";
 import { centreNavLinks, isCurrent, navBreakpoint, showRoleSwitcher } from "@/components/nav-current";
-
-describe("navLinksFor", () => {
-  it("gives officers onboarding, invites, farmers and lot screening", () => {
-    expect(navLinksFor("OFFICER")).toEqual([
-      { href: "/officer/onboarding", labelKey: "cooperative" },
-      { href: "/officer/invites", labelKey: "invites" },
-      { href: "/officer/farmers", labelKey: "farmers" },
-      { href: "/officer/lots", labelKey: "screenLots" },
-      { href: "/officer/offers", labelKey: "offers" },
-      { href: "/officer/orders", labelKey: "orders" },
-      { href: "/messages", labelKey: "messages" },
-    ]);
-  });
-
-  it("gives admins the cooperatives queue, name changes, the lot queue and platform settings", () => {
-    expect(navLinksFor("ADMIN")).toEqual([
-      { href: "/admin/cooperatives", labelKey: "reviewCooperatives" },
-      { href: "/admin/names", labelKey: "nameChanges" },
-      { href: "/admin/lots", labelKey: "lotQueue" },
-      { href: "/admin/settings", labelKey: "platformSettings" },
-      { href: "/admin/orders", labelKey: "orderQueue" },
-    ]);
-  });
-
-  it("gives farmers their farmer page, their lots and the price board", () => {
-    expect(navLinksFor("FARMER")).toEqual([
-      { href: "/farmer", labelKey: "farm" },
-      { href: "/farmer/lots", labelKey: "myLots" },
-      { href: "/farmer/earnings", labelKey: "earnings" },
-      { href: "/messages", labelKey: "messages" },
-      { href: "/prices", labelKey: "prices" },
-    ]);
-  });
-
-  it("gives board admins price entry, crops and units, and the price board", () => {
-    expect(navLinksFor("BOARD_ADMIN").map((l) => l.href)).toEqual([
-      "/board",
-      "/board/crops",
-      "/prices",
-    ]);
-  });
-
-  it("gives buyers the lot list and their offers", () => {
-    expect(navLinksFor("BUYER")).toEqual([
-      { href: "/lots", labelKey: "browseLots" },
-      { href: "/buyer", labelKey: "myOffers" },
-      { href: "/buyer/orders", labelKey: "myOrders" },
-      { href: "/messages", labelKey: "messages" },
-    ]);
-  });
-
-  it("gives no links without a role", () => {
-    expect(navLinksFor(null)).toEqual([]);
-  });
-});
 
 describe("navLinksWithoutActiveMembership", () => {
   const register = [

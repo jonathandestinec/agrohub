@@ -7,10 +7,15 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
-import { AppNav } from "@/components/app-nav";
+import { AppNav, type AppNavItem } from "@/components/app-nav";
 import { OverscrollReveal } from "@/components/overscroll";
 import { showRoleSwitcher } from "@/components/nav-current";
-import { navLinksFor, navLinksWithoutActiveMembership } from "@/components/nav-links";
+import {
+  navItemsFor,
+  navItemsSignedOut,
+  navLinksWithoutActiveMembership,
+  type NavItem,
+} from "@/components/nav-links";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { SignOutButton } from "@/components/sign-out-button";
 import { buttonClass } from "@/components/ui/button";
@@ -61,7 +66,7 @@ async function AccountSlot() {
 async function NavSlot() {
   const t = await getTranslations("nav");
   const session = await auth.api.getSession({ headers: await headers() });
-  let links: { href: string; label: string }[] = [];
+  let rawItems: NavItem[] = navItemsSignedOut();
   let hasSwitcher = false;
   if (session) {
     const memberships = await listMemberships(session.user.id);
@@ -70,15 +75,25 @@ async function NavSlot() {
       memberships,
       cookieStore.get("activeMembershipId")?.value,
     );
-    const raw = active
-      ? navLinksFor(active.role)
-      : navLinksWithoutActiveMembership(await listMembershipStates(session.user.id));
-    links = raw.map((link) => ({ href: link.href, label: t(link.labelKey) }));
+    rawItems = active
+      ? navItemsFor(active.role)
+      : navLinksWithoutActiveMembership(await listMembershipStates(session.user.id)).map(
+          (link): NavItem => ({ kind: "link", ...link }),
+        );
     hasSwitcher = showRoleSwitcher(memberships.length);
   }
+  const items: AppNavItem[] = rawItems.map((item) =>
+    item.kind === "link"
+      ? { kind: "link", href: item.href, label: t(item.labelKey) }
+      : {
+          kind: "group",
+          label: t(item.labelKey),
+          links: item.links.map((link) => ({ href: link.href, label: t(link.labelKey) })),
+        },
+  );
   return (
     <AppNav
-      links={links}
+      items={items}
       label={t("label")}
       homeLabel={t("home")}
       openLabel={t("openMenu")}

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Mark } from "@/components/ui/icons";
-import { centreNavLinks, isCurrent, navBreakpoint } from "./nav-current";
+import { Menu, MENU_ITEM } from "@/components/ui/menu";
+import { centreNavLinks, currentHref, itemIsCurrent, navBreakpoint } from "./nav-current";
 
 const BREAKPOINT_CLASSES = {
   lg: { block: "hidden lg:block", flex: "hidden lg:flex", narrowOnly: "lg:hidden" },
@@ -12,7 +13,13 @@ const BREAKPOINT_CLASSES = {
   menu: { block: "hidden", flex: "hidden", narrowOnly: "" },
 } as const;
 
+const PILL = "press flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full px-4 title-4";
+
 export type AppNavLink = { href: string; label: string };
+// One item in the bar: a link, or a labelled group that opens a dropdown of links.
+export type AppNavItem =
+  | { kind: "link"; href: string; label: string }
+  | { kind: "group"; label: string; links: AppNavLink[] };
 
 // Pinned-nav state, as in the demo: "scrolled" once the page leaves the top; "compact" while
 // scrolling down past the first screenful, and back to full the moment the reader scrolls up.
@@ -52,24 +59,29 @@ function useScrollCompact(threshold = 120) {
 // a full-height menu that is only rendered while open, so closed it can't be reached by
 // keyboard and the page keeps one navigation landmark.
 export function AppNav({
-  links,
+  items,
   label,
   homeLabel,
   openLabel,
   closeLabel,
   hasSwitcher,
   switcher,
+  bell = null,
   account,
 }: {
-  links: AppNavLink[];
+  items: AppNavItem[];
   label: string;
   homeLabel: string;
   openLabel: string;
   closeLabel: string;
   hasSwitcher: boolean;
   switcher: ReactNode;
+  // Reserved: notifications go here, between the links and the account button.
+  bell?: ReactNode;
   account: ReactNode;
 }) {
+  const links = items; // the bar's items; "links" in the layout code below
+  const allHrefs = items.flatMap((item) => (item.kind === "link" ? [item.href] : item.links.map((l) => l.href)));
   const pathname = usePathname();
   // Open on the page it was opened on; navigating anywhere closes it without an effect.
   const [openOn, setOpenOn] = useState<string | null>(null);
@@ -121,18 +133,40 @@ export function AppNav({
   const linkNav = (placement: string) => (
     <nav aria-label={label} inert={compact} className={`nav-links ${placement}`}>
       <ul className="flex items-center gap-1">
-        {links.map((link, i) => {
-          const current = isCurrent(pathname, link.href);
+        {links.map((item, i) => {
+          const current = itemIsCurrent(item, pathname, allHrefs);
+          const delay = { transitionDelay: `${compact ? i * 25 : 120 + i * 35}ms` };
+          if (item.kind === "group") {
+            const here = currentHref(pathname, allHrefs);
+            return (
+              <li key={item.label} style={delay}>
+                <Menu
+                  button={item.label}
+                  current={current}
+                  buttonClassName={`${PILL} bg-step hover:bg-step-deep data-[current]:bg-ink data-[current]:text-paper`}
+                >
+                  {item.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      aria-current={link.href === here ? "page" : undefined}
+                      className={MENU_ITEM}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </Menu>
+              </li>
+            );
+          }
           return (
-            <li key={link.href} style={{ transitionDelay: `${compact ? i * 25 : 120 + i * 35}ms` }}>
+            <li key={item.href} style={delay}>
               <Link
-                href={link.href}
+                href={item.href}
                 aria-current={current ? "page" : undefined}
-                className={`press flex min-h-11 items-center whitespace-nowrap rounded-full px-4 title-4 ${
-                  current ? "bg-ink text-paper" : "bg-step hover:bg-step-deep"
-                }`}
+                className={`${PILL} ${current ? "bg-ink text-paper" : "bg-step hover:bg-step-deep"}`}
               >
-                {link.label}
+                {item.label}
               </Link>
             </li>
           );
@@ -151,7 +185,7 @@ export function AppNav({
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
           }}
-          className="nav-bar relative mx-auto flex items-center justify-between gap-3 overflow-hidden rounded-full p-1"
+          className="nav-bar relative mx-auto flex items-center justify-between gap-3 rounded-full p-1"
         >
           <Link
             href="/"
@@ -167,6 +201,7 @@ export function AppNav({
           <div className="relative z-10 flex shrink-0 items-center gap-2">
             {hasLinks && !centred ? linkNav(compact ? "hidden" : wide.block) : null}
             <div className={`${compact ? "hidden" : hasMenu ? wide.flex : "flex"} items-center`}>{switcher}</div>
+            {bell ? <div className={`${hasMenu ? wide.flex : "flex"} items-center`}>{bell}</div> : null}
             <div className={`${hasMenu ? wide.flex : "flex"} items-center`}>{account}</div>
             {hasMenu ? (
               <button
@@ -205,18 +240,39 @@ export function AppNav({
       {hasLinks ? (
         <nav aria-label={label}>
           <ul className="flex flex-col gap-2">
-            {links.map((link, i) => (
-              <li key={link.href} className="menu-link" style={{ animationDelay: `${Math.min(i * 60, 340)}ms` }}>
+            {links.map((item, i) => {
+              const here = currentHref(pathname, allHrefs);
+              const delay = { animationDelay: `${Math.min(i * 60, 340)}ms` };
+              const row = (link: AppNavLink) => (
                 <Link
                   href={link.href}
-                  aria-current={isCurrent(pathname, link.href) ? "page" : undefined}
+                  aria-current={link.href === here ? "page" : undefined}
                   onClick={() => setOpenOn(null)}
                   className="flex min-h-14 items-center rounded-2xl bg-step px-5 heading-5 aria-[current=page]:bg-lime aria-[current=page]:text-lime-ink"
                 >
                   {link.label}
                 </Link>
-              </li>
-            ))}
+              );
+              if (item.kind === "link") {
+                return (
+                  <li key={item.href} className="menu-link" style={delay}>
+                    {row(item)}
+                  </li>
+                );
+              }
+              return (
+                <li key={item.label} className="menu-link" style={delay}>
+                  <section aria-label={item.label} className="flex flex-col gap-2">
+                    <h2 className="px-2 pt-2 caption-4 uppercase tracking-wide text-ink-soft">{item.label}</h2>
+                    <ul className="flex flex-col gap-2">
+                      {item.links.map((link) => (
+                        <li key={link.href}>{row(link)}</li>
+                      ))}
+                    </ul>
+                  </section>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       ) : null}
