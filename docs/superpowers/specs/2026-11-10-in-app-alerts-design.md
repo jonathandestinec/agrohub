@@ -33,7 +33,7 @@ The interface calls the feature "Alerts". The code and table use `notification`,
 
 1. The person who did the action is never alerted about it.
 2. "Officers" means every active officer of that cooperative. "Admins" means every active admin. "Board admins" means every active board admin. Each person gets their own row with their own read state.
-3. An alert belongs to one of the person's roles. A farmer who is also a buyer has farmer alerts and buyer alerts, and the bell shows the ones for the role they are using.
+3. An alert about work belongs to one of the person's roles. A farmer who is also a buyer has farmer alerts and buyer alerts, and the bell shows the ones for the role they are using. An alert about the person themself (a membership decision, a personal name change, a decided crop or unit request) belongs to no role and shows under every role the person uses. A person with no active role at all (a farmer just removed, with no other role) has no bell, because the app gives them no working identity; the existing email is what tells them, and the alert is waiting if they take up a role again.
 4. An alert never contains a floor price, a phone number or bank data.
 5. An alert is written only if the change it reports was saved.
 6. An alert reports a change of state, not a function call. Several functions can be reached twice for the same event: `confirmPayment` from both the webhook and the reconciliation job, `settleAttempt` from five callers, `settleRefund` on a replayed webhook. Each already decides with a conditional update (`updateMany` with the old status in `where`) and returns `ALREADY_CONFIRMED` or `ALREADY_SETTLED` when it changed nothing. The alert is written only on the branch where that update changed one row.
@@ -51,10 +51,10 @@ The interface calls the feature "Alerts". The code and table use `notification`,
 | `LOT_COUNTERED` | Their lot was sent back with a counter | `counterLot` | `/farmer/lots` |
 | `LOT_REVISION_DECIDED` | Their requested change was approved or refused | `catalog/revisions.ts` `decideRevision` | `/farmer/lots` |
 | `OFFER_NEEDS_FARMER` | An offer on their lot is waiting on them | `marketplace/negotiation.ts` `respondToOffer`, when the officer accepts an offer below the floor and the offer moves to `AWAITING_FARMER` | `/farmer/lots` |
-| `LOT_ORDER_PAID` | An order for their lot was paid | `payments/payments.ts` `confirmPayment` | `/farmer/earnings` |
+| `LOT_ORDER_PAID` | An order for their lot was paid | `payments/payments.ts` `confirmPayment`, only when the order becomes paid (a late payment that is refunded instead tells no one to prepare) | `/farmer/earnings` |
 | `PAYOUT_SENT` | Their payout was sent | `payments/sending.ts` `settleAttempt`, `settleTransferEvent` | `/farmer/earnings` |
 | `MEMBERSHIP_APPROVED`, `MEMBERSHIP_REJECTED`, `MEMBERSHIP_REMOVED` | Their membership was decided | `farmers/service.ts` `approveFarmer`, `rejectFarmer`, `removeFarmer` | `/farmer` |
-| `BANK_CHANGE_APPLIED` | Their new bank details took effect | `banking/service.ts` `applyDueBankChanges` | `/account` |
+| `BANK_CHANGE_APPLIED` | Their new bank details took effect (for a cooperative's account, its officers are told) | `banking/service.ts` `applyDueBankChanges` | `/account` |
 | `NAME_CHANGE_APPROVED`, `NAME_CHANGE_REJECTED` | Their name change was decided | `name-changes/service.ts` `approveNameChange`, `rejectNameChange` | `/account` |
 | `CATALOG_REQUEST_APPROVED`, `CATALOG_REQUEST_DECLINED` | Their request for a crop or unit was decided | `catalog/requests.ts` `approveCatalogRequest`, `declineCatalogRequest` | `/farmer` |
 
@@ -121,7 +121,8 @@ The interface calls the feature "Alerts". The code and table use `notification`,
 |---|---|---|---|
 | `MESSAGE_RECEIVED` | Someone wrote in a thread they take part in | `messaging/service.ts` `postMessage`, `postToBuyerThread` | the thread under `/messages` |
 
-- The alert goes to the other side of the thread: the buyer, or the cooperative's officers, or the farmer, according to the thread's kind.
+- The alert goes to everyone on the thread except the author: the thread's buyer or farmer, and the cooperative's officers.
+- A delivery quote is posted as a message; it raises `DELIVERY_QUOTED` only, not a message alert as well. The same goes for a note typed with an offer or with an answer to one: the offer alert covers it.
 - If the person already has an unread `MESSAGE_RECEIVED` alert for that thread, its time is moved to now and no second row is added. One thread is one line in the bell however long the chat.
 - System messages written by `postSystemMessage` raise no message alert. The event that caused them already raises its own.
 
@@ -134,7 +135,9 @@ model Notification {
   id            String                  @id @default(cuid())
   userId        String
   user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role          Role
+  // Null: shown under every role the person has.
+  role          Role?
+  // Null: not tied to a cooperative.
   cooperativeId String?
   kind          NotificationKind
   // Polymorphic: the lot, offer, order, thread or cooperative the alert is about. No foreign key.
@@ -144,17 +147,17 @@ model Notification {
   readAt        DateTime?
   createdAt     DateTime                @default(now())
 
-  @@index([userId, role, readAt])
-  @@index([userId, role, createdAt])
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
   @@index([userId, kind, subjectId])
   @@map("notification")
 }
 ```
 
 - `NotificationKind` is an enum of the kinds in section 4.
-- `NotificationSubjectType` is an enum: `LOT`, `OFFER`, `ORDER`, `THREAD`, `COOPERATIVE`, `MEMBERSHIP`, `NAME_CHANGE`, `CATALOG_REQUEST`, `BANK_CHANGE`, `PAYOUT`.
+- `NotificationSubjectType` is an enum: `LOT`, `OFFER`, `ORDER`, `THREAD`, `COOPERATIVE`, `MEMBERSHIP`, `NAME_CHANGE`, `CATALOG_REQUEST`, `BANK_CHANGE`. Payout and refund alerts take the order as their subject.
 - `data` holds only what the sentence needs: crop name, quantity and unit, cooperative name, a date, or an amount in integer kobo. Each kind has a typed shape in `src/modules/notifications/schema.ts`. Floor prices, phone numbers and bank data have no field in any shape.
-- `role` and `cooperativeId` record which of the person's roles the alert is for.
+- `role` and `cooperativeId` record which of the person's roles the alert is for. A reader sees a row when it is theirs, its `role` is null or the role they are using, and its `cooperativeId` is null or their cooperative.
 - Old events are not backfilled. The bell starts empty.
 - Alerts are kept indefinitely. There is no clean-up job in this stage.
 
@@ -165,18 +168,20 @@ All in `src/modules/notifications/`, beside the existing `emails.ts` and `recipi
 **`service.ts`**
 
 - `notify(tx, { kind, subject, data, to, exclude })` writes one row per recipient. `to` is a list of `{ userId, role, cooperativeId }`. `exclude` is the acting user's id. It takes the caller's transaction client, so the alert is saved with the change or not at all.
-- `listOwnAlerts(actor, { page })`, `latestOwnAlerts(actor)` (ten newest), `countOwnUnread(actor)`.
+- `listOwnAlerts(actor, page)`, `latestOwnAlerts(actor)` (ten newest), `countOwnUnread(actor)`.
 - `markRead(actor, id)`, `markAllRead(actor)`.
 
 The read and mark functions take an `Actor` and check `can(actor, "notification:own", { ownerUserId })` first. They filter by `actor.userId`, `actor.role` and `actor.cooperativeId`.
 
 `notify` takes no `Actor`. It is an internal write, called only from other services after their own `can` check and from webhook and scheduled-job functions that have no actor. `alertAdmins` in `payments/alerts.ts` and `postSystemMessage` in `messaging/service.ts` are the existing functions of this kind. `tx` is a `Prisma.TransactionClient`, the type the other modules already pass around.
 
-**`recipients.ts`** gains helpers that return recipient lists: `officersOf(tx, cooperativeId)`, `activeAdmins(tx)`, `activeBoardAdmins(tx)`, `farmersOfLot(tx, lotId)`, `buyerOf(order | offer)`, `otherSideOfThread(tx, threadId, authorUserId)`.
+**`recipients.ts`** gains helpers that return recipient lists: `officersOf(tx, cooperativeId)`, `activeAdmins(tx)`, `activeBoardAdmins(tx)`, `farmersOfLot(tx, lotId)`, `buyer(userId)`, `person(userId)` for alerts that belong to no role, and `threadAudience(tx, threadId)`.
 
-**`views.ts`** maps a row to what the interface shows: `{ id, sentence, href, read, createdAt }`. The sentence and link for every kind are built here from `kind`, `subjectId` and `data`. This is the only place alert copy lives, and the only way an alert leaves the server.
+**`views.ts`** maps a row to what the interface shows: `{ id, kind, params, href, read, createdAt }`. `params` are the display values for the sentence, built from `data` (amounts formatted through `src/lib/money.ts`). The link is built from `kind`, `role` and `subjectId`. This is the only way an alert leaves the server.
 
-**Copy** follows the project rule: the held payment is "payment held until delivery is confirmed", never "escrow".
+**Copy** lives in `messages/en.json` under `alerts`, one sentence per kind, as the other modules do: views return codes and the interface translates them. It follows the project rule: the held payment is "payment held until delivery is confirmed", never "escrow".
+
+**Admin problem alerts** (`PAYOUT_PROBLEM`, `RECONCILIATION_ISSUE`) are written inside the existing `alertAdmins` in `payments/alerts.ts`, next to the email it already sends. That function runs after the transaction and never throws, so these two kinds are the exception to "inside the transaction": a failure to write one is logged and does not disturb the payout.
 
 **Where the calling function has a transaction,** `notify` runs inside it. Where it has none, `notify` runs directly after the conditional update, and only if that update changed a row. `transition` in `cooperatives/service.ts` and `uploadDocument` are of this second kind.
 
