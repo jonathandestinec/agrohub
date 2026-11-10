@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { ForbiddenError } from "@/lib/errors";
 import { fakePaystack } from "@/lib/paystack";
 import { fakeStorage } from "@/lib/storage";
+import { completeOrder } from "@/modules/orders/service";
 import { suspendCooperative } from "@/modules/cooperatives/service";
 import {
   confirmReceipt,
@@ -38,6 +39,27 @@ async function reported(delivered = 30) {
   await reportProblem(w.buyer, orderId, "Ten bags were wet", new Date());
   return orderId;
 }
+
+describe("completeOrder by caller", () => {
+  const nothingMoved = async (orderId: string, status: string) => {
+    expect((await order(orderId)).status).toBe(status);
+    expect(await prisma.payout.count({ where: { orderId } })).toBe(0);
+    expect(await prisma.ledgerEntry.count({ where: { orderId, kind: "order.released" } })).toBe(0);
+  };
+
+  it.each(["AUTO", "BUYER"] as const)("%s cannot release an order that was disputed after it was read", async (by) => {
+    const orderId = await reported();
+    expect(await completeOrder(orderId, by, new Date(Date.now() + 4 * 24 * HOUR))).toBe(false);
+    await nothingMoved(orderId, "DISPUTED");
+  });
+
+  it("ADMIN cannot release an order that is only delivered, not frozen", async () => {
+    const { orderId } = await paidOrder(w, 30);
+    await markDelivered(w.officer, orderId, 30);
+    expect(await completeOrder(orderId, "ADMIN", new Date())).toBe(false);
+    await nothingMoved(orderId, "DELIVERED_MARKED");
+  });
+});
 
 describe("reportProblem", () => {
   it("freezes a delivered order: DISPUTED, not confirmable, not auto-released", async () => {

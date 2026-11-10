@@ -7,7 +7,13 @@ import { assertTransition } from "./state";
 
 export type CompletedBy = "BUYER" | "AUTO" | "ADMIN";
 
-const COMPLETABLE: readonly OrderStatus[] = ["DELIVERED_MARKED", "DISPUTED", "TIMED_OUT"];
+// The buyer and the auto-release job act only on a delivered order, never on one frozen by a
+// report since they read it; an admin decides only a frozen one.
+const COMPLETABLE: Record<CompletedBy, readonly OrderStatus[]> = {
+  BUYER: ["DELIVERED_MARKED"],
+  AUTO: ["DELIVERED_MARKED"],
+  ADMIN: ["DISPUTED", "TIMED_OUT"],
+};
 
 /**
  * System function: callers check permissions (the buyer's confirmation, the auto-release job,
@@ -23,7 +29,7 @@ export async function completeOrder(orderId: string, by: CompletedBy, now: Date,
       where: { id: orderId },
       include: { lot: { select: { contributions: { select: { farmerUserId: true, quantity: true }, orderBy: { id: "asc" } } } } },
     });
-    if (!order || !COMPLETABLE.includes(order.status)) return null;
+    if (!order || !COMPLETABLE[by].includes(order.status)) return null;
     assertTransition(order.status, "COMPLETED");
     const { count } = await tx.order.updateMany({
       where: { id: orderId, status: order.status },
