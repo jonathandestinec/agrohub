@@ -16,7 +16,9 @@
   },
   "header": {
     "signIn": "",
-    "signOut": ""
+    "signOut": "",
+    "profile": "",
+    "accountMenu": ""
   },
   "nav": {
     "label": "",
@@ -1612,5 +1614,18 @@
       "PAID": "",
       "PROBLEM": ""
     }
+  },
+  "profile": {
+    "title": "",
+    "lead": "",
+    "name": "",
+    "email": "",
+    "phone": "",
+    "noPhone": "",
+    "roles": "",
+    "noRoles": "",
+    "cooperative": "",
+    "waiting": "",
+    "changeName": ""
   }
 }

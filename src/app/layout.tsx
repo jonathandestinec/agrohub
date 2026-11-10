@@ -17,7 +17,7 @@ import {
   type NavItem,
 } from "@/components/nav-links";
 import { RoleSwitcher } from "@/components/role-switcher";
-import { SignOutButton } from "@/components/sign-out-button";
+import { AccountMenu } from "@/components/account-menu";
 import { buttonClass } from "@/components/ui/button";
 import { pickActiveMembership } from "@/modules/identity/active-role";
 import { listMembershipStates, listMemberships } from "@/modules/identity/service";
@@ -52,7 +52,21 @@ async function SwitcherSlot() {
 
 async function AccountSlot() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (session) return <SignOutButton />;
+  if (session) {
+    const memberships = await listMemberships(session.user.id);
+    const cookieStore = await cookies();
+    const active = pickActiveMembership(
+      memberships,
+      cookieStore.get("activeMembershipId")?.value,
+    );
+    const roles = await getTranslations("roles");
+    return (
+      <AccountMenu
+        name={session.user.name}
+        roleLabel={active ? roles(active.role) : null}
+      />
+    );
+  }
   const t = await getTranslations("header");
   return (
     <Link href="/sign-in" className={buttonClass("ink")}>

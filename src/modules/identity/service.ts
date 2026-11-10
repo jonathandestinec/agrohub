@@ -3,7 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { Membership, MembershipStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { recordAudit } from "@/modules/audit/audit";
-import { ConflictError, ForbiddenError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import type { Role } from "./policies";
 
 export type { Membership };
@@ -179,4 +179,43 @@ export async function holdsCooperativeRole(userId: string, cooperativeId: string
     where: { userId, cooperativeId, status: "ACTIVE", role: { in: ["FARMER", "OFFICER"] } },
   });
   return count > 0;
+}
+
+export type OwnProfile = {
+  name: string;
+  email: string;
+  phone: string | null;
+  memberships: Array<{ role: Role; status: MembershipStatus; cooperativeName: string | null }>;
+};
+
+// A person's own details for the profile page. Self-scoped like listMemberships: it reads only
+// the given user's own record, so it works before there is an Actor (no ACTIVE membership yet).
+// Any Actor fits the parameter. Ended memberships (REMOVED, LEFT) are left out.
+export async function getOwnProfile(subject: { userId: string }): Promise<OwnProfile> {
+  const user = await prisma.user.findUnique({
+    where: { id: subject.userId },
+    select: { name: true, email: true, phone: true },
+  });
+  if (!user) throw new NotFoundError("USER_NOT_FOUND");
+  const memberships = await prisma.membership.findMany({
+    where: { userId: subject.userId, status: { in: ["ACTIVE", "PENDING"] } },
+    select: { role: true, status: true, cooperativeId: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const cooperativeIds = memberships.flatMap((m) => (m.cooperativeId ? [m.cooperativeId] : []));
+  const cooperatives = await prisma.cooperative.findMany({
+    where: { id: { in: cooperativeIds } },
+    select: { id: true, name: true },
+  });
+  const names = new Map(cooperatives.map((c) => [c.id, c.name]));
+  return {
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    memberships: memberships.map((m) => ({
+      role: m.role,
+      status: m.status,
+      cooperativeName: m.cooperativeId ? (names.get(m.cooperativeId) ?? null) : null,
+    })),
+  };
 }

@@ -16,7 +16,9 @@
   },
   "header": {
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "profile": "Profile",
+    "accountMenu": "Account"
   },
   "nav": {
     "label": "Main",
@@ -1612,5 +1614,18 @@
       "PAID": "Paid",
       "PROBLEM": "Delayed: AgroHub is on it"
     }
+  },
+  "profile": {
+    "title": "Your profile",
+    "lead": "The details we hold for your account.",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "noPhone": "No phone number given",
+    "roles": "Roles",
+    "noRoles": "You have no role yet.",
+    "cooperative": "Cooperative: {name}",
+    "waiting": "Waiting for approval",
+    "changeName": "Ask to change your name"
   }
 }

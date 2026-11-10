@@ -202,7 +202,7 @@ export function AppNav({
             {hasLinks && !centred ? linkNav(compact ? "hidden" : wide.block) : null}
             <div className={`${compact ? "hidden" : hasMenu ? wide.flex : "flex"} items-center`}>{switcher}</div>
             {bell ? <div className={`${hasMenu ? wide.flex : "flex"} items-center`}>{bell}</div> : null}
-            <div className={`${hasMenu ? wide.flex : "flex"} items-center`}>{account}</div>
+            <div className="flex items-center">{account}</div>
             {hasMenu ? (
               <button
                 ref={toggle}
@@ -278,7 +278,6 @@ export function AppNav({
       ) : null}
       <div className={`menu-link ${hasLinks ? "mt-6" : ""} flex flex-wrap items-center gap-2`} style={{ animationDelay: "340ms" }}>
         {switcher}
-        {account}
       </div>
     </div>
   ) : null;
