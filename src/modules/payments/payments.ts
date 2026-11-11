@@ -5,7 +5,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { committedQuantity, lockLot, refreshSoldOut, SOLD_STATUSES } from "@/modules/catalog/service";
 import { markOfferOrdered } from "@/modules/marketplace/service";
 import { ensureBuyerThread } from "@/modules/messaging/service";
-import { assertTransition } from "@/modules/orders/service";
+import { assertTransition, notifyOrder } from "@/modules/orders/service";
 import { postLedger } from "./ledger";
 import { issueRefund, resendPendingRefunds } from "./refunds";
 
@@ -112,6 +112,10 @@ export async function confirmPayment(reference: string, now: Date = new Date()):
         },
         tx,
       );
+      // Only on this branch: a payment that is refunded instead tells no one to prepare.
+      await notifyOrder(tx, orderId, "PAYMENT_CONFIRMED", ["buyer"]);
+      await notifyOrder(tx, orderId, "ORDER_PAID", ["officers"]);
+      await notifyOrder(tx, orderId, "LOT_ORDER_PAID", ["farmers"]);
       return { outcome: "PAID" as const, refundId: null, lotId: order.lotId, buyerUserId: order.buyerUserId };
     }
 

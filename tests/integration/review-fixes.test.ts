@@ -52,7 +52,9 @@ describe("review fixes", () => {
       const status = (await prisma.offer.findUniqueOrThrow({ where: { id: old.id } })).status;
       if (results[0].status === "fulfilled") expect(status).toBe("ACCEPTED");
     }
-  });
+    // Eight rounds of three offer transactions: the alerts they now write add queries, which pushed
+    // this over the 5-second default on the local Docker database.
+  }, 30_000);
 
   it("note_over_the_message_limit_refuses_the_answer_and_stores_nothing", async () => {
     const offer = await makeOffer(buyer, { lotId, quantity: 10, offeredKobo: 5_000_000 }, NOW);

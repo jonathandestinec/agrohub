@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { recordAudit } from "@/modules/audit/audit";
 import type { Actor } from "@/modules/identity/policies";
+import { farmersOfLot, notify, officersOf } from "@/modules/notifications/service";
 import { getPlatformSettings } from "@/modules/settings/service";
 import { revisionInput, type RevisionInput } from "./lot-schema";
 import { assertFloorAtMostAsk, checkAgainstBoard, loadLot, loadOwnLot, photoUrlsOf } from "./lots";
@@ -69,6 +70,13 @@ export async function requestRevision(
       },
       tx,
     );
+    await notify(tx, {
+      kind: "LOT_REVISION_REQUESTED",
+      subject: { type: "LOT", id: lot.id },
+      data: { crop: lot.crop.name },
+      to: await officersOf(tx, lot.cooperativeId),
+      exclude: actor.userId,
+    });
   });
   return farmerView(lot.id);
 }
@@ -137,6 +145,13 @@ export async function decideRevision(
       },
       tx,
     );
+    await notify(tx, {
+      kind: "LOT_REVISION_DECIDED",
+      subject: { type: "LOT", id: lot.id },
+      data: { crop: lot.crop.name },
+      to: await farmersOfLot(tx, lot.id),
+      exclude: actor.userId,
+    });
   });
 }
 
@@ -169,6 +184,13 @@ export async function withdrawLot(actor: Actor, lotId: string, now: Date = new D
       },
       tx,
     );
+    await notify(tx, {
+      kind: "LOT_WITHDRAWN",
+      subject: { type: "LOT", id: lot.id },
+      data: { crop: lot.crop.name },
+      to: await officersOf(tx, lot.cooperativeId),
+      exclude: actor.userId,
+    });
   });
   return farmerView(lot.id);
 }

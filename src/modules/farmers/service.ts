@@ -9,6 +9,7 @@ import type { BankAccountView } from "@/modules/banking/views";
 import { resolveInvite } from "@/modules/cooperatives/invites";
 import { can, type Actor } from "@/modules/identity/policies";
 import { farmerStatusEmail, type FarmerStatusEmailKind } from "@/modules/notifications/emails";
+import { notify, officersOf, person } from "@/modules/notifications/service";
 import { hasUnfinishedOrders } from "./orders-guard";
 import { farmerProfileInput, type FarmerProfileInput } from "./schema";
 import { toOfficerFarmer, toOwnFarmer, type OfficerFarmer, type OwnFarmer } from "./views";
@@ -124,6 +125,14 @@ export async function joinViaLink(
         where: { userId: user.userId },
         create: { userId: user.userId, ...fields, crops: { connect: crops } },
         update: { ...fields, crops: { set: crops } },
+      });
+      const joiner = await tx.user.findUniqueOrThrow({ where: { id: user.userId }, select: { name: true } });
+      await notify(tx, {
+        kind: "FARMER_ASKED_TO_JOIN",
+        subject: { type: "MEMBERSHIP", id },
+        data: { name: joiner.name },
+        to: await officersOf(tx, cooperativeId),
+        exclude: user.userId,
       });
       return id;
     });
@@ -297,6 +306,22 @@ async function emailFarmer(
   }
 }
 
+// Tells the farmer how their membership was decided. It belongs to the person, not to a role:
+// a farmer who was just removed may hold no role at all, and sees it when they take one up.
+async function tellFarmer(
+  actor: Actor,
+  kind: "MEMBERSHIP_APPROVED" | "MEMBERSHIP_REJECTED" | "MEMBERSHIP_REMOVED",
+  membership: { id: string; userId: string; cooperative: { name: string } },
+): Promise<void> {
+  await notify(prisma, {
+    kind,
+    subject: { type: "MEMBERSHIP", id: membership.id },
+    data: { cooperative: membership.cooperative.name },
+    to: [person(membership.userId)],
+    exclude: actor.userId,
+  });
+}
+
 export async function approveFarmer(
   actor: Actor,
   membershipId: string,
@@ -312,6 +337,8 @@ export async function approveFarmer(
   }
   await applyTransition(actor, membership, APPROVE, { approvedAt: now });
   await emailFarmer(membership, "approved");
+  // Last, after the audit row and the email: the decision is saved by here.
+  await tellFarmer(actor, "MEMBERSHIP_APPROVED", membership);
 }
 
 export async function rejectFarmer(
@@ -326,6 +353,7 @@ export async function rejectFarmer(
   const trimmed = parseReason(reason);
   await applyTransition(actor, membership, REJECT, { reason: trimmed });
   await emailFarmer(membership, "rejected", trimmed);
+  await tellFarmer(actor, "MEMBERSHIP_REJECTED", membership);
 }
 
 export async function removeFarmer(
@@ -343,6 +371,7 @@ export async function removeFarmer(
   }
   await applyTransition(actor, membership, REMOVE, { reason: trimmed });
   await emailFarmer(membership, "removed", trimmed);
+  await tellFarmer(actor, "MEMBERSHIP_REMOVED", membership);
 }
 
 // Self-scoped: acts only on the actor's own ACTIVE farmer membership. Rows are kept.
@@ -376,6 +405,14 @@ export async function leaveCooperative(actor: Actor): Promise<void> {
     LEAVE,
     {},
   );
+  const farmerUser = await prisma.user.findUniqueOrThrow({ where: { id: actor.userId }, select: { name: true } });
+  await notify(prisma, {
+    kind: "FARMER_LEFT",
+    subject: { type: "MEMBERSHIP", id: membership.id },
+    data: { name: farmerUser.name },
+    to: await officersOf(prisma, membership.cooperativeId),
+    exclude: actor.userId,
+  });
 }
 
 // An officer's list row: the profile view plus the membership id the decisions act on.

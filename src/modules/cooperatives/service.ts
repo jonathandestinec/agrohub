@@ -17,6 +17,7 @@ import { sendEmail } from "@/lib/email";
 import { matchesSignature } from "@/lib/file-type";
 import { putPrivate, signedUrl } from "@/lib/storage";
 import { recordAudit } from "@/modules/audit/audit";
+import { activeAdmins, notify, officersOf } from "@/modules/notifications/service";
 import { getPlatformSettings } from "@/modules/settings/service";
 import { freezeOrdersOfCooperative } from "@/modules/orders/service";
 import { can, type Actor } from "@/modules/identity/policies";
@@ -196,6 +197,7 @@ export async function uploadDocument(
     }
     return created;
   });
+  let justSubmitted = false;
   const kinds = await prisma.cooperativeDocument.findMany({
     where: { cooperativeId },
     distinct: ["kind"],
@@ -203,10 +205,13 @@ export async function uploadDocument(
   });
   if (DOCUMENT_KINDS.every((kind) => kinds.some((row) => row.kind === kind))) {
     // Only while still null, so a re-upload never moves the waiting-since date.
-    await prisma.cooperative.updateMany({
+    const { count } = await prisma.cooperative.updateMany({
       where: { id: cooperativeId, submittedAt: null },
       data: { submittedAt: new Date() },
     });
+    // Only the upload that completed the set tells the admins (told last, below); a re-upload
+    // moves nothing.
+    justSubmitted = count === 1;
   }
   await recordAudit({
     actorId: actor.userId,
@@ -222,6 +227,20 @@ export async function uploadDocument(
       entity: "cooperative",
       entityId: cooperativeId,
       meta: { cooperativeId, documentId: document.id },
+    });
+  }
+  // Last, after the audit rows: the upload that completed the set tells the admins.
+  if (justSubmitted) {
+    const submitted = await prisma.cooperative.findUniqueOrThrow({
+      where: { id: cooperativeId },
+      select: { name: true },
+    });
+    await notify(prisma, {
+      kind: "COOPERATIVE_SUBMITTED",
+      subject: { type: "COOPERATIVE", id: cooperativeId },
+      data: { cooperative: submitted.name },
+      to: await activeAdmins(prisma),
+      exclude: actor.userId,
     });
   }
   return document;
@@ -399,6 +418,13 @@ async function loadForReview(id: string): Promise<Cooperative> {
   return cooperative;
 }
 
+const DECISION_ALERT = {
+  verified: "COOPERATIVE_VERIFIED",
+  rejected: "COOPERATIVE_REJECTED",
+  suspended: "COOPERATIVE_SUSPENDED",
+  reinstated: "COOPERATIVE_REINSTATED",
+} as const;
+
 // Conditional update on the expected status: of two concurrent callers exactly one
 // gets count 1, so the audit row and the emails happen once. The audit write cannot
 // join this update in a transaction (recordAudit uses the shared client), so it follows it.
@@ -427,6 +453,15 @@ async function transition(
     },
   });
   await notifyOfficers(cooperative, step.email, reason);
+  // Last, after the audit row and the emails. Mapped from the decision, not the status pair: a
+  // rejection is PENDING to PENDING.
+  await notify(prisma, {
+    kind: DECISION_ALERT[step.email],
+    subject: { type: "COOPERATIVE", id: cooperative.id },
+    data: {},
+    to: await officersOf(prisma, cooperative.id),
+    exclude: actor.userId,
+  });
   return loadForReview(cooperative.id);
 }
 

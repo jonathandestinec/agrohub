@@ -19,6 +19,7 @@ import {
   bankChangeConfirmEmail,
 } from "@/modules/notifications/emails";
 import { listActiveAdminEmails } from "@/modules/notifications/recipients";
+import { activeAdmins, notify, officersOf, person } from "@/modules/notifications/service";
 import { namesMatch } from "./names";
 import { toBankAccountView, type BankAccountView } from "./views";
 
@@ -300,6 +301,13 @@ export async function confirmBankChange(
     },
   });
   await alertAdmins(request, effectiveAt);
+  // Reached only when this call confirmed the request: a second click on the link threw above.
+  await notify(prisma, {
+    kind: "BANK_CHANGE_CONFIRMED",
+    subject: { type: "BANK_CHANGE", id: request.id },
+    data: {},
+    to: await activeAdmins(prisma),
+  });
   return { effectiveAt };
 }
 
@@ -393,6 +401,23 @@ export async function applyDueBankChanges(now: Date = new Date()): Promise<{ app
           },
         });
       }
+      // No bank field in the alert. A farmer's account is theirs (no role); a cooperative's
+      // is its officers'. A FARMER owner id is a farmer profile id, so resolve the user.
+      const to =
+        newest.ownerType === "COOPERATIVE"
+          ? await officersOf(tx, newest.ownerId)
+          : [
+              person(
+                (await tx.farmerProfile.findUniqueOrThrow({ where: { id: newest.ownerId }, select: { userId: true } }))
+                  .userId,
+              ),
+            ];
+      await notify(tx, {
+        kind: "BANK_CHANGE_APPLIED",
+        subject: { type: "BANK_CHANGE", id: newest.id },
+        data: {},
+        to,
+      });
       return true;
     });
     if (!claimed) continue;

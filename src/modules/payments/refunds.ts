@@ -4,7 +4,7 @@ import { ConflictError, UnavailableError } from "@/lib/errors";
 import { koboFromDb } from "@/lib/money";
 import { refundTransaction } from "@/lib/paystack";
 import { recordAudit } from "@/modules/audit/audit";
-import { alertAdmins } from "./alerts";
+import { alertAdmins, notifyRefundSent } from "./alerts";
 import { postLedger } from "./ledger";
 
 const CLAIM = "claim:";
@@ -104,6 +104,8 @@ export async function settleRefund(
           { account: "PAYSTACK_BALANCE", amountKobo: -amountKobo },
         ],
       });
+      // Only on the branch where this call settled the refund, so a replay adds nothing.
+      await notifyRefundSent(tx, refund);
     }
     await recordAudit(
       {

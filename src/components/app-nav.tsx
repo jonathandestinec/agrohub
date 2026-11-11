@@ -201,7 +201,7 @@ export function AppNav({
           <div className="relative z-10 flex shrink-0 items-center gap-2">
             {hasLinks && !centred ? linkNav(compact ? "hidden" : wide.block) : null}
             <div className={`${compact ? "hidden" : hasMenu ? wide.flex : "flex"} items-center`}>{switcher}</div>
-            {bell ? <div className={`${hasMenu ? wide.flex : "flex"} items-center`}>{bell}</div> : null}
+            {bell ? <div className="flex items-center empty:hidden">{bell}</div> : null}
             <div className="flex items-center">{account}</div>
             {hasMenu ? (
               <button

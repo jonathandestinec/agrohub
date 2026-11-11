@@ -18,6 +18,9 @@ import {
 } from "@/components/nav-links";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { AccountMenu } from "@/components/account-menu";
+import { AlertBell } from "@/components/alert-bell";
+import { getActor } from "@/modules/identity/session";
+import { countOwnUnread, latestOwnAlerts } from "@/modules/notifications/service";
 import { buttonClass } from "@/components/ui/button";
 import { pickActiveMembership } from "@/modules/identity/active-role";
 import { listMembershipStates, listMemberships } from "@/modules/identity/service";
@@ -48,6 +51,21 @@ async function SwitcherSlot() {
       memberships={memberships.map(toSwitcherMembership)}
     />
   );
+}
+
+// The bell's first paint: the unread count and the ten newest alerts for the role in use. Signed
+// out, or without a working identity yet (an admin before two-factor), there is no bell. After
+// the first paint the bell asks /api/alerts/summary itself.
+async function AlertSlot() {
+  let actor;
+  try {
+    actor = await getActor();
+  } catch {
+    return null;
+  }
+  if (!actor) return null;
+  const [unread, alerts] = await Promise.all([countOwnUnread(actor), latestOwnAlerts(actor)]);
+  return <AlertBell initial={{ unread, alerts }} />;
 }
 
 async function AccountSlot() {
@@ -116,6 +134,11 @@ async function NavSlot() {
       switcher={
         <Suspense fallback={null}>
           <SwitcherSlot />
+        </Suspense>
+      }
+      bell={
+        <Suspense fallback={null}>
+          <AlertSlot />
         </Suspense>
       }
       account={

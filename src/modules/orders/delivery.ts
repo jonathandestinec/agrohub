@@ -5,6 +5,7 @@ import { addDays, isDateKey, lagosDate, lagosDateKey } from "@/lib/lagos-date";
 import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
 import { ensureBuyerThread, postSystemMessage } from "@/modules/messaging/service";
+import { notifyDeliveryDate, notifyOrder } from "./alerts";
 import { completeOrder } from "./complete";
 import { closeTimeout } from "./disputes";
 import { assertTransition } from "./state";
@@ -56,6 +57,8 @@ export async function startPreparing(actor: Actor, orderId: string, now: Date = 
   const order = await loadManagedOrder(actor, orderId);
   await moveOrder(order, ["PAID_HELD"], "PREPARING", { preparingAt: now });
   await recordAudit({ actorId: actor.userId, action: "order.preparing", entity: "order", entityId: orderId, meta: { orderId } });
+  // Last, after the audit row: the change is saved by here, so a failed alert write cannot skip it.
+  await notifyOrder(prisma, orderId, "ORDER_PREPARING", ["buyer"], actor.userId);
 }
 
 /**
@@ -84,6 +87,7 @@ export async function setDeliveryDate(actor: Actor, orderId: string, date: strin
     entityId: orderId,
     meta: { orderId, date },
   });
+  await notifyDeliveryDate(prisma, orderId, date, actor.userId);
 }
 
 /**
@@ -106,6 +110,7 @@ export async function markDelivered(actor: Actor, orderId: string, deliveredQuan
     entityId: orderId,
     meta: { orderId, deliveredQuantity },
   });
+  await notifyOrder(prisma, orderId, "ORDER_DELIVERED", ["buyer"], actor.userId);
 }
 
 /** The buyer confirms they received a delivered order: the payment is released. */
@@ -115,4 +120,6 @@ export async function confirmReceipt(actor: Actor, orderId: string, now: Date = 
   const done = await completeOrder(orderId, "BUYER", now);
   if (!done) throw new ConflictError("The order cannot do that now", "ORDER_STATE");
   await postToOrderThread(order, actor.userId, "The buyer confirmed receipt. Payment released.", now);
+  // Here and not in completeOrder, which the 72-hour timer reaches too: that path tells no one.
+  await notifyOrder(prisma, orderId, "ORDER_RECEIPT_CONFIRMED", ["officers"], actor.userId);
 }

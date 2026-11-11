@@ -5,6 +5,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@
 import { lotNegotiationFacts, type NegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { holdsCooperativeRole } from "@/modules/identity/service";
+import { notify, threadAudience } from "@/modules/notifications/service";
 import { hasContactDetails, mentionsAmount } from "./guards";
 import { toThreadSummary, toThreadView, type ThreadSummary, type ThreadView } from "./views";
 
@@ -126,7 +127,9 @@ export async function assertMessageRateOk(actor: Actor, now: Date = new Date()):
   if (lastHour >= MESSAGES_PER_HOUR) throw new ValidationError("Too many messages", "MESSAGE_RATE_LIMIT");
 }
 
-async function writeMessage(actor: Actor, threadId: string, text: string, now: Date): Promise<void> {
+// `alert` is true for a message a person wrote in the thread. A note typed with an offer or an
+// answer to one, and a delivery quote line, pass false: their own alert already covers them.
+async function writeMessage(actor: Actor, threadId: string, text: string, now: Date, alert: boolean): Promise<void> {
   const side = SIDE[actor.role];
   if (!side) throw new ForbiddenError();
   await prisma.$transaction(async (tx) => {
@@ -137,6 +140,19 @@ async function writeMessage(actor: Actor, threadId: string, text: string, now: D
     if (lastHour >= MESSAGES_PER_HOUR) throw new ValidationError("Too many messages", "MESSAGE_RATE_LIMIT");
     await tx.message.create({ data: { threadId, authorUserId: actor.userId, side, body: text, createdAt: now } });
     await tx.thread.update({ where: { id: threadId }, data: { lastMessageAt: now } });
+    if (alert) {
+      const thread = await tx.thread.findUniqueOrThrow({
+        where: { id: threadId },
+        select: { lot: { select: { crop: { select: { name: true } } } } },
+      });
+      await notify(tx, {
+        kind: "MESSAGE_RECEIVED",
+        subject: { type: "THREAD", id: threadId },
+        data: { crop: thread.lot.crop.name },
+        to: await threadAudience(tx, threadId),
+        exclude: actor.userId,
+      });
+    }
   });
 }
 
@@ -158,7 +174,7 @@ export async function postMessage(actor: Actor, threadId: string, body: string, 
   const thread = await loadThread(actor, threadId);
   const quantities = await offeredQuantities(thread);
   const text = assertMessageAllowed(actor, { kind: thread.kind, floorKobo: thread.lot.floorKobo, quantities }, body);
-  await writeMessage(actor, thread.id, text, now);
+  await writeMessage(actor, thread.id, text, now, true);
   return getThread(actor, thread.id);
 }
 
@@ -176,7 +192,7 @@ export async function postToBuyerThread(
   const thread = await loadThread(actor, threadId);
   const quantities = await offeredQuantities(thread);
   const text = assertMessageAllowed(actor, { kind: thread.kind, floorKobo: thread.lot.floorKobo, quantities }, body);
-  await writeMessage(actor, thread.id, text, now);
+  await writeMessage(actor, thread.id, text, now, false);
 }
 
 export async function getThread(actor: Actor, threadId: string): Promise<ThreadView> {
@@ -251,7 +267,7 @@ export async function buyerThreadIdOf(lotId: string, buyerUserId: string): Promi
  */
 export async function writeComposedMessage(actor: Actor, threadId: string, text: string, now: Date = new Date()): Promise<void> {
   if (text.length < 1 || text.length > MESSAGE_MAX) throw new ValidationError("Message length", "MESSAGE_LENGTH");
-  await writeMessage(actor, threadId, text, now);
+  await writeMessage(actor, threadId, text, now, false);
 }
 
 /** An AgroHub line in a thread (side ADMIN, shown as "AgroHub"), recorded as written by the user whose action caused it. */

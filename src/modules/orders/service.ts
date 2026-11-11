@@ -25,3 +25,4 @@ export { listUsableQuotes, quoteDelivery, quoteDeliveryInThread, type UsableQuot
 export type { StartCheckoutInput } from "./schema";
 export { assertTransition, canTransition, isFrozen, isOpenOrder } from "./state";
 export { BUYER_ORDER_STATUSES, orderReference, type BuyerOrder, type BuyerOrderStatus, type OfficerOrder } from "./views";
+export { notifyOrder } from "./alerts";

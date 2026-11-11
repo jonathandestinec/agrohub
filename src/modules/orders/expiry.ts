@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { recordAudit } from "@/modules/audit/audit";
+import { notifyOrder } from "./alerts";
 import { UNPAID_ORDER_HOURS } from "./checkout";
 
 // The daily order-expiry job: checkouts still unpaid 24 hours after they started are cancelled
@@ -25,6 +26,8 @@ export async function expireUnpaidOrders(now: Date = new Date()): Promise<number
         { actorId: null, action: "order.expire", entity: "order", entityId: order.id, meta: { orderId: order.id } },
         tx,
       );
+      // Only on the branch where this run cancelled the order, so a second run adds nothing.
+      await notifyOrder(tx, order.id, "ORDER_EXPIRED", ["buyer"]);
     });
   }
   return expired;

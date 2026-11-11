@@ -10,6 +10,7 @@ import {
   type CertificateDigestEntry,
 } from "@/modules/notifications/emails";
 import { listActiveAdminEmails } from "@/modules/notifications/recipients";
+import { notify, officersOf } from "@/modules/notifications/service";
 import { CERTIFICATE_EXPIRED_NOTE } from "./schema";
 
 const DAY_MS = 86_400_000;
@@ -121,6 +122,13 @@ export async function runCertificateExpiry(
       "expired",
       certificateExpiredEmail({ cooperativeName: cooperative.name }),
     );
+    // Under the same guard as the email: the lapse update changed one row.
+    await notify(prisma, {
+      kind: "CERTIFICATE_EXPIRED",
+      subject: { type: "COOPERATIVE", id: cooperative.id },
+      data: { date: cooperative.certificateExpiresAt.toISOString().slice(0, 10) },
+      to: await officersOf(prisma, cooperative.id),
+    });
     lapsedEntries.push({
       name: cooperative.name,
       expiresAt: cooperative.certificateExpiresAt,
@@ -150,6 +158,13 @@ export async function runCertificateExpiry(
             expiresAt: cooperative.certificateExpiresAt,
           }),
         );
+        // Inside runOnce, so it repeats exactly as often as the email does: once per expiry date.
+        await notify(prisma, {
+          kind: "CERTIFICATE_EXPIRING",
+          subject: { type: "COOPERATIVE", id: cooperative.id },
+          data: { date },
+          to: await officersOf(prisma, cooperative.id),
+        });
       },
     );
     if (outcome === "ran") {

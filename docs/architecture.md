@@ -46,7 +46,7 @@ agrohub/
       reviews/
       analytics/
       inputs/                input orders, signups, loans (tracking only)
-      notifications/         email events
+      notifications/         email events, and in-app alerts: `notify` (written by other services in their own transaction), the bell and /alerts reads, and `GET /api/alerts/summary` for the bell's count
       support/               reports, disputes
       audit/                 append-only audit log
     styles/tokens.css        brand token slot (brand identity arrives later)

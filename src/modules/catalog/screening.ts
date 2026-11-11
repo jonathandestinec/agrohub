@@ -4,6 +4,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@
 import { recordAudit } from "@/modules/audit/audit";
 import { boardReference, type BoardPrice } from "@/modules/board/service";
 import { can, type Actor } from "@/modules/identity/policies";
+import { farmersOfLot, notify, officersOf } from "@/modules/notifications/service";
 import { MAX_PRICE_KOBO } from "./lot-schema";
 import { LOT_INCLUDE, loadLot, loadOwnLot, photoUrlsOf } from "./lots";
 import { toFarmerLot, toOfficerLot, type FarmerLot, type LotRow, type OfficerLot } from "./views";
@@ -94,6 +95,22 @@ async function audit(
   );
 }
 
+// Tells every farmer on the lot about a screening decision, inside the decision's transaction.
+async function tellFarmers(
+  tx: Prisma.TransactionClient,
+  actor: Actor,
+  kind: "LOT_APPROVED" | "LOT_REJECTED" | "LOT_COUNTERED",
+  lot: LotRow,
+): Promise<void> {
+  await notify(tx, {
+    kind,
+    subject: { type: "LOT", id: lot.id },
+    data: { crop: lot.crop.name },
+    to: await farmersOfLot(tx, lot.id),
+    exclude: actor.userId,
+  });
+}
+
 async function officerView(lotId: string): Promise<OfficerLot> {
   const lot = await loadLot(lotId);
   return toOfficerLot(lot, await photoUrlsOf(lot.id));
@@ -124,6 +141,7 @@ export async function approveLot(
       platformFeeBps: lot.quotedFeeBps,
       minOrderQty,
     });
+    await tellFarmers(tx, actor, "LOT_APPROVED", lot);
   });
   return officerView(lot.id);
 }
@@ -139,6 +157,7 @@ export async function rejectLot(actor: Actor, lotId: string, input: { reason: st
       screenedByUserId: actor.userId,
     });
     await audit(tx, actor, "reject", lot);
+    await tellFarmers(tx, actor, "LOT_REJECTED", lot);
   });
   return officerView(lot.id);
 }
@@ -166,6 +185,7 @@ export async function counterLot(
       screenedByUserId: actor.userId,
     });
     await audit(tx, actor, "counter", lot, { fromKobo: lot.askKobo, toKobo: counter });
+    await tellFarmers(tx, actor, "LOT_COUNTERED", lot);
   });
   return officerView(lot.id);
 }
@@ -205,6 +225,13 @@ export async function respondToCounter(
       });
       await audit(tx, actor, "counter_decline", lot);
     }
+    await notify(tx, {
+      kind: "LOT_COUNTER_ANSWERED",
+      subject: { type: "LOT", id: lot.id },
+      data: { crop: lot.crop.name },
+      to: await officersOf(tx, lot.cooperativeId),
+      exclude: actor.userId,
+    });
   });
   const updated = await loadLot(lot.id);
   return toFarmerLot(updated, await photoUrlsOf(updated.id));

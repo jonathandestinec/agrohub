@@ -9,6 +9,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { askDeviation } from "@/modules/board/deviation";
 import { boardReference, boardReferences, type BoardPrice } from "@/modules/board/service";
 import { can, type Actor } from "@/modules/identity/policies";
+import { notify, officersOf } from "@/modules/notifications/service";
 import { getPlatformSettings } from "@/modules/settings/service";
 import { MAX_AVAILABLE_DAYS, NOTE_MIN_WHEN_WARNED, submitLotInput, type SubmitLotInput } from "./lot-schema";
 import { MAX_PHOTOS, validatePhoto } from "./photos";
@@ -155,6 +156,13 @@ export async function submitLot(
       },
       tx,
     );
+    await notify(tx, {
+      kind: "LOT_SUBMITTED",
+      subject: { type: "LOT", id: created.id },
+      data: { crop: created.crop.name },
+      to: await officersOf(tx, cooperativeId),
+      exclude: actor.userId,
+    });
     return created;
   });
   return toFarmerLot(lot, await photoUrlsOf(lot.id));
