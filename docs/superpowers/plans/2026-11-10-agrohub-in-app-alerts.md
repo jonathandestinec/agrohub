@@ -1,6 +1,6 @@
 # In-App Alerts Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Save an alert for each person an event concerns, and show them in a header bell and an `/alerts` page.
 
@@ -69,7 +69,7 @@
 **Interfaces:**
 - Produces: Prisma `Notification` model exactly as in spec section 5; enum `NotificationKind` with every kind in the Task 2 table; enum `NotificationSubjectType` = `LOT | OFFER | ORDER | THREAD | COOPERATIVE | MEMBERSHIP | NAME_CHANGE | CATALOG_REQUEST | BANK_CHANGE`; action `"notification:own"`.
 
-- [ ] **Step 1: Write the failing policy tests**
+- [x] **Step 1: Write the failing policy tests**
 
 In `tests/access/policy-matrix.test.ts`, next to the existing `earnings:own` owner tests:
 
@@ -92,25 +92,25 @@ describe("notification:own", () => {
 
 If the matrix has a completeness check that every `Action` appears in the table, add the five `["notification:own", role, false]` rows it needs (the matrix resource has a different owner, so all five are `false`).
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `npx vitest run tests/access/policy-matrix.test.ts`
 Expected: FAIL, `"notification:own"` is not assignable to `Action`.
 
-- [ ] **Step 3: Add the action**
+- [x] **Step 3: Add the action**
 
 `"notification:own"` in the `Action` union; in `can`: any role, `resource?.ownerUserId !== undefined && resource.ownerUserId === actor.userId`.
 
-- [ ] **Step 4: Add the model and migrate**
+- [x] **Step 4: Add the model and migrate**
 
 Add the model and two enums from spec section 5 (`role Role?`, `cooperativeId String?`, `data Json`, the three indexes, `@@map("notification")`).
 
 Run: `npm run db:migrate -- --name notifications` then `npx prisma generate`
 Expected: one new migration folder ending `_notifications`; `src/generated/prisma` has `Notification`.
 
-- [ ] **Step 5: Add `notification` to `cleanDatabase`** in `tests/integration/helpers.ts`, before the `user` delete.
+- [x] **Step 5: Add `notification` to `cleanDatabase`** in `tests/integration/helpers.ts`, before the `user` delete.
 
-- [ ] **Step 6: Run and commit**
+- [x] **Step 6: Run and commit**
 
 Run: `npm run lint && npm run typecheck && npm test`
 Expected: all pass.
@@ -210,7 +210,7 @@ export function hrefOf(kind: AlertKind, role: Role | null, subjectId: string): s
 
 Only `en.json` changes: English is the only enabled locale and no test requires the other files to match.
 
-- [ ] **Step 1: Write the failing tests** (`tests/unit/notification-views.test.ts`)
+- [x] **Step 1: Write the failing tests** (`tests/unit/notification-views.test.ts`)
 
 ```ts
 import en from "../../messages/en.json";
@@ -249,10 +249,10 @@ it("flags_malformed_stored_data_instead_of_failing", () => {
 
 `row(overrides)` is a local builder returning a full `Notification` object. Use the money formatter's real name and argument type from `src/lib/money.ts`.
 
-- [ ] **Step 2: Run to see them fail.** Run: `npx vitest run tests/unit/notification-views.test.ts`. Expected: FAIL, modules not found.
-- [ ] **Step 3: Write `schema.ts`, `views.ts` and the `alerts` block in `messages/en.json`.**
-- [ ] **Step 4: Run to see them pass.** Same command. Expected: PASS.
-- [ ] **Step 5: Commit.** `git commit -m "feat: alert kinds, view mapper and copy"`
+- [x] **Step 2: Run to see them fail.** Run: `npx vitest run tests/unit/notification-views.test.ts`. Expected: FAIL, modules not found.
+- [x] **Step 3: Write `schema.ts`, `views.ts` and the `alerts` block in `messages/en.json`.**
+- [x] **Step 4: Run to see them pass.** Same command. Expected: PASS.
+- [x] **Step 5: Commit.** `git commit -m "feat: alert kinds, view mapper and copy"`
 
 ---
 
@@ -296,7 +296,7 @@ export async function alertKinds(userId: string): Promise<string[]>;
 
 `notify` parses `data` with `DATA[kind]` (throws on a bad shape: that is a programming error and tests catch it), drops `exclude`, removes duplicate recipients (same user, role and cooperative), and inserts with `createMany`. For `MESSAGE_RECEIVED` only, a recipient who already has an unread row with the same `kind` and `subjectId` gets that row's `createdAt` set to now and no new row.
 
-- [ ] **Step 1: Write the failing tests** (`tests/integration/notify.test.ts`, `lotWorld()` fixture)
+- [x] **Step 1: Write the failing tests** (`tests/integration/notify.test.ts`, `lotWorld()` fixture)
 
 ```ts
 it("writes_one_row_per_recipient_and_none_for_the_actor", async () => {
@@ -330,10 +330,10 @@ it("finds_every_farmer_on_a_lot", async () => { /* lot with a second LotContribu
 
 Write each commented test out in full in the same style.
 
-- [ ] **Step 2: Run to see them fail.** Run: `npx vitest run tests/integration/notify.test.ts`. Expected: FAIL, `notify` not exported.
-- [ ] **Step 3: Implement `recipients.ts` helpers, `notify`, and `alert-helpers.ts`.** Keep `listActiveAdminEmails` as it is.
-- [ ] **Step 4: Run to see them pass.**
-- [ ] **Step 5: Commit.** `git commit -m "feat: notify and recipient helpers"`
+- [x] **Step 2: Run to see them fail.** Run: `npx vitest run tests/integration/notify.test.ts`. Expected: FAIL, `notify` not exported.
+- [x] **Step 3: Implement `recipients.ts` helpers, `notify`, and `alert-helpers.ts`.** Keep `listActiveAdminEmails` as it is.
+- [x] **Step 4: Run to see them pass.**
+- [x] **Step 5: Commit.** `git commit -m "feat: notify and recipient helpers"`
 
 ---
 
@@ -357,7 +357,7 @@ export async function markAllRead(actor: Actor): Promise<void>;
 
 Every function checks `can(actor, "notification:own", { ownerUserId })` first (`actor.userId` for the list functions, the row's `userId` for `markRead`). The visible set is: `userId = actor.userId` AND (`role` is null OR `role = actor.role`) AND (`cooperativeId` is null OR `cooperativeId = actor.cooperativeId`). `markRead` on a row outside the visible set but owned by the actor (another role's alert) is a `ForbiddenError`. `listOwnAlerts` clamps `page` to `1..pages` (`pages` is at least 1); a non-finite page is 1. `markRead` leaves an already-read row's `readAt` unchanged.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("counts_and_lists_only_the_alerts_of_the_role_in_use", async () => {
@@ -387,10 +387,10 @@ it("says_not_found_for_an_unknown_id", async () => { /* NotFoundError */ });
 it("marks_all_read_for_the_role_in_use_only", async () => { /* other role's row stays unread */ });
 ```
 
-- [ ] **Step 2: Run to see them fail.** Run: `npx vitest run tests/integration/alerts-read.test.ts`
-- [ ] **Step 3: Implement the five functions.**
-- [ ] **Step 4: Run to see them pass.**
-- [ ] **Step 5: Commit.** `git commit -m "feat: read and mark alerts"`
+- [x] **Step 2: Run to see them fail.** Run: `npx vitest run tests/integration/alerts-read.test.ts`
+- [x] **Step 3: Implement the five functions.**
+- [x] **Step 4: Run to see them pass.**
+- [x] **Step 5: Commit.** `git commit -m "feat: read and mark alerts"`
 
 ---
 
@@ -569,7 +569,7 @@ Notes:
 - Consumes: `threadAudience`, `notify`.
 - Changes: the private `writeMessage` gains a last parameter `alert: boolean`. `postMessage` passes `true`. `postToBuyerThread` (the note typed with an offer or an answer, already covered by the offer alert) and `writeComposedMessage` (delivery quotes) pass `false`. When `true`, it calls `notify(tx, { kind: "MESSAGE_RECEIVED", subject: { type: "THREAD", id: threadId }, data: { crop }, to: await threadAudience(tx, threadId), exclude: actor.userId })` inside its existing transaction.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("tells_officers_when_the_buyer_writes", async () => { /* officers: ["MESSAGE_RECEIVED"]; buyer: [] */ });
@@ -582,10 +582,10 @@ it("a_delivery_quote_raises_no_message_alert", async () => { /* quoteDelivery �
 it("a_refused_message_writes_no_alert", async () => { /* body with a phone number → ValidationError, 0 rows */ });
 ```
 
-- [ ] **Step 2: Run to see them fail.** Run: `npx vitest run tests/integration/alerts-messages.test.ts`
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run to see them pass.**
-- [ ] **Step 5: Commit.** `git commit -m "feat: alerts for new messages"`
+- [x] **Step 2: Run to see them fail.** Run: `npx vitest run tests/integration/alerts-messages.test.ts`
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run to see them pass.**
+- [x] **Step 5: Commit.** `git commit -m "feat: alerts for new messages"`
 
 ---
 
@@ -618,7 +618,7 @@ export function AlertList(props: { alerts: AlertView[]; itemClassName?: string }
 
 The route handler gets the actor with `getActor()`; a null actor is the 401.
 
-- [ ] **Step 1: Write the failing route test.** Mock `@/modules/identity/session` `getActor` with `vi.mock` (see how other integration tests stub the session; if none do, this is the first, keep the mock local to the file).
+- [x] **Step 1: Write the failing route test.** Mock `@/modules/identity/session` `getActor` with `vi.mock` (see how other integration tests stub the session; if none do, this is the first, keep the mock local to the file).
 
 ```ts
 it("answers_401_when_signed_out", async () => { /* getActor → null; status 401; body { code: "UNAUTHENTICATED" } */ });
@@ -627,10 +627,10 @@ it("returns_the_count_and_newest_alerts_for_the_actor", async () => {
 });
 ```
 
-- [ ] **Step 2: Run to see it fail.**
-- [ ] **Step 3: Implement the route, the actions, `AlertList` and the page.**
-- [ ] **Step 4: Run to see it pass**, then `npm run typecheck`.
-- [ ] **Step 5: Commit.** `git commit -m "feat: alerts page, summary route and actions"`
+- [x] **Step 2: Run to see it fail.**
+- [x] **Step 3: Implement the route, the actions, `AlertList` and the page.**
+- [x] **Step 4: Run to see it pass**, then `npm run typecheck`.
+- [x] **Step 5: Commit.** `git commit -m "feat: alerts page, summary route and actions"`
 
 ---
 
@@ -666,7 +666,7 @@ Behaviour:
 - `NavSlot` passes `bell={<Suspense fallback={null}><AlertSlot /></Suspense>}`.
 - `docs/architecture.md`: the `notifications/` line now reads that the module holds in-app alerts (`notify`, the bell reads) as well as email copy; note `GET /api/alerts/summary`.
 
-- [ ] **Step 1: Write the failing end-to-end spec** (`tests/e2e/alerts.spec.ts`). Model the set-up on `tests/e2e/marketplace.spec.ts` (`setUpLotWorld`, `journey.ts` helpers). Scope locators to `getByRole("main")` or the header as the other specs do.
+- [x] **Step 1: Write the failing end-to-end spec** (`tests/e2e/alerts.spec.ts`). Model the set-up on `tests/e2e/marketplace.spec.ts` (`setUpLotWorld`, `journey.ts` helpers). Scope locators to `getByRole("main")` or the header as the other specs do.
 
 ```ts
 test("an officer is told about a new offer and the count clears", async ({ browser, request }) => {
@@ -699,10 +699,10 @@ test("an old alert still opens a page", async ({ browser, request }) => {
 
 Write the five tests out in full with the helpers.
 
-- [ ] **Step 2: Run to see them fail.** Run: `npx playwright test tests/e2e/alerts.spec.ts`. Expected: FAIL, no element named "Alerts, 1 unread". (Integration tests and Playwright share a database: never run them at the same time.)
-- [ ] **Step 3: Implement the bell, the `Menu` prop, the nav change and the slot.**
-- [ ] **Step 4: Run to see them pass**, then the whole e2e suite once: `npx playwright test`. The nav change can move things other specs click; fix any spec that breaks because of the bell, and report any that fail for another reason without changing them.
-- [ ] **Step 5: Commit.** `git commit -m "feat: alert bell in the header on desktop and phones"`
+- [x] **Step 2: Run to see them fail.** Run: `npx playwright test tests/e2e/alerts.spec.ts`. Expected: FAIL, no element named "Alerts, 1 unread". (Integration tests and Playwright share a database: never run them at the same time.)
+- [x] **Step 3: Implement the bell, the `Menu` prop, the nav change and the slot.**
+- [x] **Step 4: Run to see them pass**, then the whole e2e suite once: `npx playwright test`. The nav change can move things other specs click; fix any spec that breaks because of the bell, and report any that fail for another reason without changing them.
+- [x] **Step 5: Commit.** `git commit -m "feat: alert bell in the header on desktop and phones"`
 
 ---
 
