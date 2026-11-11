@@ -17,3 +17,4 @@ export {
   type OfficerOffer,
 } from "./views";
 export type { MakeOfferInput, RespondToOfferInput } from "./schema";
+export { farmerOffersSummary, officerOffersSummary } from "./summaries";

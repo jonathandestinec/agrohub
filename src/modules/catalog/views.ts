@@ -11,6 +11,7 @@ import type {
   LotStatus,
   Unit,
 } from "@/generated/prisma/client";
+import { quantityTitle, type TileItem } from "@/lib/summary";
 
 export type CatalogItem = { id: string; name: string; active: boolean };
 
@@ -200,4 +201,17 @@ export function toPublicLot(lot: LotRow, photoUrls: string[]): PublicLot {
     availableUntil: dateKey(lot.availableUntil),
     photoUrls,
   };
+}
+
+// A tile item for a lot: its quantity, unit and crop. Never the price or the floor.
+export function toLotTileItem(
+  row: { id: string; quantity: number; crop: { name: string }; unit: { name: string } },
+  href: string,
+): TileItem {
+  return { id: row.id, href, title: quantityTitle(row.quantity, row.unit.name, row.crop.name) };
+}
+
+// A tile item for a crop or unit request: the name the farmer asked for.
+export function toCatalogRequestTileItem(row: { id: string; name: string; createdAt: Date }): TileItem {
+  return { id: row.id, href: "/officer/farmers", title: row.name, date: row.createdAt.toISOString() };
 }

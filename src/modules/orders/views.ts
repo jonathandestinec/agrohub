@@ -1,5 +1,6 @@
 import type { DeliveryMethod, OrderStatus } from "@/generated/prisma/client";
-import { koboFromDb } from "@/lib/money";
+import { formatNaira, koboFromDb } from "@/lib/money";
+import { quantityTitle, type TileItem } from "@/lib/summary";
 
 // What a buyer may know about an order's state. Disputed and timed-out orders both read
 // UNDER_REVIEW; an unpaid order whose 15 minutes passed reads PAYMENT_EXPIRED.
@@ -157,5 +158,42 @@ export function toOfficerOrder(
     cutKobo: input.cutKobo,
     feeKobo: input.feeKobo,
     farmerShares: input.farmerShares.map((s) => ({ farmerName: s.farmerName, quantity: s.quantity, amountKobo: s.amountKobo })),
+  };
+}
+
+// A tile item for the farmer's earnings: what they take home from one completed sale, which is
+// their own money and the only amount a farmer's home shows.
+export function toEarningsTileItem(statement: {
+  orderId: string;
+  completedAt: string;
+  crop: string;
+  unit: string;
+  contributedQuantity: number;
+  takeHomeKobo: number;
+}): TileItem {
+  return {
+    id: statement.orderId,
+    href: `/farmer/earnings/${statement.orderId}`,
+    title: quantityTitle(statement.contributedQuantity, statement.unit, statement.crop),
+    detail: formatNaira(statement.takeHomeKobo),
+    date: statement.completedAt,
+  };
+}
+
+// A tile item for an order: quantity, unit and crop, plus the buyer's name for the cooperative.
+// Never an amount (the buyer's receipts tile adds their own total) or contact detail.
+export function toOrderTileItem(
+  row: { id: string; quantity: number; lot: { crop: { name: string }; unit: { name: string } } },
+  href: string,
+  extra: { detail?: string; date?: Date | string | null; label?: string } = {},
+): TileItem {
+  const date = extra.date instanceof Date ? extra.date.toISOString() : extra.date;
+  return {
+    id: row.id,
+    href,
+    title: quantityTitle(row.quantity, row.lot.unit.name, row.lot.crop.name),
+    ...(extra.detail ? { detail: extra.detail } : {}),
+    ...(date ? { date } : {}),
+    ...(extra.label ? { label: extra.label } : {}),
   };
 }
