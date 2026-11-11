@@ -1,5 +1,6 @@
 import type { Offer, OfferStatus } from "@/generated/prisma/client";
 import { lineTotalKobo, type SaleBreakdown } from "@/lib/money";
+import { quantityTitle, type TileItem } from "@/lib/summary";
 
 // What the buyer may know about an offer's state. OPEN and AWAITING_FARMER both read WAITING,
 // so a buyer cannot tell that an officer found the offer below the farmer's floor; a rejection
@@ -172,5 +173,22 @@ export function toFarmerOffer(
     breakdown,
     status: effectiveStatus(offer.status, offer.expiresAt, offer.payByAt, lotVisible, now),
     expiresAt: offer.expiresAt.toISOString(),
+  };
+}
+
+// A tile item for an offer: the quantity, unit and crop, and nothing priced. Built field by
+// field so no floor, price or buyer detail reaches a home page.
+export function toOfferTileItem(
+  row: { id: string; quantity: number; lot: { crop: { name: string }; unit: { name: string } } },
+  href: string,
+  extra: { date?: Date | null; label?: string; detail?: string } = {},
+): TileItem {
+  return {
+    id: row.id,
+    href,
+    title: quantityTitle(row.quantity, row.lot.unit.name, row.lot.crop.name),
+    ...(extra.detail ? { detail: extra.detail } : {}),
+    ...(extra.date ? { date: extra.date.toISOString() } : {}),
+    ...(extra.label ? { label: extra.label } : {}),
   };
 }

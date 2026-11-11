@@ -29,7 +29,7 @@ async function NewLot() {
         {context.blockedBy ? (
           <p role="status" className="body-3">
             {t(`new.blocked.${context.blockedBy}`)}{" "}
-            <Link href="/farmer" className="underline underline-offset-4">
+            <Link href="/farmer/profile" className="underline underline-offset-4">
               {t("new.goToFarm")}
             </Link>
           </p>

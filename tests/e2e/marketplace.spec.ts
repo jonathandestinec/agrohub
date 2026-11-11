@@ -68,7 +68,7 @@ test("a buyer negotiates a lot to an accepted offer without ever seeing the floo
     await clickNav(page, "Buy produce");
     await expect(page.getByRole("heading", { name: "Buy from verified cooperatives" })).toBeVisible();
     await page.getByRole("main").getByRole("button", { name: "Start buying" }).click();
-    await expect(page.getByRole("heading", { name: "My offers" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^Home, / })).toBeVisible();
   });
 
   await test.step("2. the buyer filters the lots, opens the lot and its cooperative", async () => {

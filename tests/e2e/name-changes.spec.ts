@@ -69,7 +69,7 @@ test("an admin approves a farmer's name change and rejects a cooperative rename"
 
   await test.step("1. the farmer asks for a name change with an affidavit", async () => {
     const page = farmerPage;
-    await page.goto("/farmer");
+    await page.goto("/farmer/profile");
     await page.getByRole("main").getByRole("link", { name: "Change my name" }).click();
     await expect(page.getByRole("heading", { name: "Change my name" })).toBeVisible();
     const main = page.getByRole("main");
@@ -88,7 +88,7 @@ test("an admin approves a farmer's name change and rejects a cooperative rename"
 
   await test.step("2. while it waits, the farmer cannot change their bank account", async () => {
     const page = farmerPage;
-    await page.goto("/farmer");
+    await page.goto("/farmer/profile");
     const main = page.getByRole("main");
     await main.getByLabel("Bank", { exact: true }).selectOption({ label: "Access Bank" });
     await main.getByLabel("Account number").fill("0123456789");

@@ -10,12 +10,12 @@ export const password = "correct-horse-battery-staple";
 export const HOME = /:3100\/$/;
 // Where each role lands after signing in without an explicit next (see landingPath).
 export const LANDING = {
-  admin: /\/admin\/orders$/,
+  admin: /\/admin$/,
   boardAdmin: /\/board$/,
-  officer: /\/officer\/orders$/,
+  officer: /\/officer$/,
   officerOnboarding: /\/officer\/onboarding$/,
   farmer: /\/farmer$/,
-  buyer: /\/lots$/,
+  buyer: /\/buyer$/,
   twoFactor: /\/two-factor$/,
 } as const;
 
