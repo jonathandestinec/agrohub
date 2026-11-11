@@ -46,6 +46,7 @@ agrohub/
       reviews/
       analytics/
       inputs/                input orders, signups, loans (tracking only)
+      home/                  the four role home pages' tiles: `farmerHome`, `officerHome`, `buyerHome`, `adminHome` assemble the other modules' `*Summary` reads (count plus three items) with `Promise.allSettled`; holds no queries
       notifications/         email events, and in-app alerts: `notify` (written by other services in their own transaction), the bell and /alerts reads, and `GET /api/alerts/summary` for the bell's count
       support/               reports, disputes
       audit/                 append-only audit log

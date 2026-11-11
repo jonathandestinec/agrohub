@@ -7,7 +7,7 @@ describe("navLinksWithoutActiveMembership", () => {
     { href: "/officer/onboarding", labelKey: "registerCooperative" },
     { href: "/buyer/join", labelKey: "buyProduce" },
   ];
-  const yourFarm = [{ href: "/farmer", labelKey: "yourFarm" }];
+  const yourFarm = [{ href: "/farmer/profile", labelKey: "yourFarm" }];
 
   it("offers to register a cooperative or buy produce to a user with no officer or farmer membership", () => {
     expect(navLinksWithoutActiveMembership([])).toEqual(register);

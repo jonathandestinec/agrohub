@@ -22,6 +22,8 @@ function nairaToKobo(value: string): number {
 
 function revalidateOffers(offerId?: string): void {
   revalidatePath("/buyer");
+
+  revalidatePath("/buyer/offers");
   if (offerId) revalidatePath(`/buyer/offers/${offerId}`);
   revalidatePath("/officer/offers");
   revalidatePath("/messages");

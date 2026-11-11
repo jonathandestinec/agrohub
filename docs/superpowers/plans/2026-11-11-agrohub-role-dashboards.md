@@ -254,11 +254,11 @@ Steps:
 - Modify: `src/modules/identity/landing.ts`, `src/components/nav-links.ts`, `src/modules/notifications/views.ts`, the files listed in spec section 4 ("Links into the moved pages"), `docs/architecture.md`
 - Test: `tests/unit/landing.test.ts`, `tests/unit/nav-items.test.ts`, `tests/unit/header-nav.test.ts`, `tests/unit/notification-views.test.ts`, `tests/e2e/journey.ts`, `tests/e2e/name-changes.spec.ts`
 
-- [ ] **Step 1: Update the tests first** to the new addresses: landing ADMIN `/admin`, OFFICER `/officer`, BUYER `/buyer`, FARMER `/farmer` (unchanged), unverified officer and BOARD_ADMIN unchanged; nav: a Home link first for the four roles, buyer "My offers" `/buyer/offers`, farmer "Your farm" `/farmer/profile`, the pending farmer's link `/farmer/profile`; `hrefOf("MEMBERSHIP_REMOVED", null, "m1") === "/farmer/profile"` and the same for the other membership and catalog-decision kinds; `LANDING` in `journey.ts`: admin `/\/admin$/`, officer `/\/officer$/`, buyer `/\/buyer$/`; `name-changes.spec.ts` opens `/farmer/profile`.
-- [ ] **Step 2: Run the unit tests, see them fail.**
-- [ ] **Step 3: Change the code**, including every revalidate and link in spec section 4. Search for `"/farmer"`, `'/farmer'`, `` `/farmer` ``, `"/buyer"` and `#crop-requests` with the `grep` subagent first and handle each hit as spec section 4 says.
-- [ ] **Step 4: Add** the `home` module line to `docs/architecture.md`.
-- [ ] **Step 5: Run the unit tests, see them pass; commit** `feat: land each role on its home page`.
+- [x] **Step 1: Update the tests first** to the new addresses: landing ADMIN `/admin`, OFFICER `/officer`, BUYER `/buyer`, FARMER `/farmer` (unchanged), unverified officer and BOARD_ADMIN unchanged; nav: a Home link first for the four roles, buyer "My offers" `/buyer/offers`, farmer "Your farm" `/farmer/profile`, the pending farmer's link `/farmer/profile`; `hrefOf("MEMBERSHIP_REMOVED", null, "m1") === "/farmer/profile"` and the same for the other membership and catalog-decision kinds; `LANDING` in `journey.ts`: admin `/\/admin$/`, officer `/\/officer$/`, buyer `/\/buyer$/`; `name-changes.spec.ts` opens `/farmer/profile`.
+- [x] **Step 2: Run the unit tests, see them fail.**
+- [x] **Step 3: Change the code**, including every revalidate and link in spec section 4. Search for `"/farmer"`, `'/farmer'`, `` `/farmer` ``, `"/buyer"` and `#crop-requests` with the `grep` subagent first and handle each hit as spec section 4 says.
+- [x] **Step 4: Add** the `home` module line to `docs/architecture.md`.
+- [x] **Step 5: Run the unit tests, see them pass; commit** `feat: land each role on its home page`.
 
 ---
 
