@@ -199,9 +199,17 @@ test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", 
   await signIn(page, email);
   await expect(page).toHaveURL(/\/two-factor$/);
   await expect(page.getByRole("heading", { name: "Enter your sign-in code" })).toBeVisible();
+  // The code form posts (never a GET with the code in the URL) and waits for hydration.
+  await expect(page.locator("form").filter({ hasText: "6-digit code" })).toHaveAttribute(
+    "method",
+    "post",
+  );
+  const verify = page.getByRole("button", { name: "Verify" });
+  await expect(verify).toBeEnabled();
   await page.getByLabel("6-digit code").fill(totp(secret, Date.now() - 5 * 60_000));
-  await page.getByRole("button", { name: "Verify" }).click();
+  await verify.click();
   await expect(page.getByText("That code is not correct. Try the newest code.")).toBeVisible();
+  expect(page.url()).not.toContain("code=");
   await page.getByLabel("6-digit code").fill(totp(secret));
   await page.getByRole("button", { name: "Verify" }).click();
   await expect(page).toHaveURL(HOME);

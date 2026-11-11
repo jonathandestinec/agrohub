@@ -96,7 +96,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
   }
 
   const codeForm = (
-    <form onSubmit={verifyCode} className="flex flex-col gap-4">
+    <form method="post" onSubmit={verifyCode} className="flex flex-col gap-4">
       <OtpInput
         id="code"
         name="code"
@@ -110,7 +110,12 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
           {t("signInAgain")}
         </Link>
       ) : null}
-      <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
+      <SubmitButton
+        pending={pending}
+        label={t("submit")}
+        pendingLabel={t("submitting")}
+        waitForHydration
+      />
     </form>
   );
 
