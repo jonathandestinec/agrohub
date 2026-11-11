@@ -26,4 +26,5 @@ export type { StartCheckoutInput } from "./schema";
 export { assertTransition, canTransition, isFrozen, isOpenOrder } from "./state";
 export { BUYER_ORDER_STATUSES, orderReference, type BuyerOrder, type BuyerOrderStatus, type OfficerOrder } from "./views";
 export { notifyOrder } from "./alerts";
+export { deliverySchedule, groupSchedule, scheduleWindow, SCHEDULE_DAYS, SCHEDULE_ROWS, type DeliveryRow, type DeliverySchedule } from "./schedule";
 export { officerAttentionSummary, ordersToPrepareSummary, recentEarningsSummary } from "./summaries";
