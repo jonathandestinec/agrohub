@@ -8,7 +8,7 @@ import type { Db, Recipient } from "./recipients";
 import { toAlertView, type AlertView } from "./views";
 
 export const ALERTS_PER_PAGE = 20;
-const LATEST = 10;
+const LATEST = 5;
 
 // What the actor sees in the role they are using: their own rows that are for every role or
 // for this one, and for no cooperative or for theirs.
