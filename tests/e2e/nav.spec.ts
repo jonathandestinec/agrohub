@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { grantAdmin } from "./grant";
+import { accountButton, completeSignUp, signIn, uniqueEmail } from "./journey";
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -23,6 +24,148 @@ test("the nav narrows on scroll down and comes back on scroll up", async ({ page
   await expect(bar).not.toHaveAttribute("data-compact", /.*/);
   // Still pinned: the bar stays at the top of the screen.
   expect((await bar.boundingBox())!.y).toBeLessThan(40);
+});
+
+// On a phone the shrunk bar holds the logo and the menu button only: Sign in (or the bell and the
+// avatar) wait in the menu. The menu button stays inside the bar at every phone width.
+const PHONE_WIDTHS = [320, 360, 375, 414];
+
+async function shrinkOnPhone(page: Page): Promise<Locator> {
+  await page.evaluate(() => {
+    document.body.style.minHeight = "4000px";
+  });
+  const bar = page.locator(".nav-bar");
+  await page.mouse.move(100, 400);
+  await expect
+    .poll(async () => {
+      await page.mouse.wheel(0, 400);
+      return bar.getAttribute("data-compact");
+    })
+    .not.toBeNull();
+  // The bar narrows over about half a second; measure it where it comes to rest.
+  await expect.poll(async () => Math.round((await bar.boundingBox())!.width)).toBeLessThanOrEqual(280);
+  return bar;
+}
+
+async function expectMenuButtonInside(page: Page, width: number, state: string): Promise<void> {
+  for (const [name, scope] of [
+    ["bar", ".nav-bar"],
+    ["header", "header"],
+  ] as const) {
+    // Retried: the bar's width eases over about half a second after it changes size.
+    await expect
+      .poll(
+        async () => {
+          const toggle = (await page.locator(".nav-bar button[aria-controls='app-menu']").boundingBox())!;
+          const outer = (await page.locator(scope).first().boundingBox())!;
+          return toggle.x >= outer.x && toggle.x + toggle.width <= outer.x + outer.width;
+        },
+        { message: `menu button inside the ${name} at ${width}px, ${state}` },
+      )
+      .toBe(true);
+  }
+}
+
+test("on a phone the shrunk bar shows the logo and the menu button, and Sign in waits in the menu", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const barSignIn = page.locator('.nav-bar a[href="/sign-in"]');
+  await expect(barSignIn).toBeVisible();
+
+  await shrinkOnPhone(page);
+  await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
+  await expectMenuButtonInside(page, 375, "shrunk");
+  await expect(barSignIn).toBeHidden();
+
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const menu = page.locator("#app-menu");
+  await expect(menu.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+  await menu.getByRole("link", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test("signed out, the menu button stays inside the bar at every phone width, shrunk or not", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  for (const width of PHONE_WIDTHS) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator(".nav-bar")).not.toHaveAttribute("data-compact", /.*/);
+    await expectMenuButtonInside(page, width, "full size");
+    await shrinkOnPhone(page);
+    await expectMenuButtonInside(page, width, "shrunk");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.locator("#app-menu")).toBeVisible();
+    await expectMenuButtonInside(page, width, "open");
+    await page.getByRole("button", { name: "Close menu" }).click();
+  }
+});
+
+test("tabbing into the shrunk phone bar brings the full bar back, with the menu button inside it", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 812 });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const bar = await shrinkOnPhone(page);
+  await expect(page.locator('.nav-bar a[href="/sign-in"]')).toBeHidden();
+  await expect
+    .poll(async () => {
+      await page.keyboard.press("Tab");
+      return page.evaluate(() => Boolean(document.activeElement?.closest(".nav-bar")));
+    })
+    .toBe(true);
+  await expect(bar).not.toHaveAttribute("data-compact", /.*/);
+  await expect(page.locator('.nav-bar a[href="/sign-in"]')).toBeVisible();
+  await expectMenuButtonInside(page, 320, "focused");
+});
+
+test("signed in, the shrunk phone bar hides the bell and avatar, and the menu offers them", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  const user = { name: "Ada Obi", email: uniqueEmail("nav-compact") };
+  await page.goto("/sign-up");
+  await completeSignUp(page, request, user);
+  await signIn(page, user.email);
+  await expect(accountButton(page)).toBeVisible();
+
+  // With no role yet there is no bell, so the menu offers Profile and Sign out but not Alerts.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await shrinkOnPhone(page);
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const bare = page.locator("#app-menu");
+  await expect(bare.getByRole("link", { name: "Profile", exact: true })).toBeVisible();
+  await expect(bare.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await expect(bare.getByRole("link", { name: "Alerts", exact: true })).toHaveCount(0);
+
+  // A buyer has alerts, so the bar carries the bell as well as the avatar.
+  await page.goto("/buyer/join");
+  await page.getByRole("main").getByRole("button", { name: "Start buying" }).click();
+  await expect(page).toHaveURL(/\/buyer$/);
+  await expect(page.getByRole("main").getByRole("heading", { name: /^Home/ })).toBeVisible();
+
+  for (const width of PHONE_WIDTHS) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator(".nav-bar")).not.toHaveAttribute("data-compact", /.*/);
+    await expect(accountButton(page)).toBeVisible();
+    await expectMenuButtonInside(page, width, "full size");
+    await shrinkOnPhone(page);
+    await expectMenuButtonInside(page, width, "shrunk");
+    await expect(accountButton(page)).toBeHidden();
+    await expect(page.locator('.nav-bar a[href="/alerts"]')).toBeHidden();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const menu = page.locator("#app-menu");
+    await expect(menu.getByRole("link", { name: "Alerts", exact: true })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Profile", exact: true })).toHaveAttribute("href", "/account");
+    await expect(menu.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expectMenuButtonInside(page, width, "open");
+    await page.getByRole("button", { name: "Close menu" }).click();
+  }
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await shrinkOnPhone(page);
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await page.locator("#app-menu").getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
 });
 
 // With two memberships the header also carries the role switcher. Nothing in it may overlap

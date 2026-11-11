@@ -9,7 +9,7 @@ import { initials } from "./account-label";
 
 // A form, not an onClick: React replays a submit made before hydration, so a tap made while the
 // page is still loading is not lost. The menu itself needs script to open.
-function SignOutForm({ className }: { className: string }) {
+export function SignOutForm({ className }: { className: string }) {
   return (
     <form action={signOut} className="w-full">
       <SignOutSubmit className={className} />
@@ -29,7 +29,8 @@ function SignOutSubmit({ className }: { className: string }) {
 
 // Who is signed in: a round avatar in the bar showing the person's initials, opening a dropdown
 // that starts with their full name and the role in use (plain text, not a menu item), then
-// Profile and Sign out. It stays in the bar at every width, beside the phone menu's toggle.
+// Profile and Sign out. It stays in the bar at full size, beside the phone menu's toggle; while the bar is shrunk on a
+// phone it moves into the menu (see app-nav).
 export function AccountMenu({ name, roleLabel }: { name: string; roleLabel: string | null }) {
   const t = useTranslations("header");
   const spoken = roleLabel ? `${name}, ${roleLabel}` : name;
