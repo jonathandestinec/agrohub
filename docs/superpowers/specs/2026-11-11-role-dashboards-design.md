@@ -133,15 +133,19 @@ No new table, no migration, no new dependency.
 
 ```ts
 // src/lib/summary.ts
-export type Summary<T> = { count: number; items: T[] }; // items: at most 3
+export type TileItem = { id: string; href: string; title: string; detail?: string; date?: string; label?: string };
+export type Summary = { count: number; items: TileItem[] }; // to-do tiles: count and the oldest 3
+export type History = { items: TileItem[] };                // history tiles: the newest 3
 ```
+
+`title` and `detail` hold data only (quantities, names, an amount already formatted). Any words come through `label`, a message key, so the tile never prints a status code.
 
 | Module | Functions |
 |---|---|
 | `marketplace` | `farmerOffersSummary`, `officerOffersSummary`, `buyerOffersToActSummary` |
 | `catalog` | `farmerCounteredLotsSummary`, `farmerLotCounts`, `screeningSummary`, `catalogRequestsSummary` |
 | `farmers` | `pendingFarmersSummary` |
-| `orders` | `recentEarningsSummary`, `ordersToPrepareSummary`, `officerAttentionSummary`, `upcomingDeliveries`, `deliveriesToConfirmSummary`, `buyerOpenOrdersSummary`, `recentReceiptsSummary`, `openDisputesSummary` |
+| `orders` | `recentEarningsSummary`, `ordersToPrepareSummary`, `officerAttentionSummary`, `deliverySchedule`, `deliveriesToConfirmSummary`, `buyerOpenOrdersSummary`, `recentReceiptsSummary`, `openDisputesSummary` |
 | `payments` | `payoutIssuesSummary`, `reconciliationSummary` |
 | `cooperatives` | `verificationSummary` |
 | `name-changes` | `nameChangeQueueSummary` |
@@ -149,8 +153,8 @@ export type Summary<T> = { count: number; items: T[] }; // items: at most 3
 
 - Each takes an `Actor` (and `now` where time matters) and checks the same `can` action as its list counterpart before reading. Cooperative reads are scoped by `actor.cooperativeId`.
 - Counts are `count` queries. Items are a `findMany` with `take: 3`. No summary loads a full list.
-- Item types are small view types built by the module's `views.ts`, so private fields cannot reach the page.
-- `upcomingDeliveries(actor, now)` returns `{ days: { date: string; orders: DeliveryRow[] }[]; more: number }`, using `src/lib/lagos-date.ts` for the window and the grouping.
+- Items are built by each module's `views.ts`, which selects only the fields an item shows, so private fields cannot reach the page.
+- `deliverySchedule(actor, now)` returns `{ overdue: DeliveryRow[]; days: { date: string; orders: DeliveryRow[] }[]; more: number; noDate: number; later: number }`, using `src/lib/lagos-date.ts` for the window and the grouping.
 
 **The `home` module** (`src/modules/home/service.ts`) assembles each role's page: `farmerHome(actor, now)`, `officerHome(actor, now)`, `buyerHome(actor, now)`, `adminHome(actor, now)`. Each first checks `can(actor, "home:view")`, a new action allowed for FARMER, OFFICER, BUYER and ADMIN, and then requires its own role, throwing `ForbiddenError` otherwise. It then calls its summaries in parallel with `Promise.allSettled` and returns the tiles in a fixed order as `{ id, status: "ok", summary } | { id, status: "error" }`. It holds no queries of its own; each summary still runs its own `can` check.
 
