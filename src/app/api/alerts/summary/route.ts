@@ -3,7 +3,7 @@ import { ForbiddenError, UnauthenticatedError } from "@/lib/errors";
 import { getActor } from "@/modules/identity/session";
 import { countOwnUnread, latestOwnAlerts } from "@/modules/notifications/service";
 
-// The bell's data: the unread count and the ten newest alerts for the signed-in person in the
+// The bell's data: the unread count and the five newest alerts for the signed-in person in the
 // role they are using. Never cached. No `dynamic` export: the session read makes it dynamic.
 const NO_STORE = { "Cache-Control": "no-store" };
 

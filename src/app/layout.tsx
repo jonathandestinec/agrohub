@@ -53,7 +53,7 @@ async function SwitcherSlot() {
   );
 }
 
-// The bell's first paint: the unread count and the ten newest alerts for the role in use. Signed
+// The bell's first paint: the unread count and the five newest alerts for the role in use. Signed
 // out, or without a working identity yet (an admin before two-factor), there is no bell. After
 // the first paint the bell asks /api/alerts/summary itself.
 async function AlertSlot() {
