@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
@@ -19,7 +18,6 @@ export function SignInForm({ next }: { next: string }) {
   const returnTo = safeNext(next);
   const t = useTranslations("auth.signIn");
   const fields = useTranslations("auth.fields");
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,18 +35,18 @@ export function SignInForm({ next }: { next: string }) {
       setError(t(ERROR_KEYS[failure.code ?? ""] ?? "error"));
       return;
     }
+    // A full load, not router.replace plus router.refresh: the refresh could land while the
+    // client navigation (and its server redirects) was still in flight and leave the router
+    // on this page. A full load also renders the header fresh, signed in.
     // A user with two-factor gets no session yet: the code is entered on /two-factor.
-    if (data && "twoFactorRedirect" in data) {
-      router.replace("/two-factor");
-    } else {
-      // The server picks the page: an explicit next, else the one the active role works from.
-      router.replace(await resolveLanding(returnTo));
-    }
-    router.refresh();
+    // Otherwise the server picks the page: an explicit next, else the one the active role works from.
+    const target =
+      data && "twoFactorRedirect" in data ? "/two-factor" : await resolveLanding(returnTo);
+    window.location.assign(target);
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <Field
         id="email"
         name="email"
@@ -66,7 +64,12 @@ export function SignInForm({ next }: { next: string }) {
         required
       />
       <FormError message={error} />
-      <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
+      <SubmitButton
+        pending={pending}
+        label={t("submit")}
+        pendingLabel={t("submitting")}
+        waitForHydration
+      />
       <p className="body-6 text-ink-soft">
         {t("noAccount")}{" "}
         <Link href={withNext("/sign-up", returnTo)} className="underline underline-offset-2">

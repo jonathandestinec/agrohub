@@ -127,7 +127,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
     return (
       <AuthCard title={t("enrolTitle")}>
         <p className="text-ink-soft">{t("enrolIntro")}</p>
-        <form onSubmit={startEnrolment} className="flex flex-col gap-4">
+        <form method="post" onSubmit={startEnrolment} className="flex flex-col gap-4">
           <Field
             id="password"
             name="password"
@@ -137,7 +137,12 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
             required
           />
           <FormError message={error} />
-          <SubmitButton pending={pending} label={t("start")} pendingLabel={t("starting")} />
+          <SubmitButton
+            pending={pending}
+            label={t("start")}
+            pendingLabel={t("starting")}
+            waitForHydration
+          />
         </form>
       </AuthCard>
     );
