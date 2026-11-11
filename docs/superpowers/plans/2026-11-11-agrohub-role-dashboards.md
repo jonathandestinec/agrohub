@@ -79,11 +79,11 @@ export function countLabel(count: number): string;             // "0".."99", the
 
 - `"home:view"` in `Action`; `can` allows FARMER, OFFICER, BUYER, ADMIN; denies BOARD_ADMIN.
 
-- [ ] **Step 1: Failing tests.** `countLabel(0) === "0"`, `countLabel(99) === "99"`, `countLabel(100) === "99+"`. In the policy matrix, five `home:view` rows: four `true`, BOARD_ADMIN `false`.
-- [ ] **Step 2: Run, see them fail.** `npx vitest run tests/unit/summary.test.ts tests/access/policy-matrix.test.ts`
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run, see them pass.**
-- [ ] **Step 5: Commit.** `feat: summary types and the home:view policy`
+- [x] **Step 1: Failing tests.** `countLabel(0) === "0"`, `countLabel(99) === "99"`, `countLabel(100) === "99+"`. In the policy matrix, five `home:view` rows: four `true`, BOARD_ADMIN `false`.
+- [x] **Step 2: Run, see them fail.** `npx vitest run tests/unit/summary.test.ts tests/access/policy-matrix.test.ts`
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run, see them pass.**
+- [x] **Step 5: Commit.** `feat: summary types and the home:view policy`
 
 ---
 
