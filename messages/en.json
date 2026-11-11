@@ -1714,5 +1714,109 @@
       "CATALOG_REQUEST_FORWARDED": "A request for a new {itemKind, select, CROP {crop} other {unit}} was forwarded to you: {name}.",
       "MESSAGE_RECEIVED": "New message about {crop}."
     }
+  },
+  "home": {
+    "title": "Home, {name}",
+    "titleAnonymous": "Home",
+    "seeAll": "See all",
+    "error": "Couldn't load this",
+    "tiles": {
+      "farmerOffers": "Offers waiting on you",
+      "farmerCountered": "Lots needing your answer",
+      "farmerLots": "Your lots",
+      "farmerEarnings": "Recent earnings",
+      "officerFarmers": "Farmers to approve",
+      "officerLots": "Lots to screen",
+      "officerOffers": "Offers to answer",
+      "officerPrepare": "Orders to prepare",
+      "officerAttention": "Needs attention",
+      "officerRequests": "Crop and unit requests",
+      "buyerOffers": "Offers to act on",
+      "buyerConfirm": "Deliveries to confirm",
+      "buyerOrders": "Orders in progress",
+      "buyerReceipts": "Recent receipts",
+      "adminCooperatives": "Cooperatives to verify",
+      "adminDisputes": "Reported problems",
+      "adminPayouts": "Payout problems",
+      "adminReconciliation": "Reconciliation issues",
+      "adminNames": "Name changes",
+      "adminLots": "Lots to review",
+      "messages": "Messages"
+    },
+    "empty": {
+      "farmerOffers": "No offers waiting on you",
+      "farmerCountered": "No lots need your answer",
+      "farmerLots": "You have no lots yet",
+      "farmerEarnings": "No earnings yet",
+      "officerFarmers": "No farmers to approve",
+      "officerLots": "No lots to screen",
+      "officerOffers": "No offers to answer",
+      "officerPrepare": "No orders to prepare",
+      "officerAttention": "Nothing needs attention",
+      "officerRequests": "No requests to forward",
+      "buyerOffers": "No offers need you",
+      "buyerConfirm": "No deliveries to confirm",
+      "buyerOrders": "No orders in progress",
+      "buyerReceipts": "No receipts yet",
+      "adminCooperatives": "No cooperatives to verify",
+      "adminDisputes": "No reported problems",
+      "adminPayouts": "No payout problems",
+      "adminReconciliation": "No reconciliation issues",
+      "adminNames": "No name changes waiting",
+      "adminLots": "No lots to review",
+      "messages": "No messages yet"
+    },
+    "dates": {
+      "farmerOffers": "Answer by {date}",
+      "farmerEarnings": "Completed {date}",
+      "officerFarmers": "Asked {date}",
+      "officerOffers": "Answer by {date}",
+      "officerPrepare": "Paid {date}",
+      "officerAttention": "Since {date}",
+      "officerRequests": "Asked {date}",
+      "buyerOffers": "Pay by {date}",
+      "buyerOrders": "Delivery {date}",
+      "adminCooperatives": "Submitted {date}",
+      "adminDisputes": "Since {date}",
+      "adminPayouts": "Since {date}",
+      "adminReconciliation": "Since {date}",
+      "adminNames": "Asked {date}",
+      "messages": "{date}"
+    },
+    "counts": {
+      "pendingReview": "In review",
+      "live": "Live",
+      "soldOut": "Sold out"
+    },
+    "labels": {
+      "CANCEL_REQUESTED": "Cancel requested",
+      "payout": {
+        "failed": "Payout failed",
+        "blocked": "No payout account",
+        "waiting": "Waiting for funds",
+        "stale": "Waiting for Paystack"
+      },
+      "reconciliation": {
+        "UNCONFIRMED_PAYMENT": "Payment not confirmed",
+        "AMOUNT_MISMATCH": "Amount does not match",
+        "STALE_TRANSFER": "Transfer not settled",
+        "STALE_REFUND": "Refund not settled",
+        "LEDGER_UNBALANCED": "Ledger does not balance"
+      }
+    },
+    "schedule": {
+      "title": "Deliveries to make",
+      "overdue": "Overdue",
+      "noDate": "{count} with no date set",
+      "later": "{count} later than two weeks",
+      "more": "{count} more not shown",
+      "empty": "No deliveries scheduled",
+      "error": "Couldn't load the delivery schedule",
+      "seeAll": "See all orders"
+    },
+    "officer": {
+      "onboarding": "Finish onboarding to start selling",
+      "onboardingLink": "Go to onboarding"
+    }
   }
 }

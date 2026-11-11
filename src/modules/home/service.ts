@@ -19,29 +19,9 @@ import {
   type DeliverySchedule,
 } from "@/modules/orders/service";
 import { payoutIssuesSummary, reconciliationSummary } from "@/modules/payments/service";
+import { SEE_ALL, type TileId } from "./tiles";
 
-export type TileId =
-  | "farmerOffers"
-  | "farmerCountered"
-  | "farmerLots"
-  | "farmerEarnings"
-  | "officerFarmers"
-  | "officerLots"
-  | "officerOffers"
-  | "officerPrepare"
-  | "officerAttention"
-  | "officerRequests"
-  | "buyerOffers"
-  | "buyerConfirm"
-  | "buyerOrders"
-  | "buyerReceipts"
-  | "adminCooperatives"
-  | "adminDisputes"
-  | "adminPayouts"
-  | "adminReconciliation"
-  | "adminNames"
-  | "adminLots"
-  | "messages";
+export type { TileId } from "./tiles";
 
 export type Tile =
   | { id: TileId; seeAll: string; status: "ok"; kind: "todo"; summary: Summary }
@@ -50,31 +30,6 @@ export type Tile =
   | { id: TileId; seeAll: string; status: "error" };
 
 export type OfficerHome = { verified: false } | { verified: true; tiles: Tile[]; schedule: DeliverySchedule | null };
-
-// Where each tile's "See all" goes: the page that already holds the full list and its actions.
-const SEE_ALL: Record<TileId, string> = {
-  farmerOffers: "/farmer/lots",
-  farmerCountered: "/farmer/lots",
-  farmerLots: "/farmer/lots",
-  farmerEarnings: "/farmer/earnings",
-  officerFarmers: "/officer/farmers",
-  officerLots: "/officer/lots",
-  officerOffers: "/officer/offers",
-  officerPrepare: "/officer/orders",
-  officerAttention: "/officer/orders",
-  officerRequests: "/officer/farmers",
-  buyerOffers: "/buyer/offers",
-  buyerConfirm: "/buyer/orders",
-  buyerOrders: "/buyer/orders",
-  buyerReceipts: "/buyer/orders",
-  adminCooperatives: "/admin/cooperatives",
-  adminDisputes: "/admin/orders",
-  adminPayouts: "/admin/payouts",
-  adminReconciliation: "/admin/orders",
-  adminNames: "/admin/names",
-  adminLots: "/admin/lots",
-  messages: "/messages",
-};
 
 type Body =
   | { kind: "todo"; summary: Summary }

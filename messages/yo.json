@@ -1714,5 +1714,109 @@
       "CATALOG_REQUEST_FORWARDED": "",
       "MESSAGE_RECEIVED": ""
     }
+  },
+  "home": {
+    "title": "",
+    "titleAnonymous": "",
+    "seeAll": "",
+    "error": "",
+    "tiles": {
+      "farmerOffers": "",
+      "farmerCountered": "",
+      "farmerLots": "",
+      "farmerEarnings": "",
+      "officerFarmers": "",
+      "officerLots": "",
+      "officerOffers": "",
+      "officerPrepare": "",
+      "officerAttention": "",
+      "officerRequests": "",
+      "buyerOffers": "",
+      "buyerConfirm": "",
+      "buyerOrders": "",
+      "buyerReceipts": "",
+      "adminCooperatives": "",
+      "adminDisputes": "",
+      "adminPayouts": "",
+      "adminReconciliation": "",
+      "adminNames": "",
+      "adminLots": "",
+      "messages": ""
+    },
+    "empty": {
+      "farmerOffers": "",
+      "farmerCountered": "",
+      "farmerLots": "",
+      "farmerEarnings": "",
+      "officerFarmers": "",
+      "officerLots": "",
+      "officerOffers": "",
+      "officerPrepare": "",
+      "officerAttention": "",
+      "officerRequests": "",
+      "buyerOffers": "",
+      "buyerConfirm": "",
+      "buyerOrders": "",
+      "buyerReceipts": "",
+      "adminCooperatives": "",
+      "adminDisputes": "",
+      "adminPayouts": "",
+      "adminReconciliation": "",
+      "adminNames": "",
+      "adminLots": "",
+      "messages": ""
+    },
+    "dates": {
+      "farmerOffers": "",
+      "farmerEarnings": "",
+      "officerFarmers": "",
+      "officerOffers": "",
+      "officerPrepare": "",
+      "officerAttention": "",
+      "officerRequests": "",
+      "buyerOffers": "",
+      "buyerOrders": "",
+      "adminCooperatives": "",
+      "adminDisputes": "",
+      "adminPayouts": "",
+      "adminReconciliation": "",
+      "adminNames": "",
+      "messages": ""
+    },
+    "counts": {
+      "pendingReview": "",
+      "live": "",
+      "soldOut": ""
+    },
+    "labels": {
+      "CANCEL_REQUESTED": "",
+      "payout": {
+        "failed": "",
+        "blocked": "",
+        "waiting": "",
+        "stale": ""
+      },
+      "reconciliation": {
+        "UNCONFIRMED_PAYMENT": "",
+        "AMOUNT_MISMATCH": "",
+        "STALE_TRANSFER": "",
+        "STALE_REFUND": "",
+        "LEDGER_UNBALANCED": ""
+      }
+    },
+    "schedule": {
+      "title": "",
+      "overdue": "",
+      "noDate": "",
+      "later": "",
+      "more": "",
+      "empty": "",
+      "error": "",
+      "seeAll": ""
+    },
+    "officer": {
+      "onboarding": "",
+      "onboardingLink": ""
+    }
   }
 }
