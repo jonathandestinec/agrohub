@@ -120,3 +120,6 @@ export function toAlertView(row: Notification): AlertView {
     createdAt: row.createdAt.toISOString(),
   };
 }
+
+// What the bell shows: the unread count and the ten newest alerts.
+export type AlertSummary = { unread: number; alerts: AlertView[] };
