@@ -17,6 +17,7 @@ export function Menu({
   current = false,
   align = "start",
   hideChevron = false,
+  onOpen,
   children,
 }: {
   button: ReactNode;
@@ -28,6 +29,8 @@ export function Menu({
   align?: "start" | "end";
   // For a trigger that is a round avatar: no arrow beside it.
   hideChevron?: boolean;
+  // Called each time the panel opens (a bell refreshes its list here).
+  onOpen?: () => void;
   children: ReactNode;
 }) {
   const id = useId();
@@ -80,6 +83,7 @@ export function Menu({
     if (next === null || (!open && !arrowOpens)) return;
     event.preventDefault();
     if (!open) {
+      onOpen?.();
       setOpen(true);
       // The panel is not in the page yet: focus its item once it is.
       requestAnimationFrame(() => {
@@ -107,7 +111,10 @@ export function Menu({
         aria-controls={open ? id : undefined}
         aria-label={buttonLabel}
         data-current={current ? "" : undefined}
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (!open) onOpen?.();
+          setOpen(!open);
+        }}
         className={buttonClassName}
       >
         {button}
