@@ -225,8 +225,8 @@ export async function adminHome(actor: Actor, now?: Date): Promise<Tile[]>;
 
 Each starts with `can(actor, "home:view")`, then requires its own role (`ForbiddenError` otherwise), then runs its summaries with `Promise.allSettled` in the spec's tile order (section 3). A rejected summary becomes `{ status: "error" }` and is logged as `console.error("home tile failed", { id })` with nothing else. `officerHome` returns `{ verified: false }` when the cooperative is not verified (read it the way `landing.ts`'s caller does) and calls no summaries; `schedule` is `null` when `deliverySchedule` failed.
 
-- [ ] **Step 1: Failing tests:** `farmer_home_has_its_tiles_in_order`, the same for the other three roles; `a_failing_summary_becomes_an_error_tile_and_the_rest_load` (`vi.spyOn` one summary to reject); `refuses_another_roles_home`; `unverified_officer_gets_no_tiles` (Review Focus 3); `a_count_over_ninety_nine_reaches_the_tile` (101 pending farmers: the tile's `count` is 101, and `countLabel` gives "99+", Review Focus 5).
-- [ ] **Step 2: Run, see them fail. Step 3: implement. Step 4: run, see them pass. Step 5: commit** `feat: the home module`.
+- [x] **Step 1: Failing tests:** `farmer_home_has_its_tiles_in_order`, the same for the other three roles; `a_failing_summary_becomes_an_error_tile_and_the_rest_load` (`vi.spyOn` one summary to reject); `refuses_another_roles_home`; `unverified_officer_gets_no_tiles` (Review Focus 3); `a_count_over_ninety_nine_reaches_the_tile` (101 pending farmers: the tile's `count` is 101, and `countLabel` gives "99+", Review Focus 5).
+- [x] **Step 2: Run, see them fail. Step 3: implement. Step 4: run, see them pass. Step 5: commit** `feat: the home module`.
 
 ---
 
