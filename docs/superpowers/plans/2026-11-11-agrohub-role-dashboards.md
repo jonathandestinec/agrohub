@@ -266,13 +266,13 @@ Steps:
 
 **Files:** Create `tests/e2e/home.spec.ts`.
 
-- [ ] **Step 1: The spec** (model the set-up on `tests/e2e/marketplace.spec.ts` and the `journey.ts` helpers; scope locators to `getByRole("main")`):
+- [x] **Step 1: The spec** (model the set-up on `tests/e2e/marketplace.spec.ts` and the `journey.ts` helpers; scope locators to `getByRole("main")`):
   - `each role lands on its home after sign-in`: officer, buyer, farmer, admin (admin after two-factor).
   - `an officer's tile opens the item`: a buyer makes an offer; the officer's "Offers to answer" shows 1 and its row opens `/officer/offers/<id>`.
   - `a pending farmer is sent to the farm page`: a farmer who joined but is not approved opens `/farmer` and lands on `/farmer/profile`.
   - `a farmer using the buyer role is sent to the farm page`: an approved farmer who also holds a buyer membership switches to the buyer role and opens `/farmer`; they land on `/farmer/profile` and see their farm details (Review Focus 2).
   - `the buyer's offers have their own page`: `/buyer/offers` lists the offer.
-- [ ] **Step 2: Run it, see it pass;** then the whole e2e suite once. Fix specs broken by the new addresses; report, without changing, any that fail for another reason.
-- [ ] **Step 3: Click-through** (spec section 8): start `npm run dev` against the local database (create `.claude/launch.json` if missing), create local test accounts, and in the built-in browser pane open each of the four homes at 375×812 and 1280×800, once empty and once with items in every tile (seed with the integration fixtures or a short script). Include a 60-character cooperative name and a count over 99 (Review Focus 4 and 5). Screenshot each. Localhost only; never the public link.
+- [x] **Step 2: Run it, see it pass;** then the whole e2e suite once. Fix specs broken by the new addresses; report, without changing, any that fail for another reason.
+- [x] **Step 3: Click-through** (spec section 8): start `npm run dev` against the local database (create `.claude/launch.json` if missing), create local test accounts, and in the built-in browser pane open each of the four homes at 375×812 and 1280×800, once empty and once with items in every tile (seed with the integration fixtures or a short script). Include a 60-character cooperative name and a count over 99 (Review Focus 4 and 5). Screenshot each. Localhost only; never the public link.
 - [ ] **Step 4:** lint, typecheck, `npm test`, `npx playwright test`; then the `audit` subagent on the committed branch; fix its findings.
 - [ ] **Step 5:** push with `git push -u origin role-dashboards` and open the pull request against `main`: what was built; "No migration"; the spec section 10 choices plus any of yours; deviations from the plan; the click-through results (what each screenshot showed); which subagent ran each search and test run; how each Review Focus item turned out. Then stop. Do not merge.

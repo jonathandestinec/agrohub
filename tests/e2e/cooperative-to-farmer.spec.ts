@@ -215,7 +215,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     const page = farmerPage;
     await page.reload();
     await expect(page.getByText("Your officer has approved you.")).toBeVisible();
-    await clickNav(page, "My farm");
+    await clickNav(page, "Your farm");
     await expect(page.getByRole("heading", { name: cooperativeName })).toBeVisible();
     await expect(page.getByRole("status")).toHaveText("You are an approved member.");
   });

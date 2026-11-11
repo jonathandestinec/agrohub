@@ -77,7 +77,7 @@ test("delivery, a shortfall, confirmation, payouts and an admin refund", async (
     await expect(buyerPage).toHaveURL(HOME);
     await clickNav(buyerPage, "Buy produce");
     await buyerPage.getByRole("main").getByRole("button", { name: "Start buying" }).click();
-    await expect(buyerPage.getByRole("heading", { name: "My offers" })).toBeVisible();
+    await expect(buyerPage.getByRole("heading", { name: /^Home, / })).toBeVisible();
     await clickNav(buyerPage, "Browse lots");
     const main = buyerPage.getByRole("main");
     await main.getByLabel("Crop").selectOption({ label: crop });
