@@ -6,7 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { committedQuantity, isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
-import { buyer as buyerRecipient, farmersOfLot, notify, officersOf } from "@/modules/notifications/service";
+import { buyer as buyerRecipient, farmer, notify, officersOf } from "@/modules/notifications/service";
 import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, REFERRAL_MIN_HOURS, hoursAfter } from "./limits";
 import { LIVE_OFFER, buyerViewOf, loadOwnOffer } from "./offers";
 import { respondToOfferInput, type RespondToOfferInput } from "./schema";
@@ -251,7 +251,9 @@ export async function respondToOffer(
         kind: "OFFER_NEEDS_FARMER",
         subject: { type: "LOT", id: row.lotId },
         data: alertData(row),
-        to: await farmersOfLot(tx, row.lotId),
+        // Only the farmer who submitted the lot can answer (farmerRespondToOffer checks lot:own),
+        // so a contributor is not told an offer is below the floor.
+        to: [farmer(row.lot.farmerUserId, row.cooperativeId)],
         exclude: actor.userId,
       });
     } else if (decision === "REJECT") {

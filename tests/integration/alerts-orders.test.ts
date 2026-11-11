@@ -1,7 +1,8 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/db";
 import { fakeStorage } from "@/lib/storage";
 import { openLotThread } from "@/modules/messaging/service";
+import { notify } from "@/modules/notifications/service";
 import {
   answerCancelRequest,
   cancelOrder,
@@ -20,6 +21,12 @@ import { alertKinds, alertsFor } from "./alert-helpers";
 import { cleanDatabase } from "./helpers";
 import { seedOrder } from "./order-fixtures";
 import { HOUR, paidOrder, paidWorld, type PaidWorld } from "./paid-order";
+
+// Wraps the real notify so one test can make it fail once.
+vi.mock("@/modules/notifications/service", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/notifications/service")>();
+  return { ...actual, notify: vi.fn(actual.notify) };
+});
 
 let w: PaidWorld;
 let orderId: string;
@@ -185,5 +192,17 @@ describe("order alerts for officers and admins", () => {
     const before = await prisma.notification.count();
     await expect(startPreparing(w.officer, orderId)).rejects.toThrow();
     expect(await prisma.notification.count()).toBe(before);
+  });
+  it("an_alert_failure_comes_after_the_audit_row_and_the_thread_line", async () => {
+    await markDelivered(w.officer, orderId, 10);
+    await reportProblem(w.buyer, orderId, "Ten bags were wet");
+    const dispute = await prisma.dispute.findFirstOrThrow({ where: { orderId } });
+    vi.mocked(notify).mockRejectedValueOnce(new Error("alert write failed"));
+    await expect(resolveDispute(w.admin, dispute.id, { outcome: "RELEASE", note: "Checked the photos" })).rejects.toThrow(
+      "alert write failed",
+    );
+    // The decision is complete, with its bookkeeping, before the alert is written.
+    expect(await prisma.auditLog.count({ where: { action: "dispute.resolve", entityId: dispute.id } })).toBe(1);
+    expect(await prisma.message.count({ where: { body: { startsWith: "AgroHub decided" } } })).toBe(1);
   });
 });

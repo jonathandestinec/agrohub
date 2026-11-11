@@ -127,12 +127,12 @@ export async function cancelOrder(actor: Actor, orderId: string, reason: string,
       const text = await checkedReason(actor, order.lotId, reason, false);
       const { count } = await prisma.order.updateMany({ where: { id: orderId, status: "PREPARING" }, data: { cancelRequestedAt: now } });
       if (count === 0) throw new ConflictError("The order cannot do that now", "ORDER_STATE");
-      // Only the first request alerts: asking again moves nothing (the line is posted each time).
+      await postLine(order, actor.userId, `The buyer asked to cancel${text ? `: ${text}` : ""}`, now);
+      await recordAudit({ actorId: actor.userId, action: "order.cancel_request", entity: "order", entityId: orderId, meta: { orderId } });
+      // Last, and only for the first request: asking again moves nothing (the line is posted each time).
       if (order.cancelRequestedAt === null) {
         await notifyOrder(prisma, orderId, "ORDER_CANCEL_REQUESTED", ["officers"], actor.userId);
       }
-      await postLine(order, actor.userId, `The buyer asked to cancel${text ? `: ${text}` : ""}`, now);
-      await recordAudit({ actorId: actor.userId, action: "order.cancel_request", entity: "order", entityId: orderId, meta: { orderId } });
       return;
     }
     throw new ConflictError("The order cannot do that now", "ORDER_STATE");
@@ -180,7 +180,6 @@ export async function answerCancelRequest(actor: Actor, orderId: string, agree: 
       data: { cancelRequestedAt: null },
     });
     if (count === 0) throw new ConflictError("There is no request to cancel", "NO_CANCEL_REQUEST");
-    await notifyOrder(prisma, orderId, "CANCEL_REQUEST_REFUSED", ["buyer"], actor.userId);
     await postLine(order, actor.userId, "The cooperative declined the request to cancel. The order goes ahead.", now);
   }
   await recordAudit({
@@ -190,6 +189,9 @@ export async function answerCancelRequest(actor: Actor, orderId: string, agree: 
     entityId: orderId,
     meta: { orderId, agree },
   });
+  // Last. An agreed cancellation's alert was written in the refund's own transaction; a refusal
+  // moved the order only by clearing the request, so it is told here, after the bookkeeping.
+  if (!agree) await notifyOrder(prisma, orderId, "CANCEL_REQUEST_REFUSED", ["buyer"], actor.userId);
 }
 
 /** Admin read: how many orders a cooperative has cancelled (shown on its admin page). */

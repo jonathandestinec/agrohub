@@ -13,7 +13,7 @@ import {
 } from "@/modules/marketplace/service";
 import { alertKinds, alertsFor } from "./alert-helpers";
 import { cleanDatabase } from "./helpers";
-import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
+import { buyerMember, farmerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
 
 const ASK = 6_500_000;
 const FLOOR = 5_500_000;
@@ -76,6 +76,17 @@ describe("offer alerts", () => {
     expect(row).toMatchObject({ role: "FARMER", cooperativeId: w.cooperativeId, subjectType: "LOT", subjectId: lotId });
     // The floor and the offered price stay out of the alert.
     expect(JSON.stringify(row.data)).not.toMatch(/5500000|5000000/);
+  });
+
+  it("asks_only_the_farmer_who_submitted_the_lot_not_a_contributor", async () => {
+    const contributor = await farmerMember("u-farmer-2", w.cooperativeId);
+    await prisma.lotContribution.create({ data: { lotId, farmerUserId: contributor.userId, quantity: 5 } });
+    const id = await offer(5_000_000);
+    await clearAlerts();
+    await respondToOffer(w.officer, id, { decision: "ACCEPT" }, NOW);
+    expect(await alertKinds(w.farmer.userId)).toEqual(["OFFER_NEEDS_FARMER"]);
+    // Only the submitting farmer can answer, so a contributor is not told the offer is below the floor.
+    expect(await alertKinds(contributor.userId)).toEqual([]);
   });
 
   it("tells_the_buyer_their_offer_was_declined", async () => {

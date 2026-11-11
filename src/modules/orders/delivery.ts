@@ -56,8 +56,9 @@ async function postToOrderThread(order: Order, causedByUserId: string, text: str
 export async function startPreparing(actor: Actor, orderId: string, now: Date = new Date()): Promise<void> {
   const order = await loadManagedOrder(actor, orderId);
   await moveOrder(order, ["PAID_HELD"], "PREPARING", { preparingAt: now });
-  await notifyOrder(prisma, orderId, "ORDER_PREPARING", ["buyer"], actor.userId);
   await recordAudit({ actorId: actor.userId, action: "order.preparing", entity: "order", entityId: orderId, meta: { orderId } });
+  // Last, after the audit row: the change is saved by here, so a failed alert write cannot skip it.
+  await notifyOrder(prisma, orderId, "ORDER_PREPARING", ["buyer"], actor.userId);
 }
 
 /**
@@ -78,7 +79,6 @@ export async function setDeliveryDate(actor: Actor, orderId: string, date: strin
     data: { deliveryDate: lagosDate(date) },
   });
   if (count === 0) throw new ConflictError("The order cannot do that now", "ORDER_STATE");
-  await notifyDeliveryDate(prisma, orderId, date, actor.userId);
   await postToOrderThread(order, actor.userId, `Delivery date proposed: ${DAY.format(lagosDate(date))}`, now);
   await recordAudit({
     actorId: actor.userId,
@@ -87,6 +87,7 @@ export async function setDeliveryDate(actor: Actor, orderId: string, date: strin
     entityId: orderId,
     meta: { orderId, date },
   });
+  await notifyDeliveryDate(prisma, orderId, date, actor.userId);
 }
 
 /**
@@ -100,7 +101,6 @@ export async function markDelivered(actor: Actor, orderId: string, deliveredQuan
   }
   await moveOrder(order, ["PAID_HELD", "PREPARING", "TIMED_OUT"], "DELIVERED_MARKED", { deliveredQuantity, deliveredMarkedAt: now });
   if (order.status === "TIMED_OUT") await closeTimeout(prisma, orderId, now);
-  await notifyOrder(prisma, orderId, "ORDER_DELIVERED", ["buyer"], actor.userId);
   const lot = await prisma.lot.findUniqueOrThrow({ where: { id: order.lotId }, select: { unit: { select: { name: true } } } });
   await postToOrderThread(order, actor.userId, `Marked delivered: ${deliveredQuantity} of ${order.quantity} ${lot.unit.name}`, now);
   await recordAudit({
@@ -110,6 +110,7 @@ export async function markDelivered(actor: Actor, orderId: string, deliveredQuan
     entityId: orderId,
     meta: { orderId, deliveredQuantity },
   });
+  await notifyOrder(prisma, orderId, "ORDER_DELIVERED", ["buyer"], actor.userId);
 }
 
 /** The buyer confirms they received a delivered order: the payment is released. */
@@ -118,7 +119,7 @@ export async function confirmReceipt(actor: Actor, orderId: string, now: Date = 
   if (order.status !== "DELIVERED_MARKED") throw new ConflictError("The order cannot do that now", "ORDER_STATE");
   const done = await completeOrder(orderId, "BUYER", now);
   if (!done) throw new ConflictError("The order cannot do that now", "ORDER_STATE");
+  await postToOrderThread(order, actor.userId, "The buyer confirmed receipt. Payment released.", now);
   // Here and not in completeOrder, which the 72-hour timer reaches too: that path tells no one.
   await notifyOrder(prisma, orderId, "ORDER_RECEIPT_CONFIRMED", ["officers"], actor.userId);
-  await postToOrderThread(order, actor.userId, "The buyer confirmed receipt. Payment released.", now);
 }

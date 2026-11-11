@@ -197,6 +197,7 @@ export async function uploadDocument(
     }
     return created;
   });
+  let justSubmitted = false;
   const kinds = await prisma.cooperativeDocument.findMany({
     where: { cooperativeId },
     distinct: ["kind"],
@@ -208,20 +209,9 @@ export async function uploadDocument(
       where: { id: cooperativeId, submittedAt: null },
       data: { submittedAt: new Date() },
     });
-    // Only the upload that completed the set tells the admins; a re-upload moves nothing.
-    if (count === 1) {
-      const submitted = await prisma.cooperative.findUniqueOrThrow({
-        where: { id: cooperativeId },
-        select: { name: true },
-      });
-      await notify(prisma, {
-        kind: "COOPERATIVE_SUBMITTED",
-        subject: { type: "COOPERATIVE", id: cooperativeId },
-        data: { cooperative: submitted.name },
-        to: await activeAdmins(prisma),
-        exclude: actor.userId,
-      });
-    }
+    // Only the upload that completed the set tells the admins (told last, below); a re-upload
+    // moves nothing.
+    justSubmitted = count === 1;
   }
   await recordAudit({
     actorId: actor.userId,
@@ -237,6 +227,20 @@ export async function uploadDocument(
       entity: "cooperative",
       entityId: cooperativeId,
       meta: { cooperativeId, documentId: document.id },
+    });
+  }
+  // Last, after the audit rows: the upload that completed the set tells the admins.
+  if (justSubmitted) {
+    const submitted = await prisma.cooperative.findUniqueOrThrow({
+      where: { id: cooperativeId },
+      select: { name: true },
+    });
+    await notify(prisma, {
+      kind: "COOPERATIVE_SUBMITTED",
+      subject: { type: "COOPERATIVE", id: cooperativeId },
+      data: { cooperative: submitted.name },
+      to: await activeAdmins(prisma),
+      exclude: actor.userId,
     });
   }
   return document;
@@ -448,7 +452,9 @@ async function transition(
       ...(reason === undefined ? {} : { reason }),
     },
   });
-  // Mapped from the decision, not the status pair: a rejection is PENDING to PENDING.
+  await notifyOfficers(cooperative, step.email, reason);
+  // Last, after the audit row and the emails. Mapped from the decision, not the status pair: a
+  // rejection is PENDING to PENDING.
   await notify(prisma, {
     kind: DECISION_ALERT[step.email],
     subject: { type: "COOPERATIVE", id: cooperative.id },
@@ -456,7 +462,6 @@ async function transition(
     to: await officersOf(prisma, cooperative.id),
     exclude: actor.userId,
   });
-  await notifyOfficers(cooperative, step.email, reason);
   return loadForReview(cooperative.id);
 }
 

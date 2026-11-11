@@ -336,8 +336,9 @@ export async function approveFarmer(
     throw new ConflictError("Cooperative is not verified", "COOPERATIVE_NOT_VERIFIED");
   }
   await applyTransition(actor, membership, APPROVE, { approvedAt: now });
-  await tellFarmer(actor, "MEMBERSHIP_APPROVED", membership);
   await emailFarmer(membership, "approved");
+  // Last, after the audit row and the email: the decision is saved by here.
+  await tellFarmer(actor, "MEMBERSHIP_APPROVED", membership);
 }
 
 export async function rejectFarmer(
@@ -351,8 +352,8 @@ export async function rejectFarmer(
   }
   const trimmed = parseReason(reason);
   await applyTransition(actor, membership, REJECT, { reason: trimmed });
-  await tellFarmer(actor, "MEMBERSHIP_REJECTED", membership);
   await emailFarmer(membership, "rejected", trimmed);
+  await tellFarmer(actor, "MEMBERSHIP_REJECTED", membership);
 }
 
 export async function removeFarmer(
@@ -369,8 +370,8 @@ export async function removeFarmer(
     throw new ConflictError("Farmer has unfinished orders", "UNFINISHED_ORDERS");
   }
   await applyTransition(actor, membership, REMOVE, { reason: trimmed });
-  await tellFarmer(actor, "MEMBERSHIP_REMOVED", membership);
   await emailFarmer(membership, "removed", trimmed);
+  await tellFarmer(actor, "MEMBERSHIP_REMOVED", membership);
 }
 
 // Self-scoped: acts only on the actor's own ACTIVE farmer membership. Rows are kept.

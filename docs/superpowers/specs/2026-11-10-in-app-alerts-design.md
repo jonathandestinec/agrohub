@@ -50,7 +50,7 @@ The interface calls the feature "Alerts". The code and table use `notification`,
 | `LOT_REJECTED` | Their lot was rejected | `rejectLot` | `/farmer/lots` |
 | `LOT_COUNTERED` | Their lot was sent back with a counter | `counterLot` | `/farmer/lots` |
 | `LOT_REVISION_DECIDED` | Their requested change was approved or refused | `catalog/revisions.ts` `decideRevision` | `/farmer/lots` |
-| `OFFER_NEEDS_FARMER` | An offer on their lot is waiting on them | `marketplace/negotiation.ts` `respondToOffer`, when the officer accepts an offer below the floor and the offer moves to `AWAITING_FARMER` | `/farmer/lots` |
+| `OFFER_NEEDS_FARMER` | An offer on their lot is waiting on them: it goes to the farmer who submitted the lot, the only one who can answer | `marketplace/negotiation.ts` `respondToOffer`, when the officer accepts an offer below the floor and the offer moves to `AWAITING_FARMER` | `/farmer/lots` |
 | `LOT_ORDER_PAID` | An order for their lot was paid | `payments/payments.ts` `confirmPayment`, only when the order becomes paid (a late payment that is refunded instead tells no one to prepare) | `/farmer/earnings` |
 | `PAYOUT_SENT` | Their payout was sent | `payments/sending.ts` `settleAttempt`, `settleTransferEvent` | `/farmer/earnings` |
 | `MEMBERSHIP_APPROVED`, `MEMBERSHIP_REJECTED`, `MEMBERSHIP_REMOVED` | Their membership was decided | `farmers/service.ts` `approveFarmer`, `rejectFarmer`, `removeFarmer` | `/farmer` |
