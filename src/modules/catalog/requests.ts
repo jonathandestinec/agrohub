@@ -296,11 +296,14 @@ export async function approveCatalogRequest(
     const open = await tx.catalogRequest.findMany({
       where: { kind: row.kind, nameKey: row.nameKey, status: { in: [...OPEN] } },
     });
-    await tx.catalogRequest.updateMany({
-      where: { id: { in: open.map((r) => r.id) }, status: { in: [...OPEN] } },
-      data: { status: "APPROVED", resolvedItemId: itemId, decidedByUserId: actor.userId },
-    });
     for (const request of open) {
+      // Claimed one at a time: a request someone else decided meanwhile is skipped, with no audit
+      // row and no alert from this call.
+      const claimed = await tx.catalogRequest.updateMany({
+        where: { id: request.id, status: { in: [...OPEN] } },
+        data: { status: "APPROVED", resolvedItemId: itemId, decidedByUserId: actor.userId },
+      });
+      if (claimed.count === 0) continue;
       await recordAudit(
         {
           actorId: actor.userId,
