@@ -66,7 +66,7 @@ export function SignUpForm({ next }: { next: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <Field id="name" name="name" label={fields("name")} autoComplete="name" required />
       <Field
         id="email"
@@ -114,7 +114,12 @@ export function SignUpForm({ next }: { next: string }) {
         </label>
       </div>
       <FormError message={error} />
-      <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
+      <SubmitButton
+        pending={pending}
+        label={t("submit")}
+        pendingLabel={t("submitting")}
+        waitForHydration
+      />
       <p className="body-6 text-ink-soft">
         {t("haveAccount")}{" "}
         <Link href={withNext("/sign-in", returnTo)} className="underline underline-offset-2">

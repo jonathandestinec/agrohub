@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { grantRole } from "./grant";
 import { totp } from "./totp";
 
 type OutboxMessage = { to: string; subject: string; html: string };
@@ -198,11 +199,62 @@ test("a user enrols TOTP on /two-factor, and the next sign-in asks for a code", 
   await signIn(page, email);
   await expect(page).toHaveURL(/\/two-factor$/);
   await expect(page.getByRole("heading", { name: "Enter your sign-in code" })).toBeVisible();
+  // The code form posts (never a GET with the code in the URL) and waits for hydration.
+  await expect(page.locator("form").filter({ hasText: "6-digit code" })).toHaveAttribute(
+    "method",
+    "post",
+  );
+  const verify = page.getByRole("button", { name: "Verify" });
+  await expect(verify).toBeEnabled();
   await page.getByLabel("6-digit code").fill(totp(secret, Date.now() - 5 * 60_000));
-  await page.getByRole("button", { name: "Verify" }).click();
+  await verify.click();
   await expect(page.getByText("That code is not correct. Try the newest code.")).toBeVisible();
+  expect(page.url()).not.toContain("code=");
   await page.getByLabel("6-digit code").fill(totp(secret));
   await page.getByRole("button", { name: "Verify" }).click();
   await expect(page).toHaveURL(HOME);
   await expect(accountButton(page)).toBeVisible();
+});
+
+// Before React hydrates, a submit would be a native form submit. The buttons stay disabled
+// until then, so a password can never be sent in the address bar.
+test("password forms cannot be submitted before the page is interactive", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  for (const path of ["/sign-in", "/sign-up"]) {
+    await page.goto(path);
+    // Without scripts the page never hydrates: the button stays disabled, and a native
+    // submit would be a POST, so the password could not reach the address bar either way.
+    await expect(page.locator("form button[type=submit]")).toBeDisabled();
+    await expect(page.locator("form")).toHaveAttribute("method", "post");
+  }
+  await context.close();
+});
+
+// Sign-in used router.replace then router.refresh, which could leave the page on /sign-in
+// (or stop it short of a second redirect) under load. A full load always reaches the landing.
+test("signing in always reaches the landing page, even when it redirects again", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(120_000);
+
+  const buyer = uniqueEmail();
+  await signUpAndVerify(page, request, buyer);
+  await signIn(page, buyer);
+  // A new account with no membership works from the home page.
+  await expect(page).toHaveURL(HOME);
+  await expect(accountButton(page)).toBeVisible();
+
+  for (const role of ["ADMIN", "BOARD_ADMIN"] as const) {
+    const email = uniqueEmail();
+    const context = await page.context().browser()!.newContext();
+    const adminPage = await context.newPage();
+    await signUpAndVerify(adminPage, request, email);
+    await grantRole(email, role);
+    await signIn(adminPage, email);
+    // No two-factor yet: the landing page sends the user on to enrol.
+    await expect(adminPage).toHaveURL(/\/two-factor$/);
+    await context.close();
+  }
 });
