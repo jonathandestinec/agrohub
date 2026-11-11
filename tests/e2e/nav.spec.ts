@@ -139,7 +139,8 @@ test("signed in, the shrunk phone bar hides the bell and avatar, and the menu of
   // A buyer has alerts, so the bar carries the bell as well as the avatar.
   await page.goto("/buyer/join");
   await page.getByRole("main").getByRole("button", { name: "Start buying" }).click();
-  await expect(page.getByRole("heading", { name: "My offers" })).toBeVisible();
+  await expect(page).toHaveURL(/\/buyer$/);
+  await expect(page.getByRole("main").getByRole("heading", { name: /^Home/ })).toBeVisible();
 
   for (const width of PHONE_WIDTHS) {
     await page.setViewportSize({ width, height: 812 });
