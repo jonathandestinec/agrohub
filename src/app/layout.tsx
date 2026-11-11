@@ -100,7 +100,14 @@ async function NavSlot() {
   const session = await auth.api.getSession({ headers: await headers() });
   let rawItems: NavItem[] = navItemsSignedOut();
   let hasSwitcher = false;
+  // The bell shows for whoever has a working role (see AlertSlot); the phone menu mirrors it.
+  let hasAlerts = false;
   if (session) {
+    try {
+      hasAlerts = Boolean(await getActor());
+    } catch {
+      hasAlerts = false;
+    }
     const memberships = await listMemberships(session.user.id);
     const cookieStore = await cookies();
     const active = pickActiveMembership(
@@ -131,6 +138,8 @@ async function NavSlot() {
       openLabel={t("openMenu")}
       closeLabel={t("closeMenu")}
       hasSwitcher={hasSwitcher}
+      signedIn={Boolean(session)}
+      hasAlerts={hasAlerts}
       switcher={
         <Suspense fallback={null}>
           <SwitcherSlot />

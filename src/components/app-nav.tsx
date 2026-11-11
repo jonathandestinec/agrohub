@@ -3,15 +3,29 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
+import { SignOutForm } from "@/components/account-menu";
 import { Mark } from "@/components/ui/icons";
 import { Menu, MENU_ITEM } from "@/components/ui/menu";
-import { centreNavLinks, currentHref, itemIsCurrent, navBreakpoint } from "./nav-current";
+import {
+  accountInMenu,
+  centreNavLinks,
+  currentHref,
+  itemIsCurrent,
+  menuAccountEntries,
+  navBreakpoint,
+} from "./nav-current";
 
 const BREAKPOINT_CLASSES = {
   lg: { block: "hidden lg:block", flex: "hidden lg:flex", narrowOnly: "lg:hidden" },
   xl: { block: "hidden xl:block", flex: "hidden xl:flex", narrowOnly: "xl:hidden" },
   menu: { block: "hidden", flex: "hidden", narrowOnly: "" },
 } as const;
+
+// A full-width row in the phone menu, and where the account rows lead.
+const ROW =
+  "flex min-h-14 items-center rounded-2xl bg-step px-5 heading-5 aria-[current=page]:bg-lime aria-[current=page]:text-lime-ink";
+const ACCOUNT_HREF = { signIn: "/sign-in", alerts: "/alerts", profile: "/account" } as const;
 
 const PILL = "press flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full px-4 title-4";
 
@@ -20,6 +34,17 @@ export type AppNavLink = { href: string; label: string };
 export type AppNavItem =
   | { kind: "link"; href: string; label: string }
   | { kind: "group"; label: string; links: AppNavLink[] };
+
+// Focus brings the shrunk bar back, so the focused control is never hidden. The one exception is
+// a tap or click on the menu button: the bar would grow under the pointer between mouse-down and
+// mouse-up (the button moves right with the bar's edge) and the tap would miss it.
+function focusIsFromKeyboard(target: EventTarget): boolean {
+  try {
+    return (target as Element).matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
 
 // Pinned-nav state, as in the demo: "scrolled" once the page leaves the top; "compact" while
 // scrolling down past the first screenful, and back to full the moment the reader scrolls up.
@@ -68,6 +93,8 @@ export function AppNav({
   switcher,
   bell = null,
   account,
+  signedIn,
+  hasAlerts,
 }: {
   items: AppNavItem[];
   label: string;
@@ -79,7 +106,13 @@ export function AppNav({
   // Reserved: notifications go here, between the links and the account button.
   bell?: ReactNode;
   account: ReactNode;
+  // Whether someone is signed in: decides what the phone menu offers for the account.
+  signedIn: boolean;
+  // Whether the bell is shown (someone with a working role): the menu then offers Alerts too.
+  hasAlerts: boolean;
 }) {
+  const header = useTranslations("header");
+  const alerts = useTranslations("alerts");
   const links = items; // the bar's items; "links" in the layout code below
   const allHrefs = items.flatMap((item) => (item.kind === "link" ? [item.href] : item.links.map((l) => l.href)));
   const pathname = usePathname();
@@ -93,7 +126,11 @@ export function AppNav({
   // The round menu holds whatever does not fit the bar: the links, and the role switcher too.
   // navBreakpoint says from which width the full bar fits. Class names stay whole for Tailwind.
   const hasMenu = hasLinks || hasSwitcher;
+  const accountEntries = menuAccountEntries({ signedIn, hasAlerts });
   const wide = BREAKPOINT_CLASSES[navBreakpoint(links.length, hasSwitcher)];
+  // While the bar is shrunk, below the breakpoint, it holds the logo and the menu button only:
+  // Sign in (or the bell and the avatar) move into the menu. From the breakpoint up they stay.
+  const accountClass = accountInMenu({ compact, hasMenu }) ? wide.flex : "flex";
   const toggle = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
 
@@ -181,16 +218,19 @@ export function AppNav({
         <div
           data-compact={compact ? "" : undefined}
           data-scrolled={scrolled ? "" : undefined}
-          onFocus={() => setFocused(true)}
+          onFocus={(event) => {
+            const target: EventTarget = event.target;
+            setFocused(target !== toggle.current || focusIsFromKeyboard(target));
+          }}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
           }}
-          className="nav-bar relative mx-auto flex items-center justify-between gap-3 rounded-full p-1"
+          className="nav-bar relative mx-auto flex items-center justify-between gap-1 rounded-full p-1 min-[360px]:gap-3"
         >
           <Link
             href="/"
             aria-label={homeLabel}
-            className="press relative z-10 flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 heading-6"
+            className="press relative z-10 flex min-h-11 shrink-0 items-center gap-2 rounded-full px-2 heading-6 min-[360px]:px-3"
           >
             <Mark />
             AgroHub
@@ -198,11 +238,11 @@ export function AppNav({
 
           {hasLinks && centred ? linkNav(`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${wide.block}`) : null}
 
-          <div className="relative z-10 flex shrink-0 items-center gap-2">
+          <div className="relative z-10 flex shrink-0 items-center gap-1 min-[360px]:gap-2">
             {hasLinks && !centred ? linkNav(compact ? "hidden" : wide.block) : null}
             <div className={`${compact ? "hidden" : hasMenu ? wide.flex : "flex"} items-center`}>{switcher}</div>
-            {bell ? <div className="flex items-center empty:hidden">{bell}</div> : null}
-            <div className="flex items-center">{account}</div>
+            {bell ? <div className={`${accountClass} items-center empty:hidden`}>{bell}</div> : null}
+            <div className={`${accountClass} items-center`}>{account}</div>
             {hasMenu ? (
               <button
                 ref={toggle}
@@ -237,6 +277,22 @@ export function AppNav({
       id="app-menu"
       className={`menu-panel fixed inset-0 z-20 overflow-y-auto bg-paper/95 px-4 pb-8 pt-24 backdrop-blur-xl ${wide.narrowOnly}`}
     >
+      {accountEntries.top.length > 0 ? (
+        <ul className="mb-2 flex flex-col gap-2">
+          {accountEntries.top.map((entry, i) => (
+            <li key={entry} className="menu-link" style={{ animationDelay: `${i * 60}ms` }}>
+              <Link
+                href={ACCOUNT_HREF[entry]}
+                aria-current={pathname === ACCOUNT_HREF[entry] ? "page" : undefined}
+                onClick={() => setOpenOn(null)}
+                className={ROW}
+              >
+                {entry === "alerts" ? alerts("title") : entry === "profile" ? header("profile") : header("signIn")}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {hasLinks ? (
         <nav aria-label={label}>
           <ul className="flex flex-col gap-2">
@@ -248,7 +304,7 @@ export function AppNav({
                   href={link.href}
                   aria-current={link.href === here ? "page" : undefined}
                   onClick={() => setOpenOn(null)}
-                  className="flex min-h-14 items-center rounded-2xl bg-step px-5 heading-5 aria-[current=page]:bg-lime aria-[current=page]:text-lime-ink"
+                  className={ROW}
                 >
                   {link.label}
                 </Link>
@@ -279,6 +335,11 @@ export function AppNav({
       <div className={`menu-link ${hasLinks ? "mt-6" : ""} flex flex-wrap items-center gap-2`} style={{ animationDelay: "340ms" }}>
         {switcher}
       </div>
+      {accountEntries.bottom.length > 0 ? (
+        <div className="menu-link mt-6" style={{ animationDelay: "400ms" }}>
+          <SignOutForm className={`${ROW} w-full text-left disabled:opacity-50`} />
+        </div>
+      ) : null}
     </div>
   ) : null;
 
