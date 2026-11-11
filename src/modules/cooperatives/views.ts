@@ -1,3 +1,4 @@
+import type { TileItem } from "@/lib/summary";
 import type {
   Cooperative,
   CooperativeDocument,
@@ -114,5 +115,15 @@ export function toPublicCooperative(c: Cooperative): PublicCooperative {
     state: c.state,
     lga: c.lga,
     verifiedSince: c.verifiedAt ? c.verifiedAt.toISOString().slice(0, 7) : null,
+  };
+}
+
+// A tile item for a cooperative waiting for verification: its name and when it submitted.
+export function toVerificationTileItem(row: { id: string; name: string; submittedAt: Date | null }): TileItem {
+  return {
+    id: row.id,
+    href: `/admin/cooperatives/${row.id}`,
+    title: row.name,
+    ...(row.submittedAt ? { date: row.submittedAt.toISOString() } : {}),
   };
 }

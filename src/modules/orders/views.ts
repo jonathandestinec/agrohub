@@ -197,3 +197,22 @@ export function toOrderTileItem(
     ...(extra.label ? { label: extra.label } : {}),
   };
 }
+
+const DISPUTE_KINDS = ["REPORT", "TIMEOUT", "SUSPENSION", "AFTER_COMPLETION"];
+
+// A tile item for an open dispute: the order's quantity, unit and crop and what kind of problem.
+// The reason text the buyer wrote stays on the dispute.
+export function toDisputeTileItem(row: {
+  id: string;
+  kind: string;
+  orderId: string;
+  createdAt: Date;
+  order: { quantity: number; lot: { crop: { name: string }; unit: { name: string } } };
+}): TileItem {
+  return {
+    ...toOrderTileItem({ id: row.id, quantity: row.order.quantity, lot: row.order.lot }, `/admin/orders/${row.orderId}`, {
+      date: row.createdAt,
+      ...(DISPUTE_KINDS.includes(row.kind) ? { label: `admin.orders.kind.${row.kind}` } : {}),
+    }),
+  };
+}

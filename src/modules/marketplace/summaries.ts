@@ -3,7 +3,7 @@ import { ForbiddenError } from "@/lib/errors";
 import { TILE_ITEMS, type Summary } from "@/lib/summary";
 import { publiclyVisibleWhere } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
-import { toOfferTileItem } from "./views";
+import { buyerStatusOf, toOfferTileItem } from "./views";
 
 const OFFER_TILE = {
   id: true,
@@ -35,6 +35,39 @@ export async function farmerOffersSummary(actor: Actor, now: Date = new Date()):
     }),
   ]);
   return { count, items: rows.map((row) => toOfferTileItem(row, `/farmer/lots/${row.lotId}`, { date: row.expiresAt })) };
+}
+
+// The buyer's offers that need them: accepted and still inside the time to pay (pay now), or
+// countered and still open (answer the counter). An offer whose lot is off sale reads expired
+// on its own page, so it is left out here too. Oldest first; an accepted one shows its pay-by date.
+export async function buyerOffersToActSummary(actor: Actor, now: Date = new Date()): Promise<Summary> {
+  if (!can(actor, "offer:own", { ownerUserId: actor.userId })) throw new ForbiddenError();
+  const where = {
+    buyerUserId: actor.userId,
+    lot: publiclyVisibleWhere(now),
+    OR: [
+      { status: "ACCEPTED" as const, payByAt: { gt: now } },
+      { status: "COUNTERED" as const, expiresAt: { gt: now } },
+    ],
+  };
+  const [count, rows] = await Promise.all([
+    prisma.offer.count({ where }),
+    prisma.offer.findMany({
+      where,
+      select: { ...OFFER_TILE, status: true, payByAt: true },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      take: TILE_ITEMS,
+    }),
+  ]);
+  return {
+    count,
+    items: rows.map((row) =>
+      toOfferTileItem(row, `/buyer/offers/${row.id}`, {
+        date: row.status === "ACCEPTED" ? row.payByAt : null,
+        label: `offers.buyerStatus.${buyerStatusOf(row.status, row.expiresAt, row.payByAt, true, now)}`,
+      }),
+    ),
+  };
 }
 
 // The cooperative's offers waiting for an officer: OPEN and not yet expired, oldest first.
