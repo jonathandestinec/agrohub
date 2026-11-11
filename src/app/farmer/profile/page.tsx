@@ -7,12 +7,12 @@ import { Card, Chip, PageHeading } from "@/components/ui";
 import { withNext } from "@/lib/safe-next";
 import { getOwnFarmerOverview } from "@/modules/farmers/service";
 import { currentUser } from "@/modules/identity/session";
-import { FarmerBankSection } from "./bank-section";
-import { LeaveSection } from "./leave-section";
-import { CropsForm } from "./crops-form";
+import { FarmerBankSection } from "../bank-section";
+import { LeaveSection } from "../leave-section";
+import { CropsForm } from "../crops-form";
 import { listActiveCatalog, listOwnCatalogRequests } from "@/modules/catalog/service";
 import { getActor } from "@/modules/identity/session";
-import { CropRequests } from "./crop-requests";
+import { CropRequests } from "../crop-requests";
 
 // A PENDING farmer has no Actor yet, so this page works from the signed-in user and the
 // self-scoped farmer overview.
@@ -26,7 +26,7 @@ export default function FarmerPage() {
 
 async function FarmerHome() {
   const user = await currentUser();
-  if (!user) redirect(withNext("/sign-in", "/farmer"));
+  if (!user) redirect(withNext("/sign-in", "/farmer/profile"));
   const t = await getTranslations("farmer.home");
   const nameT = await getTranslations("nameChange");
   const overview = await getOwnFarmerOverview(user);
