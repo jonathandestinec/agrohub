@@ -86,10 +86,10 @@ describe("reading alerts", () => {
     expect(await countOwnUnread(asOfficer)).toBe(0);
   });
 
-  it("returns_the_ten_newest_first", async () => {
+  it("returns_the_five_newest_first", async () => {
     await seedMany(12);
     const alerts = await latestOwnAlerts(asOfficer);
-    expect(alerts).toHaveLength(10);
+    expect(alerts).toHaveLength(5);
     expect(alerts.map((a) => a.createdAt)).toEqual([...alerts.map((a) => a.createdAt)].sort().reverse());
     expect(alerts[0].href).toBe("/officer/lots/lot-11");
   });

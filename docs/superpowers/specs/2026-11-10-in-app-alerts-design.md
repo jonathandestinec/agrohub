@@ -168,7 +168,7 @@ All in `src/modules/notifications/`, beside the existing `emails.ts` and `recipi
 **`service.ts`**
 
 - `notify(tx, { kind, subject, data, to, exclude })` writes one row per recipient. `to` is a list of `{ userId, role, cooperativeId }`. `exclude` is the acting user's id. It takes the caller's transaction client, so the alert is saved with the change or not at all.
-- `listOwnAlerts(actor, page)`, `latestOwnAlerts(actor)` (ten newest), `countOwnUnread(actor)`.
+- `listOwnAlerts(actor, page)`, `latestOwnAlerts(actor)` (five newest), `countOwnUnread(actor)`.
 - `markRead(actor, id)`, `markAllRead(actor)`.
 
 The read and mark functions take an `Actor` and check `can(actor, "notification:own", { ownerUserId })` first. They filter by `actor.userId`, `actor.role` and `actor.cooperativeId`.
@@ -189,10 +189,10 @@ The read and mark functions take an `Actor` and check `can(actor, "notification:
 
 ## 7. Interface
 
-**Bell.** `src/components/alert-bell.tsx`, a client component built on the kit menu (`src/components/ui/menu.tsx`). `src/app/layout.tsx` gets an `AlertSlot` server component, written like the existing `AccountSlot`, which loads the unread count and the ten newest alerts for the signed-in actor and passes the bell into `AppNav`'s `bell` prop. Signed-out visitors get no bell.
+**Bell.** `src/components/alert-bell.tsx`, a client component built on the kit menu (`src/components/ui/menu.tsx`). `src/app/layout.tsx` gets an `AlertSlot` server component, written like the existing `AccountSlot`, which loads the unread count and the five newest alerts for the signed-in actor and passes the bell into `AppNav`'s `bell` prop. Signed-out visitors get no bell.
 
 - The bell shows the unread count, or "9+" above nine, and nothing at zero. Its accessible name states the count.
-- Desktop: the bell opens a list of the ten newest alerts. Unread ones are marked. Below the list are "Mark all as read" and "See all".
+- Desktop: the bell opens a list of the five newest alerts. Unread ones are marked. Below the list are "Mark all as read" and "See all". The list area is at most about five rows tall and scrolls inside itself when long sentences make the rows taller; the two actions stay visible below it, and the whole panel is capped at the viewport height minus the header, so it keeps the same small size however many alerts there are.
 - Phones: `AppNav` renders the bell in the header bar beside the menu button, always visible, as a link straight to `/alerts`. This changes the current behaviour, where the slot is hidden below the `lg` breakpoint.
 - Opening an alert marks it read through a server action, then goes to its link.
 - An empty bell says "No alerts yet".
@@ -201,7 +201,7 @@ The read and mark functions take an `Actor` and check `can(actor, "notification:
 
 **Freshness.** The count updates when the person moves to another page or reloads, not while they sit on a page. The root layout does not render again when someone follows a link inside the app, so the slot alone would leave the count stale until a full reload. The bell therefore also asks for its data itself:
 
-- `GET /api/alerts/summary` returns the unread count and the ten newest alerts for the signed-in actor, through `countOwnUnread` and `latestOwnAlerts` and the `views.ts` mapper. It answers 401 when signed out and is never cached.
+- `GET /api/alerts/summary` returns the unread count and the five newest alerts for the signed-in actor, through `countOwnUnread` and `latestOwnAlerts` and the `views.ts` mapper. It answers 401 when signed out and is never cached.
 - The bell calls it when the pathname changes and when the list is opened. The slot's data is only the first paint.
 - The mark-read actions return the new count, so the bell is right immediately after one.
 

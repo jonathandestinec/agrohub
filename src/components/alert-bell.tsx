@@ -36,7 +36,7 @@ function Badge({ count }: { count: number }) {
 // The bell in the header. Its first paint comes from the layout (`initial`); after that it asks
 // /api/alerts/summary itself whenever the page changes or the list opens, because the root layout
 // does not render again when someone follows a link inside the app. Below the lg breakpoint it is
-// a plain link to /alerts; from lg up it opens the ten newest alerts.
+// a plain link to /alerts; from lg up it opens the five newest alerts.
 export function AlertBell({ initial }: { initial: AlertSummary }) {
   const t = useTranslations("alerts");
   const pathname = usePathname();
@@ -91,20 +91,22 @@ export function AlertBell({ initial }: { initial: AlertSummary }) {
           }
           onOpen={() => void refresh()}
         >
-          <div className="flex max-h-[28rem] w-80 max-w-[80vw] flex-col gap-1 overflow-y-auto">
-            {summary.alerts.length === 0 ? (
-              <p className="px-3 py-2 body-6 text-ink-soft">{t("empty")}</p>
-            ) : (
-              <AlertList alerts={summary.alerts} />
-            )}
+          <div className="flex max-h-[calc(100dvh-7rem)] w-80 max-w-[80vw] flex-col gap-1">
+            <div className="max-h-[19rem] min-h-0 overflow-y-auto">
+              {summary.alerts.length === 0 ? (
+                <p className="px-3 py-2 body-6 text-ink-soft">{t("empty")}</p>
+              ) : (
+                <AlertList alerts={summary.alerts} />
+              )}
+            </div>
+            <hr className="mx-2 my-1 shrink-0 border-ink/10" />
+            <button type="button" onClick={() => void markAll()} className={`${MENU_ITEM} shrink-0`}>
+              {t("markAll")}
+            </button>
+            <Link href="/alerts" className={`${MENU_ITEM} shrink-0`}>
+              {t("seeAll")}
+            </Link>
           </div>
-          <hr className="mx-2 my-1 border-ink/10" />
-          <button type="button" onClick={() => void markAll()} className={MENU_ITEM}>
-            {t("markAll")}
-          </button>
-          <Link href="/alerts" className={MENU_ITEM}>
-            {t("seeAll")}
-          </Link>
         </Menu>
       </div>
       <Link href="/alerts" aria-label={label} className={`${BUTTON} lg:hidden`}>

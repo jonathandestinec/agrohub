@@ -121,5 +121,5 @@ export function toAlertView(row: Notification): AlertView {
   };
 }
 
-// What the bell shows: the unread count and the ten newest alerts.
+// What the bell shows: the unread count and the five newest alerts.
 export type AlertSummary = { unread: number; alerts: AlertView[] };
