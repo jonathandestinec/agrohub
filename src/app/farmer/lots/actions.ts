@@ -120,6 +120,8 @@ export async function farmerRespondToOfferAction(input: { offerId: string; agree
     revalidatePath("/farmer/lots");
     revalidatePath("/officer/offers");
     revalidatePath("/buyer");
+
+    revalidatePath("/buyer/offers");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);

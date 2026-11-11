@@ -1,4 +1,5 @@
 import type { MessageSide, ThreadKind } from "@/generated/prisma/client";
+import type { TileItem } from "@/lib/summary";
 import type { Role } from "@/modules/identity/policies";
 
 // Thread rows as THREAD_INCLUDE (service.ts) loads them. Names are resolved to labels here, per
@@ -91,5 +92,26 @@ export function toThreadSummary(thread: ThreadRow, last: { body: string } | unde
     title: titleFor(thread, viewer),
     lastMessageAt: thread.lastMessageAt.toISOString(),
     lastMessage: last?.body ?? "",
+  };
+}
+
+// A tile item for a thread: who it is with (named per viewer, as the thread list does) and the
+// lot's crop. No message text.
+export function toThreadTileItem(
+  thread: {
+    id: string;
+    lastMessageAt: Date;
+    cooperative: { name: string };
+    counterpart: { name: string };
+    lot: { crop: { name: string } };
+  },
+  viewer: Viewer,
+): TileItem {
+  return {
+    id: thread.id,
+    href: `/messages/${thread.id}`,
+    title: viewer.role === "BUYER" || viewer.role === "FARMER" ? thread.cooperative.name : thread.counterpart.name,
+    detail: thread.lot.crop.name,
+    date: thread.lastMessageAt.toISOString(),
   };
 }

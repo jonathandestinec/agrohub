@@ -168,3 +168,5 @@ export { expireLots, getPublicLot, listLiveLots, publiclyVisibleWhere, searchLiv
 export { isPubliclyVisible, lockLot, lotNegotiationFacts, type NegotiationFacts } from "./negotiation";
 export { availableQuantity, committedQuantity, refreshSoldOut, reopenIfFree, SOLD_STATUSES } from "./stock";
 export { parseLotFilters, LOT_SORTS, type LotFilters, type LotSort } from "./search-schema";
+export { farmerCounteredLotsSummary, farmerLotCounts, type FarmerLotCounts } from "./summaries";
+export { catalogRequestsSummary, screeningSummary } from "./summaries";

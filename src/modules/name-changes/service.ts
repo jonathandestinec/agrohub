@@ -477,3 +477,5 @@ export async function rejectNameChange(
   });
   return adminView(actor, await loadRequest(request.id), now);
 }
+
+export { nameChangeQueueSummary } from "./summaries";

@@ -38,6 +38,7 @@ export async function requireActor(): Promise<Actor> {
 export async function currentUser(): Promise<{
   userId: string;
   email: string;
+  name: string;
   twoFactorEnabled: boolean;
 } | null> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -45,6 +46,7 @@ export async function currentUser(): Promise<{
   return {
     userId: session.user.id,
     email: session.user.email,
+    name: session.user.name,
     twoFactorEnabled: session.user.twoFactorEnabled === true,
   };
 }

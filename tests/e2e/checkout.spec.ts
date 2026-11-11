@@ -56,7 +56,7 @@ test("a buyer pays for a lot with a quoted delivery cost, and pays an accepted o
     await expect(buyerPage).toHaveURL(HOME);
     await clickNav(buyerPage, "Buy produce");
     await buyerPage.getByRole("main").getByRole("button", { name: "Start buying" }).click();
-    await expect(buyerPage.getByRole("heading", { name: "My offers" })).toBeVisible();
+    await expect(buyerPage.getByRole("heading", { name: /^Home, / })).toBeVisible();
   });
 
   await test.step("1. the buyer opens the lot and asks for delivery", async () => {
