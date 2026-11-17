@@ -89,6 +89,29 @@ describe("email adapter", () => {
       expect(resendMocks.send).toHaveBeenCalledWith(expect.objectContaining({ from: "AgroHub <hello@agrohub.ng>" }));
     });
 
+    it("falls back to the agro-hub.com.ng sender", async () => {
+      resendMocks.send.mockResolvedValue({ data: { id: "1" }, error: null });
+      const config = { appEnv: "staging" as const, nodeEnv: "production", resendApiKey: "k" };
+      await sendEmailWith(config, msg);
+      expect(resendMocks.send).toHaveBeenCalledWith(
+        expect.objectContaining({ from: "AgroHub <noreply@agro-hub.com.ng>" }),
+      );
+    });
+
+    it("skips reserved-domain recipients on the real transport without calling Resend", async () => {
+      const info = vi.spyOn(console, "info").mockImplementation(() => {});
+      const config = { appEnv: "staging" as const, nodeEnv: "production", resendApiKey: "k" };
+      await sendEmailWith(config, { ...msg, to: "seed-buyer@example.com" });
+      expect(resendMocks.send).not.toHaveBeenCalled();
+      expect(JSON.stringify(info.mock.calls)).not.toContain("seed-buyer");
+      info.mockRestore();
+    });
+
+    it("still records reserved-domain recipients in the fake outbox", async () => {
+      await sendEmailWith({ appEnv: "local", nodeEnv: "development", resendApiKey: undefined }, { ...msg, to: "seed-buyer@example.com" });
+      expect(fakeOutbox.sent.map((m) => m.to)).toEqual(["seed-buyer@example.com"]);
+    });
+
     it("throws when Resend returns an error, without leaking the body", async () => {
       resendMocks.send.mockResolvedValue({ data: null, error: { message: "bad", name: "validation_error" } });
       const config = { appEnv: "staging" as const, nodeEnv: "production", resendApiKey: "test-key" };
@@ -100,5 +123,17 @@ describe("email adapter", () => {
       await expect(sendEmailWith(config, msg)).rejects.toThrow(/RESEND_API_KEY/);
       expect(fakeOutbox.sent).toEqual([]);
     });
+  });
+});
+
+describe("isReservedDomain", () => {
+  it("flags reserved domains and TLDs, case-insensitively", async () => {
+    const { isReservedDomain } = await import("@/lib/email-recipients");
+    for (const a of ["a@example.com", "a@Sub.Example.ORG", "a@example.net", "a@x.test", "a@x.invalid", "a@x.localhost", "a@x.example"]) {
+      expect(isReservedDomain(a), a).toBe(true);
+    }
+    for (const a of ["a@gmail.com", "a@agro-hub.com.ng", "a@notexample.com", "garbage"]) {
+      expect(isReservedDomain(a), a).toBe(false);
+    }
   });
 });
