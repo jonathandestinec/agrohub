@@ -66,7 +66,8 @@
       "email": "Email address",
       "password": "Password",
       "phone": "Phone number",
-      "code": "6-digit code"
+      "code": "6-digit code",
+      "newPassword": "New password"
     },
     "signUp": {
       "title": "Create your AgroHub account",
@@ -91,7 +92,8 @@
       "unverified": "Please verify your email first. Check your inbox for the link.",
       "error": "We could not sign you in. Please try again.",
       "noAccount": "New to AgroHub?",
-      "signUpLink": "Create an account"
+      "signUpLink": "Create an account",
+      "forgotLink": "Forgot password?"
     },
     "verified": {
       "title": "Email verified",
@@ -125,6 +127,30 @@
       "tooManyAttempts": "Too many attempts. Please sign in again later.",
       "signInAgain": "Sign in again",
       "error": "Something went wrong. Please try again."
+    },
+    "forgot": {
+      "title": "Reset your password",
+      "lead": "Enter the email address you signed up with. If an account exists, we will send a link to choose a new password.",
+      "submit": "Send reset link",
+      "submitting": "Sending…",
+      "sentTitle": "Check your email",
+      "sentBody": "If an account exists for {email}, we have sent a link to reset the password. It works for one hour.",
+      "back": "Back to sign in",
+      "error": "We could not send the link. Please try again."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "lead": "Pick a password you have not used here before.",
+      "submit": "Save new password",
+      "submitting": "Saving…",
+      "doneTitle": "Password changed",
+      "doneBody": "Your password is changed and you are signed out everywhere. Sign in with the new one.",
+      "signIn": "Sign in",
+      "invalidTitle": "This link did not work",
+      "invalidBody": "The reset link has expired or was already used. Ask for a new one.",
+      "requestNew": "Get a new link",
+      "tooShort": "Your password must be at least 8 characters.",
+      "error": "We could not change your password. Please try again."
     }
   },
   "privacy": {

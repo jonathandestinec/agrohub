@@ -63,6 +63,9 @@ export function SignInForm({ next }: { next: string }) {
         autoComplete="current-password"
         required
       />
+      <Link href="/forgot-password" className="body-6 text-ink-soft underline underline-offset-2">
+        {t("forgotLink")}
+      </Link>
       <FormError message={error} />
       <SubmitButton
         pending={pending}

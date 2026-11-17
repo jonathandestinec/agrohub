@@ -66,7 +66,8 @@
       "email": "",
       "password": "",
       "phone": "",
-      "code": ""
+      "code": "",
+      "newPassword": ""
     },
     "signUp": {
       "title": "",
@@ -91,7 +92,8 @@
       "unverified": "",
       "error": "",
       "noAccount": "",
-      "signUpLink": ""
+      "signUpLink": "",
+      "forgotLink": ""
     },
     "verified": {
       "title": "",
@@ -124,6 +126,30 @@
       "expired": "",
       "tooManyAttempts": "",
       "signInAgain": "",
+      "error": ""
+    },
+    "forgot": {
+      "title": "",
+      "lead": "",
+      "submit": "",
+      "submitting": "",
+      "sentTitle": "",
+      "sentBody": "",
+      "back": "",
+      "error": ""
+    },
+    "reset": {
+      "title": "",
+      "lead": "",
+      "submit": "",
+      "submitting": "",
+      "doneTitle": "",
+      "doneBody": "",
+      "signIn": "",
+      "invalidTitle": "",
+      "invalidBody": "",
+      "requestNew": "",
+      "tooShort": "",
       "error": ""
     }
   },
