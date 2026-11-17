@@ -47,7 +47,7 @@ agrohub/
       analytics/
       inputs/                input orders, signups, loans (tracking only)
       home/                  the four role home pages' tiles: `farmerHome`, `officerHome`, `buyerHome`, `adminHome` assemble the other modules' `*Summary` reads (count plus three items) with `Promise.allSettled`; holds no queries
-      notifications/         email events, and in-app alerts: `notify` (written by other services in their own transaction), the bell and /alerts reads, and `GET /api/alerts/summary` for the bell's count
+      notifications/         email events, and in-app alerts: `notify` (written by other services in their own transaction), the bell and /alerts reads, and `GET /api/alerts/summary` for the bell's count. Key events also email the people involved: `sendAlertEmail` (`alert-emails.ts`) is called by the service after its transaction commits, on the branch that wrote the alert, builds the email from the same strict `data` shape and bell sentence, and sends one email at a time in a single task handed to Next's `after()` (`src/lib/defer.ts`), so a mail failure never blocks or rolls back the action. The real transport skips reserved-domain recipients such as the seeded `example.com` accounts. Password reset uses Better Auth's `sendResetPassword`, throttled to 3 emails per account per hour from its `verification` rows
       support/               reports, disputes
       audit/                 append-only audit log
     styles/tokens.css        brand token slot (brand identity arrives later)
