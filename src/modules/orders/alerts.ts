@@ -113,3 +113,19 @@ export async function emailOrder(
     console.error("order email failed", { kind, orderId });
   }
 }
+
+// The email twin of notifyDeliveryDate. Call it after the date is saved. Never throws.
+export async function emailDeliveryDate(orderId: string, date: string, exclude?: string | null): Promise<void> {
+  try {
+    const order = await loadOrderFacts(prisma, orderId);
+    await sendAlertEmail({
+      kind: "DELIVERY_DATE_SET",
+      subject: { type: "ORDER", id: order.id },
+      data: { crop: order.lot.crop.name, quantity: order.quantity, unit: order.lot.unit.name, date },
+      to: await recipientsOf(prisma, order, ["buyer"]),
+      exclude,
+    });
+  } catch {
+    console.error("order email failed", { kind: "DELIVERY_DATE_SET", orderId });
+  }
+}
