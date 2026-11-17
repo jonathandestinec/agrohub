@@ -36,7 +36,11 @@
 2. **Alert emails sent after commit, from the call site, not inside `notify`.** `notify` runs inside the caller's transaction; an email sent there would go out for a change that later rolls back. Each wired site calls `sendAlertEmail(...)` after its transaction, on the same changed-one-row branch, passing the same `kind`, `data` and recipient list it gave `notify` (same recipient helpers from `notifications/recipients.ts`). Rejected alternative: hooking `notify` itself, which would couple the in-transaction write to a network call.
 3. **One generic template per kind, from the existing alert sentences.** Subject and body come from the same copy the bell uses (`messages/en.json` `alerts`), plus a button linking to the same `href` the bell builds in `views.ts`, made absolute with `BETTER_AUTH_URL`. No new copy to keep in sync; "escrow" is already barred by the existing unit test, which is extended to the email output.
 4. **Password reset keeps Better Auth's default one-hour token** and revokes other sessions on reset.
-5. **Mail failures are logged, never retried.** No queue in this stage (simpler; a lost email never blocks anything, and the in-app alert is the record).
+5. **Mail failures are logged, never retried.** No queue in this stage (simpler; a lost email never blocks anything, and the in-app alert is the record). A 429 from Resend is just a logged failure.
+6. **Mail never blocks a response.** `src/lib/defer.ts` exports `deferWork(task: () => Promise<void>): Promise<void>`: it hands the task to Next's `after()` (from `next/server`, Next 16.4.3 installed) and resolves at once; `after()` works anywhere inside a route handler, server action or server component call stack, which covers the webhook, the crons and the actions. Outside a request scope (Vitest, `tsx` seed) `after()` throws, so `deferWork` catches that and runs the task inline and awaited. Call sites `await sendAlertEmail(...)`, which is instant in production and deterministic in tests. A unit test pins both branches (the `after()` branch with `next/server` mocked). Better Auth awaits `sendResetPassword` inline unless `advanced.backgroundTasks.handler` is set, so `auth.ts` sets it to schedule the promise with `after()` (ignoring the throw outside a request scope).
+7. **Sends are sequential** (one in flight), not `Promise.allSettled`, to stay under Resend's rate limit. `docs/environments.md` notes that Resend's free plan caps daily volume (about 100 a day) and the user should check their plan.
+8. **Reset abuse limit: DB count, no migration.** Better Auth's built-in limiter on `/request-password-reset` is 3 per 60 s per IP, production only, in memory (per instance on Vercel), and keyed by IP, not address. Its database storage needs a new `rateLimit` table (a migration). Instead `sendResetPassword` counts the `verification` rows Better Auth already wrote for that user in the last hour (identifier `reset-password:…`, value the user id) and skips the send when more than 3 exist. That holds across instances, needs no migration, and the response stays identical because the skip happens after the response body is decided. Logged as `password reset throttled` with no address. The in-memory IP limiter stays as is.
+9. **Payment-code edits are additive only.** The post-commit email call is added; no transaction, ledger, conditional-update or Paystack logic is reordered or changed. If a site cannot be wired without restructuring, work stops and is reported. Those edits are their own commit (Task 5a).
 
 ## Proposed events to email (trim before building)
 
@@ -58,7 +62,9 @@ Already emailed today and unchanged (no duplicates): cooperative status, members
 | `DISPUTE_RESOLVED` | buyer and officers | dispute ruled |
 | `NAME_CHANGE_APPROVED` / `NAME_CHANGE_REJECTED` | the person, or the cooperative's officers | |
 
-**Your call (excluded by default):** `OFFER_RECEIVED` (officers); `OFFER_ACCEPTED`, `OFFER_COUNTERED`, `OFFER_DECLINED` (buyer); `LOT_APPROVED`, `LOT_REJECTED`, `LOT_COUNTERED` (farmers); `ORDER_CANCELLED_BY_BUYER`, `ORDER_CANCELLED_BY_COOPERATIVE`, `CANCEL_REQUEST_AGREED`, `CANCEL_REQUEST_REFUSED`; `ORDER_EXPIRED`; `DELIVERY_QUOTED`. The design spec §6.11 names offers, counters and lot decisions as key events, so say if you want them; each is one more entry in the kind list in Task 4 and one more call in Task 5.
+**Added at review (approved: "add offer/lot emails"):** `OFFER_ACCEPTED`, `OFFER_COUNTERED` (buyer); `LOT_APPROVED`, `LOT_REJECTED` (farmers of the lot). Wired in Task 5b.
+
+**Excluded (still your call):** `OFFER_RECEIVED` (officers); `OFFER_DECLINED` (buyer); `LOT_COUNTERED` (farmers); `ORDER_CANCELLED_BY_BUYER`, `ORDER_CANCELLED_BY_COOPERATIVE`, `CANCEL_REQUEST_AGREED`, `CANCEL_REQUEST_REFUSED`; `ORDER_EXPIRED`; `DELIVERY_QUOTED`. Each is one more entry in the kind list in Task 4 and one more call.
 
 **Never emailed:** `MESSAGE_RECEIVED`, `ORDER_PREPARING`, catalog requests, farmer-asked-to-join, lot submitted/withdrawn/revision kinds, price alerts.
 
@@ -99,7 +105,8 @@ Already emailed today and unchanged (no duplicates): cooperative status, members
 
 - [ ] **Step 1: Write failing tests.** Unit: `passwordResetEmail({name:"Ada <b>", link:"https://x/y?token=a&b=1"})` escapes name and link, subject is `Reset your AgroHub password`, no "escrow". Integration: calling the Better Auth request-reset endpoint for a seeded verified user puts exactly one message in `fakeOutbox` with a link containing `token=`; for an unknown address it puts none and the response body and status equal the known-address response.
 - [ ] **Step 2: Run** the two files via `test` subagent. Expected: FAIL.
-- [ ] **Step 3: Implement** `passwordResetEmail` (reuse the file's private `escapeHtml`) and wire `sendResetPassword` to `sendEmail`. The send is not awaited past Better Auth's own handling and a failure is caught and logged with the shared failure-log shape (no address, no url). Check the installed Better Auth version's client method name (`requestPasswordReset` vs `forgetPassword`) and callback shape in `node_modules` before Task 3.
+- [ ] **Step 3: Implement** `passwordResetEmail` (reuse the file's private `escapeHtml`), `emailAndPassword.sendResetPassword`, `revokeSessionsOnPasswordReset: true`, and `advanced.backgroundTasks.handler` (decision 6). In `sendResetPassword`, first apply the throttle (decision 8): count `verification` rows with identifier starting `reset-password:` and value `user.id` created in the last hour; more than 3 means log `password reset throttled` and return without sending. Failures are caught and logged (no address, no url). Better Auth 1.7.14 names: server `POST /request-password-reset`, client `authClient.requestPasswordReset`.
+- [ ] **Step 3b:** extra tests in the same files: a fourth reset request within the hour sends no email and returns the same body as the first; with the transport throwing, the request still returns 200.
 - [ ] **Step 4: Run** tests, lint, typecheck. Commit `feat: password reset email`.
 
 ### Task 3: Forgot and reset pages, sign-in link, e2e
@@ -121,16 +128,19 @@ Already emailed today and unchanged (no duplicates): cooperative status, members
 
 **Interfaces:**
 - Consumes: `AlertKind`, `AlertData` from `schema.ts`; `Recipient` from `recipients.ts`; link builder from `views.ts`; `sendEmail`.
-- Produces: `EMAILED_KINDS: ReadonlySet<AlertKind>` (the approved list above); `alertEmail(kind, data, href): { subject: string; html: string }` in `emails.ts`; `sendAlertEmail<K extends AlertKind>(db: Db, input: { kind: K; subject: { type: NotificationSubjectType; id: string }; data: AlertData[K]; to: Recipient[]; exclude?: string | null }): Promise<void>`. It validates `data` with the same schema as `notify`, drops `exclude`, looks up emails for the user ids, sends each with `Promise.allSettled`, logs failures as `{ kind, subjectId, error }`, never throws, and does nothing for a kind outside `EMAILED_KINDS` or an empty list.
+- Produces: `EMAILED_KINDS: ReadonlySet<AlertKind>` (the approved list above); `alertEmail(kind, data, href): { subject: string; html: string }` in `emails.ts`; `sendAlertEmail<K extends AlertKind>(db: Db, input: { kind: K; subject: { type: NotificationSubjectType; id: string }; data: AlertData[K]; to: Recipient[]; exclude?: string | null }): Promise<void>`. It validates `data` with the same schema as `notify`, drops `exclude`, looks up emails for the user ids, sends them one at a time through `deferWork` (decision 6, 7), logs failures as `{ kind, subjectId, error }`, never throws, and does nothing for a kind outside `EMAILED_KINDS` or an empty list.
 
 - [ ] **Step 1: Write failing tests.** Unit: every kind in `EMAILED_KINDS` yields a subject, a body with an absolute link on `BETTER_AUTH_URL`, no "escrow", and none of the strings `floor`, `phone`, `bank account`; `PAYMENT_CONFIRMED` body contains "held until delivery is confirmed". Integration: one send per recipient, actor excluded, user with `@example.com` handled via fake outbox, a throwing transport does not throw and the log call contains neither the address nor the html.
 - [ ] **Step 2: Run** via `test` subagent. Expected: FAIL.
-- [ ] **Step 3: Implement** as specified; one body template parameterised by the existing `alerts` sentence for the kind.
+- [ ] **Step 3: Implement** as specified (and `src/lib/defer.ts`); one body template parameterised by the existing `alerts` sentence for the kind. `EMAILED_KINDS` includes the five added at review.
+- [ ] **Step 3b:** `tests/unit/defer.test.ts`: with `next/server` mocked so `after` records its argument, `deferWork` calls it and resolves without running the task; with `after` throwing, the task runs inline and is awaited; a throwing task never rejects. Sends are sequential (assert max one in flight).
 - [ ] **Step 4: Run** tests, lint, typecheck. Commit `feat: alert email helper`.
 
-### Task 5: Wire order and payment events
+### Task 5a: Wire payment, payout, refund and dispute events (own commit, additive only)
 
-**Files:** modify `src/modules/orders/alerts.ts` (add `emailOrder` beside `notifyOrder`, same audience argument), `src/modules/payments/payments.ts:116-118`, `src/modules/orders/delivery.ts:90,113,124`, `src/modules/orders/disputes.ts:63,223`, `src/modules/payments/alerts.ts:64-86` (`notifyPayoutSent`, `notifyRefundSent`); test `tests/integration/order-emails.test.ts`.
+**Files:** modify `src/modules/orders/alerts.ts` (add `emailOrder` beside `notifyOrder`, same audience argument; this is new code, not a change to `notifyOrder`), `src/modules/payments/payments.ts:116-118`, `src/modules/orders/disputes.ts:63,223`, `src/modules/payments/alerts.ts:64-86` (`notifyPayoutSent`, `notifyRefundSent`); test `tests/integration/order-emails.test.ts`.
+
+**Rule:** only add the post-commit call. Do not reorder, restructure, or alter any transaction, ledger, conditional update or Paystack logic. If a site cannot be wired that way, stop and report to the starting session. This commit is read in isolation by the Opus review.
 
 **Interfaces:**
 - Consumes: `sendAlertEmail` (Task 4).
@@ -139,7 +149,16 @@ Already emailed today and unchanged (no duplicates): cooperative status, members
 - [ ] **Step 1: Write failing tests**, one per core order kind: the right people get exactly one email with the order link; replaying the same Paystack `charge.success` and a reconciliation run after the webhook send no second email; a throwing transport leaves the order paid/delivered/resolved; a late payment that is refunded instead emails no "prepare" mail.
 - [ ] **Step 2: Run** via `test` subagent. Expected: FAIL.
 - [ ] **Step 3: Implement** by adding the post-commit call at each site above. Where a site's `notify` is currently inside the transaction, hoist the data needed and call `emailOrder` after the transaction returns.
-- [ ] **Step 4: Run** tests, lint, typecheck. Commit `feat: email key order, payment, payout and dispute events`.
+- [ ] **Step 4: Run** tests, lint, typecheck. Commit `feat: email payment, payout, refund and dispute events`.
+
+### Task 5b: Wire delivery, offer and lot events
+
+**Files:** modify `src/modules/orders/delivery.ts:90,113,124`, `src/modules/marketplace/negotiation.ts:94` (`tellBuyer`: only `OFFER_ACCEPTED`, `OFFER_COUNTERED`), `src/modules/catalog/screening.ts:105` (`tellFarmers`: only `LOT_APPROVED`, `LOT_REJECTED`); tests `tests/integration/delivery-emails.test.ts`, `tests/integration/offer-lot-emails.test.ts`.
+
+- [ ] **Step 1: Write failing tests:** delivery date set / delivered / receipt confirmed email the right people once; an accepted or countered offer emails the buyer, a declined one does not; an approved or rejected lot emails every farmer with a contribution, a countered one does not; transport failure leaves each action saved; the offer note and floor price never appear in the body.
+- [ ] **Step 2: Run** via `test` subagent. Expected: FAIL.
+- [ ] **Step 3: Implement** the post-commit `sendAlertEmail` call beside each `notify`.
+- [ ] **Step 4: Run** tests, lint, typecheck. Commit `feat: email delivery, offer and lot events`.
 
 ### Task 6: Wire name-change events
 
@@ -152,8 +171,9 @@ Already emailed today and unchanged (no duplicates): cooperative status, members
 
 ### Task 7: Docs, full verification, PR
 
-**Files:** modify `docs/architecture.md` (notifications module now sends event emails after commit; reserved-domain skip), `docs/environments.md` if anything changed.
+**Files:** modify `docs/architecture.md` (notifications module now sends event emails after commit via `deferWork`; reserved-domain skip), `docs/environments.md` (Resend free plan caps daily volume at about 100; check the plan).
 
+- [ ] **Step 0: Local click-through** on a local dev server (never on agrohub-theta.vercel.app), locally created test accounts, built-in browser pane. Script: sign up and verify a test user (link from `/api/dev/outbox`); sign in; click "Forgot password?"; request a reset; open the link from the outbox; set a new password; sign in with it; then drive one order event (a buyer's paid order) and confirm its email in the outbox. Steps, results and screenshots go in the PR description.
 - [ ] **Step 1:** Run lint, typecheck, `npm test` (with `--testTimeout=60000` for `reconciliation`), and `npx playwright test` through the `test` subagent. Known flaky: `buyer-join` integration, `cooperative-to-farmer` e2e bank step; rerun those once and report honestly.
 - [ ] **Step 2:** Run the `audit` subagent on the committed diff; fix findings, recommit.
 - [ ] **Step 3:** Push the branch, open the PR against `main` (no AI attribution). Description lists: which subagent ran each search and each test run (and any done without one), the design decisions above, the exact Vercel variables to set for Preview and Production (`RESEND_API_KEY`, `EMAIL_FROM`), and "no migration". Stop; do not merge.
