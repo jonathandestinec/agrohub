@@ -28,6 +28,7 @@
 - Password reset for an unknown email: identical response to a known email, and no email sent. Task 3.
 - Reset link reused or expired: the page shows a clear error and offers a new request. Task 3.
 - Seeded accounts on staging (`@example.com`): no real send, no bounce. Task 1.
+- Per-address reset limiting does not stop one sender spraying many different addresses; only Better Auth's in-memory per-IP limiter guards that today. Stated in the PR.
 - Reset after sign-in with two-factor on: password reset must not bypass two-factor; sign-in afterwards still asks for the code (Better Auth behaviour, asserted in Task 3).
 
 ## Design decisions (spec silent; each repeated in the PR description)
@@ -38,7 +39,7 @@
 4. **Password reset keeps Better Auth's default one-hour token** and revokes other sessions on reset.
 5. **Mail failures are logged, never retried.** No queue in this stage (simpler; a lost email never blocks anything, and the in-app alert is the record). A 429 from Resend is just a logged failure.
 6. **Mail never blocks a response.** `src/lib/defer.ts` exports `deferWork(task: () => Promise<void>): Promise<void>`: it hands the task to Next's `after()` (from `next/server`, Next 16.4.3 installed) and resolves at once; `after()` works anywhere inside a route handler, server action or server component call stack, which covers the webhook, the crons and the actions. Outside a request scope (Vitest, `tsx` seed) `after()` throws, so `deferWork` catches that and runs the task inline and awaited. Call sites `await sendAlertEmail(...)`, which is instant in production and deterministic in tests. A unit test pins both branches (the `after()` branch with `next/server` mocked). Better Auth awaits `sendResetPassword` inline unless `advanced.backgroundTasks.handler` is set, so `auth.ts` sets it to schedule the promise with `after()` (ignoring the throw outside a request scope).
-7. **Sends are sequential** (one in flight), not `Promise.allSettled`, to stay under Resend's rate limit. `docs/environments.md` notes that Resend's free plan caps daily volume (about 100 a day) and the user should check their plan.
+7. **Sends are sequential, in one deferred task.** `sendAlertEmail` schedules ONE `deferWork` task that loops over the recipients and awaits each send in turn (never one `deferWork` per recipient, which would run them concurrently inside `after()`). `deferWork` catches only `after()`'s "outside a request scope" error and runs inline; any other error from `after()` is logged and the task still runs inline. The "max one in flight" test covers both the deferred and the inline path. Previously: **Sends are sequential** (one in flight), not `Promise.allSettled`, to stay under Resend's rate limit. `docs/environments.md` notes that Resend's free plan caps daily volume (about 100 a day) and the user should check their plan.
 8. **Reset abuse limit: DB count, no migration.** Better Auth's built-in limiter on `/request-password-reset` is 3 per 60 s per IP, production only, in memory (per instance on Vercel), and keyed by IP, not address. Its database storage needs a new `rateLimit` table (a migration). Instead `sendResetPassword` counts the `verification` rows Better Auth already wrote for that user in the last hour (identifier `reset-password:…`, value the user id) and skips the send when more than 3 exist. That holds across instances, needs no migration, and the response stays identical because the skip happens after the response body is decided. Logged as `password reset throttled` with no address. The in-memory IP limiter stays as is.
 9. **Payment-code edits are additive only.** The post-commit email call is added; no transaction, ledger, conditional-update or Paystack logic is reordered or changed. If a site cannot be wired without restructuring, work stops and is reported. Those edits are their own commit (Task 5a).
 
@@ -124,7 +125,7 @@ Already emailed today and unchanged (no duplicates): cooperative status, members
 
 ### Task 4: Alert email helper
 
-**Files:** create `src/modules/notifications/alert-emails.ts`; modify `src/modules/notifications/emails.ts`; tests `tests/unit/alert-emails.test.ts`, `tests/integration/alert-emails.test.ts`.
+**Files:** create `src/lib/defer.ts` (created in Task 2 because `auth.ts` needs it), `src/modules/notifications/alert-emails.ts`; modify `src/modules/notifications/emails.ts`; tests `tests/unit/alert-emails.test.ts`, `tests/integration/alert-emails.test.ts`.
 
 **Interfaces:**
 - Consumes: `AlertKind`, `AlertData` from `schema.ts`; `Recipient` from `recipients.ts`; link builder from `views.ts`; `sendEmail`.
@@ -140,13 +141,13 @@ Already emailed today and unchanged (no duplicates): cooperative status, members
 
 **Files:** modify `src/modules/orders/alerts.ts` (add `emailOrder` beside `notifyOrder`, same audience argument; this is new code, not a change to `notifyOrder`), `src/modules/payments/payments.ts:116-118`, `src/modules/orders/disputes.ts:63,223`, `src/modules/payments/alerts.ts:64-86` (`notifyPayoutSent`, `notifyRefundSent`); test `tests/integration/order-emails.test.ts`.
 
-**Rule:** only add the post-commit call. Do not reorder, restructure, or alter any transaction, ledger, conditional update or Paystack logic. If a site cannot be wired that way, stop and report to the starting session. This commit is read in isolation by the Opus review.
+**Rule:** only add the post-commit call. "Hoisting data" is allowed only as returning extra values from the existing transaction callback; no write, read-then-write or conditional update moves in or out of a transaction. `PAYOUT_SENT` and `REFUND_SENT` must be wired at the point of Paystack's confirmed success (`transfer.success`, refund processed), verified in code before wiring; if they fire at transfer start, wire at the confirmed point (still additive) or report back. Do not reorder, restructure, or alter any transaction, ledger, conditional update or Paystack logic. If a site cannot be wired that way, stop and report to the starting session. This commit is read in isolation by the Opus review.
 
 **Interfaces:**
 - Consumes: `sendAlertEmail` (Task 4).
 - Produces: `emailOrder(db, order, kind, data, audience)` mirroring `notifyOrder`'s signature, called after the transaction on the branch where the conditional update changed one row.
 
-- [ ] **Step 1: Write failing tests**, one per core order kind: the right people get exactly one email with the order link; replaying the same Paystack `charge.success` and a reconciliation run after the webhook send no second email; a throwing transport leaves the order paid/delivered/resolved; a late payment that is refunded instead emails no "prepare" mail.
+- [ ] **Step 1: Write failing tests**, one per core order kind: the right people get exactly one email with the order link; replaying the same Paystack `charge.success` and a reconciliation run after the webhook send no second email; a throwing transport leaves the order paid/delivered/resolved; a late payment that is refunded instead emails no "prepare" mail; when the webhook never arrived and the daily reconciliation is the first confirmer, the buyer, officers and farmers each get exactly one email (and the webhook-first test stays, with reconciliation sending nothing).
 - [ ] **Step 2: Run** via `test` subagent. Expected: FAIL.
 - [ ] **Step 3: Implement** by adding the post-commit call at each site above. Where a site's `notify` is currently inside the transaction, hoist the data needed and call `emailOrder` after the transaction returns.
 - [ ] **Step 4: Run** tests, lint, typecheck. Commit `feat: email payment, payout, refund and dispute events`.
