@@ -98,7 +98,7 @@ export function hrefOf(kind: AlertKind, role: Role | null, subjectId: string): s
 // Delivery dates are Lagos calendar days stored as YYYY-MM-DD, shown like the order pages do.
 const day = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" });
 
-function paramsOf(data: Record<string, unknown>): Record<string, string | number> {
+export function paramsOf(data: Record<string, unknown>): Record<string, string | number> {
   const params: Record<string, string | number> = {};
   for (const [key, value] of Object.entries(data)) {
     if (key === "amountKobo") params.amount = formatNaira(Number(value));

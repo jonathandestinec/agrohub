@@ -19,6 +19,18 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+// One layout for every event email: the same sentence the in-app bell shows, plus a link to the page.
+export function alertEmail(input: {
+  subject: string;
+  sentence: string;
+  href: string;
+}): { subject: string; html: string } {
+  return {
+    subject: input.subject,
+    html: `<p>${escapeHtml(input.sentence)}</p><p><a href="${escapeHtml(input.href)}">Open in AgroHub</a></p>`,
+  };
+}
+
 export function passwordResetEmail(input: {
   name: string;
   link: string;
