@@ -19,6 +19,18 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+export function passwordResetEmail(input: {
+  name: string;
+  link: string;
+}): { subject: string; html: string } {
+  const name = escapeHtml(input.name);
+  const href = escapeHtml(input.link);
+  return {
+    subject: "Reset your AgroHub password",
+    html: `<p>Hello ${name},</p><p>We got a request to reset your AgroHub password. <a href="${href}">Choose a new password</a>. The link works for one hour.</p><p>If you did not ask for this, you can ignore this email and your password stays the same.</p>`,
+  };
+}
+
 export function cooperativeStatusEmail(
   kind: StatusEmailKind,
   input: StatusEmailInput,
