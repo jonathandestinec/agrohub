@@ -27,7 +27,8 @@ afterAll(cleanDatabase);
 
 const issues = () => prisma.reconciliationIssue.findMany({ orderBy: { createdAt: "asc" } });
 
-describe("reconcile", () => {
+// On the local Docker database these tests take 2.5-7.9s each, past Vitest's 5-second default.
+describe("reconcile", { timeout: 30_000 }, () => {
   it("confirms a payment whose webhook never came, and records nothing", async () => {
     const { orderId } = await startCheckout(w.buyer, { source: "LOT", lotId: w.lotId, quantity: 10 });
     const { reference } = await prisma.payment.findFirstOrThrow({ where: { orderId } });
