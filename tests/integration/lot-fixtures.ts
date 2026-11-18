@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { addDays, lagosDateKey } from "@/lib/lagos-date";
+import { addDays, lagosDate, lagosDateKey } from "@/lib/lagos-date";
 import { createCrop, createUnit } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { createTestCooperative, createTestUser } from "./helpers";
@@ -107,4 +107,15 @@ export async function lotWorld(): Promise<LotWorld> {
       ...overrides,
     }),
   };
+}
+
+// Lots are submitted and approved at the fixed NOW, which caps their sale window at NOW + 90 days
+// and (by default) ends it two weeks after NOW. Tests that check out at the real clock need a lot
+// that is still on sale today, so this moves the window to 30 days from the real current day.
+// Call it after approveLot in any fixture whose flow then runs at real time.
+export async function keepLotOnSale(lotId: string): Promise<void> {
+  await prisma.lot.update({
+    where: { id: lotId },
+    data: { availableUntil: lagosDate(addDays(lagosDateKey(new Date()), 30)) },
+  });
 }

@@ -8,7 +8,7 @@ import { getOwnOffer, makeOffer, respondToOffer } from "@/modules/marketplace/se
 import { startCheckout } from "@/modules/orders/service";
 import { confirmPayment, handlePaystackWebhook, ledgerBalance } from "@/modules/payments/service";
 import { cleanDatabase } from "./helpers";
-import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
+import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld, keepLotOnSale } from "./lot-fixtures";
 
 const MIN = 60_000;
 let w: LotWorld;
@@ -31,6 +31,7 @@ async function liveLot(quantity: number, askKobo = 6_500_000, cut = false): Prom
   if (cut) await prisma.cooperative.update({ where: { id: w.cooperativeId }, data: { cutBps: 0 } });
   const lot = await submitLot(w.farmer, w.input({ quantity, askKobo, floorKobo: askKobo - 100 }), [PHOTO], NOW);
   await approveLot(w.officer, lot.id, { minOrderQty: 1 }, NOW);
+  await keepLotOnSale(lot.id);
   return lot.id;
 }
 

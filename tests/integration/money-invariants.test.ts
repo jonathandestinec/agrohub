@@ -17,7 +17,7 @@ import {
 } from "@/modules/orders/service";
 import { confirmPayment, handlePaystackWebhook, ledgerBalance, sendDuePayouts } from "@/modules/payments/service";
 import { cleanDatabase } from "./helpers";
-import { buyerMember, farmerMember, lotWorld, NOW, PHOTO } from "./lot-fixtures";
+import { buyerMember, farmerMember, lotWorld, NOW, PHOTO, keepLotOnSale } from "./lot-fixtures";
 
 const HOUR = 3_600_000;
 const MIN = 60_000;
@@ -51,6 +51,7 @@ async function world(s: Scenario) {
   await prisma.membership.create({ data: { userId: w.admin.userId, role: "ADMIN", status: "ACTIVE" } });
   const lot = await submitLot(w.farmer, w.input({ quantity: s.quantity, askKobo: s.unitKobo, floorKobo: s.unitKobo }), [PHOTO], NOW);
   await approveLot(w.officer, lot.id, { minOrderQty: 1 }, NOW);
+  await keepLotOnSale(lot.id);
   await prisma.lotFeeTerms.update({ where: { lotId: lot.id }, data: { cooperativeCutBps: s.cutBps, platformFeeBps: s.feeBps } });
   // Contributions: the scenario's weights scaled to the lot quantity, at least 1 each.
   const n = Math.min(s.contributors, s.quantity);
