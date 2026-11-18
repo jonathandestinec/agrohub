@@ -8,7 +8,7 @@ import { makeOffer, respondToOffer } from "@/modules/marketplace/service";
 import { startCheckout } from "@/modules/orders/service";
 import { handlePaystackWebhook, ledgerBalance } from "@/modules/payments/service";
 import { cleanDatabase } from "./helpers";
-import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
+import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld, keepLotOnSale } from "./lot-fixtures";
 
 const MIN = 60_000;
 let w: LotWorld;
@@ -25,6 +25,7 @@ beforeEach(async () => {
   other = await buyerMember("u-other");
   const lot = await submitLot(w.farmer, w.input({ quantity: 30 }), [PHOTO], NOW);
   await approveLot(w.officer, lot.id, { minOrderQty: 1 }, NOW);
+  await keepLotOnSale(lot.id);
   lotId = lot.id;
 });
 

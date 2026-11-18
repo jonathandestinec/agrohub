@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { SignOutForm } from "@/components/account-menu";
 import { Mark } from "@/components/ui/icons";
+import { useHydrated } from "@/lib/use-hydrated";
 import { Menu, MENU_ITEM } from "@/components/ui/menu";
 import {
   accountInMenu,
@@ -116,6 +117,7 @@ export function AppNav({
   const links = items; // the bar's items; "links" in the layout code below
   const allHrefs = items.flatMap((item) => (item.kind === "link" ? [item.href] : item.links.map((l) => l.href)));
   const pathname = usePathname();
+  const hydrated = useHydrated();
   // Open on the page it was opened on; navigating anywhere closes it without an effect.
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
@@ -247,7 +249,10 @@ export function AppNav({
               <button
                 ref={toggle}
                 type="button"
-                className={`press relative z-50 flex size-11 shrink-0 items-center justify-center rounded-full bg-step ${wide.narrowOnly}`}
+                className={`press relative z-50 flex size-11 shrink-0 items-center justify-center rounded-full bg-step disabled:cursor-progress ${wide.narrowOnly}`}
+                // Off until React has attached the handler: a tap before then did nothing.
+                // Looks the same while waiting; only the cursor says so.
+                disabled={!hydrated}
                 aria-expanded={open}
                 aria-controls="app-menu"
                 aria-label={open ? closeLabel : openLabel}
