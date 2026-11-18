@@ -1,15 +1,21 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { chromium } from "playwright";
 
-// The link-preview image (WhatsApp, X, LinkedIn, Slack): the brand mark, the landing headline,
-// and the cooperative photo (public domain, so it needs no credit line). Built once at build time.
+// Makes the link-preview image (WhatsApp, X, LinkedIn, Slack): src/app/opengraph-image.jpg.
+// Run after changing the design: `npx tsx --tsconfig scripts/tsconfig.json scripts/og-image.tsx`.
+//
+// The design is drawn with next/og (which only outputs PNG), then saved as a JPEG through
+// Playwright's Chromium, because the photo makes the PNG about 950 KB and WhatsApp skips
+// preview images over about 300 KB. The JPEG is a static file, so nothing renders at runtime.
+//
+// Brand mark, landing headline, and the cooperative photo (public domain, so no credit line).
 // Colours are the brand tokens in src/styles/tokens.css; the font is next/og's bundled Geist,
-// the app's own typeface.
+// the app's own typeface. Alt text lives in src/app/opengraph-image.alt.txt.
 
-export const alt = "AgroHub: farmer cooperatives sell together and get paid on delivery";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+const size = { width: 1200, height: 630 };
+const JPEG_QUALITY = 82;
 
 const FOREST = "#173a2a";
 const FOREST_INK = "#f3f7ef";
@@ -26,7 +32,7 @@ function BrandMark({ size: px }: { size: number }) {
   );
 }
 
-export default async function OpengraphImage() {
+async function renderPng(): Promise<ImageResponse> {
   const photo = await readFile(join(process.cwd(), "public/photos/cooperative.jpg"));
   const photoSrc = `data:image/jpeg;base64,${photo.toString("base64")}`;
 
@@ -62,3 +68,22 @@ export default async function OpengraphImage() {
     size,
   );
 }
+
+async function main(): Promise<void> {
+  const png = Buffer.from(await (await renderPng()).arrayBuffer());
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: size });
+    await page.setContent(
+      `<html><body style="margin:0"><img src="data:image/png;base64,${png.toString("base64")}"></body></html>`,
+    );
+    const jpg = await page.screenshot({ type: "jpeg", quality: JPEG_QUALITY });
+    const out = join(process.cwd(), "src/app/opengraph-image.jpg");
+    await writeFile(out, jpg);
+    console.log(`wrote ${out}: ${Math.round(jpg.length / 1024)} KB (PNG was ${Math.round(png.length / 1024)} KB)`);
+  } finally {
+    await browser.close();
+  }
+}
+
+void main();
