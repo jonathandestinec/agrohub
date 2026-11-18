@@ -42,7 +42,18 @@ For Cloudflare R2 instead, the endpoint is `https://<cloudflare-account-id>.r2.c
 
 ### Email sender
 
-`EMAIL_FROM` is the sender for real email, for example `AgroHub <noreply@<your-domain>>`. Resend refuses any sender whose domain is not verified in the Resend account (Domains, then add the DNS records it lists). Until a domain is verified, staging and production cannot send email, so sign-up verification links never arrive. Unset, it defaults to the placeholder `AgroHub <noreply@agrohub.example>`, which Resend rejects.
+Real email is sent from `agro-hub.com.ng`, verified in Resend (region eu-west-1, sending enabled). `EMAIL_FROM` is the sender; unset, it defaults to `AgroHub <noreply@agro-hub.com.ng>`. Resend refuses a sender whose domain is not verified in the account, so any other domain needs its own DNS records first.
+
+The two variables to set in Vercel (Project, Settings, Environment Variables), for **Preview** and for **Production**, then redeploy because Vercel applies variables only to new deployments:
+
+| Variable | Value | Notes |
+| --- | --- | --- |
+| `RESEND_API_KEY` | a Resend API key with sending access to `agro-hub.com.ng` | mark Sensitive; create one key per environment if you want to revoke them separately |
+| `EMAIL_FROM` | `AgroHub <noreply@agro-hub.com.ng>` | optional, same as the default |
+
+- **Seeded accounts never get real mail.** The seed users are on `example.com`. The real transport skips any recipient on a reserved domain (`example.com`, `.org`, `.net`, and the `.test`, `.example`, `.invalid` and `.localhost` TLDs), logging only "email skipped: reserved domain", so the public staging link cannot bounce. The fake outbox still records them, so tests are unchanged.
+- **Mail never holds up a response.** Event emails are sent after the response through Next's `after()`, one at a time, and a failure (including Resend's 429 rate limit) is logged without the address and not retried.
+- **Check your Resend plan.** The free plan caps daily volume (about 100 emails a day). Sign-ups, resets and order events all draw on it.
 
 ### Variables per environment
 
@@ -53,7 +64,8 @@ For Cloudflare R2 instead, the endpoint is `https://<cloudflare-account-id>.r2.c
 | `STORAGE_ACCESS_KEY_ID` | empty | `<staging-b2-key-id>` | `<production-b2-key-id>` |
 | `STORAGE_SECRET_ACCESS_KEY` | empty | `<staging-b2-application-key>` | `<production-b2-application-key>` |
 | `STORAGE_REGION` | unset (`auto`) | `<b2-region>` | `<b2-region>` |
-| `EMAIL_FROM` | unset (fake outbox) | `AgroHub <noreply@<verified-domain>>` | same |
+| `EMAIL_FROM` | unset (fake outbox) | `AgroHub <noreply@agro-hub.com.ng>` | same |
+| `RESEND_API_KEY` | empty (fake outbox) | Resend key for `agro-hub.com.ng` | Resend key for `agro-hub.com.ng` |
 | `PAYSTACK_SECRET_KEY` | empty (fake Paystack) | `sk_test_<...>` (a test key only) | `sk_live_<...>` |
 
 - Mark the secrets as Sensitive in Vercel and scope each to its one environment.

@@ -196,7 +196,7 @@ export function LotForm({ context, states }: { context: LotFormContext; states: 
         </div>
       </div>
       <p className="body-6 text-ink-soft">
-        <Link href="/farmer#crop-requests" className="underline underline-offset-4">
+        <Link href="/farmer/profile#crop-requests" className="underline underline-offset-4">
           {t("form.notListed")}
         </Link>
       </p>

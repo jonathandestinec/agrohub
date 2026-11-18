@@ -14,15 +14,15 @@ export function landingPath(input: {
   if (next !== "/") return next;
   switch (input.role) {
     case "ADMIN":
-      return "/admin/orders";
+      return "/admin";
     case "BOARD_ADMIN":
       return "/board";
     case "OFFICER":
-      return input.cooperativeVerified ? "/officer/orders" : "/officer/onboarding";
+      return input.cooperativeVerified ? "/officer" : "/officer/onboarding";
     case "FARMER":
       return "/farmer";
     case "BUYER":
-      return "/lots";
+      return "/buyer";
     default:
       return "/";
   }

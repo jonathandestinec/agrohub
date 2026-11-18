@@ -6,6 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { committedQuantity, isPubliclyVisible, lockLot, lotNegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, assertMessageRateOk, postToBuyerThread } from "@/modules/messaging/service";
+import { sendAlertEmail } from "@/modules/notifications/alert-emails";
 import { buyer as buyerRecipient, farmer, notify, officersOf } from "@/modules/notifications/service";
 import { ACCEPT_HOLD_HOURS, OFFER_TTL_HOURS, REFERRAL_MIN_HOURS, hoursAfter } from "./limits";
 import { LIVE_OFFER, buyerViewOf, loadOwnOffer } from "./offers";
@@ -92,6 +93,22 @@ async function tellBuyer(
   actorId: string,
 ): Promise<void> {
   await notify(tx, {
+    kind,
+    subject: { type: "OFFER", id: offer.id },
+    data: alertData(offer),
+    to: [buyerRecipient(offer.buyerUserId)],
+    exclude: actorId,
+  });
+}
+
+// The email twin of tellBuyer for the answers that email (accepted, countered). Call it after the
+// answering transaction has committed. Never throws.
+async function emailBuyer(
+  kind: "OFFER_ACCEPTED" | "OFFER_COUNTERED",
+  offer: AlertOffer,
+  actorId: string,
+): Promise<void> {
+  await sendAlertEmail({
     kind,
     subject: { type: "OFFER", id: offer.id },
     data: alertData(offer),
@@ -280,6 +297,10 @@ export async function respondToOffer(
       await tellBuyer(tx, "OFFER_COUNTERED", row, actor.userId);
     }
   });
+  // The transaction above throws unless the answer was recorded, so reaching here means it was.
+  // A referral and a decline are not emailed: the buyer's view must not move, and declines stay in-app.
+  if (decision === "COUNTER") await emailBuyer("OFFER_COUNTERED", row, actor.userId);
+  else if (decision === "ACCEPT" && !referral) await emailBuyer("OFFER_ACCEPTED", row, actor.userId);
   if (note) await postToBuyerThread(actor, row.lotId, row.buyerUserId, note, now);
   return officerViewOf((await loadCooperativeOffer(row.id)) as CooperativeOfferRow, now);
 }
@@ -318,6 +339,7 @@ export async function farmerRespondToOffer(
     }
     await tellOfficers(tx, "OFFER_FARMER_ANSWERED", row, actor.userId);
   });
+  if (agree) await emailBuyer("OFFER_ACCEPTED", row, actor.userId);
   return farmerViewOf((await loadCooperativeOffer(row.id)) as CooperativeOfferRow, now);
 }
 

@@ -5,7 +5,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { committedQuantity, lockLot, refreshSoldOut, SOLD_STATUSES } from "@/modules/catalog/service";
 import { markOfferOrdered } from "@/modules/marketplace/service";
 import { ensureBuyerThread } from "@/modules/messaging/service";
-import { assertTransition, notifyOrder } from "@/modules/orders/service";
+import { assertTransition, emailOrder, notifyOrder } from "@/modules/orders/service";
 import { postLedger } from "./ledger";
 import { issueRefund, resendPendingRefunds } from "./refunds";
 
@@ -150,6 +150,12 @@ export async function confirmPayment(reference: string, now: Date = new Date()):
     );
     return { outcome: "REFUNDING" as const, refundId: refund.id };
   });
+  // Emails go out only on the branch that marked the order paid, after the commit.
+  if (result.outcome === "PAID") {
+    await emailOrder(payment.orderId, "PAYMENT_CONFIRMED", ["buyer"]);
+    await emailOrder(payment.orderId, "ORDER_PAID", ["officers"]);
+    await emailOrder(payment.orderId, "LOT_ORDER_PAID", ["farmers"]);
+  }
   if (result.refundId) await issueRefund(result.refundId);
   // Every paid order has its thread with the cooperative (the order thread), even if the buyer
   // never wrote before and the lot is now sold out.

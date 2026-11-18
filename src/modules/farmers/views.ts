@@ -1,4 +1,5 @@
 import type { Crop, FarmerProfile, User } from "@/generated/prisma/client";
+import type { TileItem } from "@/lib/summary";
 
 // A profile row with its crops loaded (`include: PROFILE_CROPS` in the service).
 export type ProfileWithCrops = FarmerProfile & { crops: Pick<Crop, "id" | "name" | "nameKey">[] };
@@ -61,4 +62,9 @@ export function toAdminFarmer(profile: ProfileWithCrops, user: FarmerUser): Admi
     phoneConfirmed: user.phoneConfirmed,
     accountName: profile.accountName,
   };
+}
+
+// A tile item for a membership waiting for approval: the farmer's name and when they asked.
+export function toPendingFarmerTileItem(row: { id: string; createdAt: Date; user: { name: string } }): TileItem {
+  return { id: row.id, href: "/officer/farmers", title: row.user.name, date: row.createdAt.toISOString() };
 }

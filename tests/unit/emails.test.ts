@@ -5,6 +5,7 @@ import {
   cooperativeStatusEmail,
   farmerInviteEmail,
   farmerStatusEmail,
+  passwordResetEmail,
 } from "@/modules/notifications/emails";
 
 const kinds = ["verified", "rejected", "suspended", "reinstated"] as const;
@@ -131,5 +132,17 @@ describe("farmerStatusEmail", () => {
       const { subject, html } = farmerStatusEmail(kind, { cooperativeName: "Zaria Growers", reason: "r" });
       expect(`${subject} ${html}`.toLowerCase()).not.toContain("escrow");
     }
+  });
+});
+
+describe("passwordResetEmail", () => {
+  it("escapes the name and the link, and never says escrow", () => {
+    const { subject, html } = passwordResetEmail({ name: "Ada <b>", link: "https://x.test/y?token=a&b=1" });
+    expect(subject).toBe("Reset your AgroHub password");
+    expect(html).toContain("Ada &lt;b&gt;");
+    expect(html).toContain("https://x.test/y?token=a&amp;b=1");
+    expect(html).not.toContain("<b>");
+    expect(html.toLowerCase()).not.toContain("escrow");
+    expect(html).toContain("ignore this email");
   });
 });

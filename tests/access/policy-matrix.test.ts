@@ -257,6 +257,13 @@ const matrix: Array<[Action, Role, boolean]> = [
   ["notification:own", "BUYER", false],
   ["notification:own", "ADMIN", false],
   ["notification:own", "BOARD_ADMIN", false],
+
+  // home:view: the four roles with a to-do home page; the board admin lands on /board.
+  ["home:view", "FARMER", true],
+  ["home:view", "OFFICER", true],
+  ["home:view", "BUYER", true],
+  ["home:view", "ADMIN", true],
+  ["home:view", "BOARD_ADMIN", false],
 ];
 
 describe("policy matrix", () => {
@@ -277,7 +284,7 @@ describe("policy matrix", () => {
   });
 
   it("covers every action and role", () => {
-    expect(matrix).toHaveLength(190);
+    expect(matrix).toHaveLength(195);
   });
 });
 

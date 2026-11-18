@@ -1,3 +1,4 @@
+import type { TileItem } from "@/lib/summary";
 import type {
   NameChangeRequest,
   NameChangeStatus,
@@ -69,4 +70,9 @@ export function toAdminNameChange(
     newNameMatchesAccount: extras.newNameMatchesAccount,
     cooperativeId: r.subjectType === "COOPERATIVE" ? r.subjectId : null,
   };
+}
+
+// A tile item for a name change waiting for an admin: the name asked for and the date.
+export function toNameChangeTileItem(row: { id: string; toName: string; createdAt: Date }): TileItem {
+  return { id: row.id, href: `/admin/names/${row.id}`, title: row.toName, date: row.createdAt.toISOString() };
 }

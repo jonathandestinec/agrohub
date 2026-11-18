@@ -36,6 +36,7 @@
     "farm": "",
     "registerCooperative": "",
     "yourFarm": "",
+    "roleHome": "",
     "openMenu": "",
     "closeMenu": "",
     "skip": "",
@@ -65,7 +66,8 @@
       "email": "",
       "password": "",
       "phone": "",
-      "code": ""
+      "code": "",
+      "newPassword": ""
     },
     "signUp": {
       "title": "",
@@ -90,7 +92,8 @@
       "unverified": "",
       "error": "",
       "noAccount": "",
-      "signUpLink": ""
+      "signUpLink": "",
+      "forgotLink": ""
     },
     "verified": {
       "title": "",
@@ -123,6 +126,30 @@
       "expired": "",
       "tooManyAttempts": "",
       "signInAgain": "",
+      "error": ""
+    },
+    "forgot": {
+      "title": "",
+      "lead": "",
+      "submit": "",
+      "submitting": "",
+      "sentTitle": "",
+      "sentBody": "",
+      "back": "",
+      "error": ""
+    },
+    "reset": {
+      "title": "",
+      "lead": "",
+      "submit": "",
+      "submitting": "",
+      "doneTitle": "",
+      "doneBody": "",
+      "signIn": "",
+      "invalidTitle": "",
+      "invalidBody": "",
+      "requestNew": "",
+      "tooShort": "",
       "error": ""
     }
   },
@@ -1713,6 +1740,110 @@
       "BANK_CHANGE_CONFIRMED": "",
       "CATALOG_REQUEST_FORWARDED": "",
       "MESSAGE_RECEIVED": ""
+    }
+  },
+  "home": {
+    "title": "",
+    "titleAnonymous": "",
+    "seeAll": "",
+    "error": "",
+    "tiles": {
+      "farmerOffers": "",
+      "farmerCountered": "",
+      "farmerLots": "",
+      "farmerEarnings": "",
+      "officerFarmers": "",
+      "officerLots": "",
+      "officerOffers": "",
+      "officerPrepare": "",
+      "officerAttention": "",
+      "officerRequests": "",
+      "buyerOffers": "",
+      "buyerConfirm": "",
+      "buyerOrders": "",
+      "buyerReceipts": "",
+      "adminCooperatives": "",
+      "adminDisputes": "",
+      "adminPayouts": "",
+      "adminReconciliation": "",
+      "adminNames": "",
+      "adminLots": "",
+      "messages": ""
+    },
+    "empty": {
+      "farmerOffers": "",
+      "farmerCountered": "",
+      "farmerLots": "",
+      "farmerEarnings": "",
+      "officerFarmers": "",
+      "officerLots": "",
+      "officerOffers": "",
+      "officerPrepare": "",
+      "officerAttention": "",
+      "officerRequests": "",
+      "buyerOffers": "",
+      "buyerConfirm": "",
+      "buyerOrders": "",
+      "buyerReceipts": "",
+      "adminCooperatives": "",
+      "adminDisputes": "",
+      "adminPayouts": "",
+      "adminReconciliation": "",
+      "adminNames": "",
+      "adminLots": "",
+      "messages": ""
+    },
+    "dates": {
+      "farmerOffers": "",
+      "farmerEarnings": "",
+      "officerFarmers": "",
+      "officerOffers": "",
+      "officerPrepare": "",
+      "officerAttention": "",
+      "officerRequests": "",
+      "buyerOffers": "",
+      "buyerOrders": "",
+      "adminCooperatives": "",
+      "adminDisputes": "",
+      "adminPayouts": "",
+      "adminReconciliation": "",
+      "adminNames": "",
+      "messages": ""
+    },
+    "counts": {
+      "pendingReview": "",
+      "live": "",
+      "soldOut": ""
+    },
+    "labels": {
+      "CANCEL_REQUESTED": "",
+      "payout": {
+        "failed": "",
+        "blocked": "",
+        "waiting": "",
+        "stale": ""
+      },
+      "reconciliation": {
+        "UNCONFIRMED_PAYMENT": "",
+        "AMOUNT_MISMATCH": "",
+        "STALE_TRANSFER": "",
+        "STALE_REFUND": "",
+        "LEDGER_UNBALANCED": ""
+      }
+    },
+    "schedule": {
+      "title": "",
+      "overdue": "",
+      "noDate": "",
+      "later": "",
+      "more": "",
+      "empty": "",
+      "error": "",
+      "seeAll": ""
+    },
+    "officer": {
+      "onboarding": "",
+      "onboardingLink": ""
     }
   }
 }

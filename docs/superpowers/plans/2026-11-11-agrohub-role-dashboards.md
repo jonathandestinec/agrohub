@@ -79,11 +79,11 @@ export function countLabel(count: number): string;             // "0".."99", the
 
 - `"home:view"` in `Action`; `can` allows FARMER, OFFICER, BUYER, ADMIN; denies BOARD_ADMIN.
 
-- [ ] **Step 1: Failing tests.** `countLabel(0) === "0"`, `countLabel(99) === "99"`, `countLabel(100) === "99+"`. In the policy matrix, five `home:view` rows: four `true`, BOARD_ADMIN `false`.
-- [ ] **Step 2: Run, see them fail.** `npx vitest run tests/unit/summary.test.ts tests/access/policy-matrix.test.ts`
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run, see them pass.**
-- [ ] **Step 5: Commit.** `feat: summary types and the home:view policy`
+- [x] **Step 1: Failing tests.** `countLabel(0) === "0"`, `countLabel(99) === "99"`, `countLabel(100) === "99+"`. In the policy matrix, five `home:view` rows: four `true`, BOARD_ADMIN `false`.
+- [x] **Step 2: Run, see them fail.** `npx vitest run tests/unit/summary.test.ts tests/access/policy-matrix.test.ts`
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run, see them pass.**
+- [x] **Step 5: Commit.** `feat: summary types and the home:view policy`
 
 ---
 
@@ -163,9 +163,9 @@ export async function deliverySchedule(actor: Actor, now?: Date): Promise<Delive
 
 `scheduleWindow`: `todayKey = lagosDateKey(now)`, `lastKey = addDays(todayKey, SCHEDULE_DAYS - 1)`. `groupSchedule` puts a row in `overdue` when `date < todayKey` and otherwise in its day's group; it is given only rows dated up to `lastKey`. `deliverySchedule` owns the three numbers: it loads the rows dated up to `lastKey` with `take: SCHEDULE_ROWS` ordered by `deliveryDate` asc, and runs three `count` queries over the same orders: dated up to `lastKey` (so `more = that count - rows shown`), `deliveryDate: null` (`noDate`), and dated after `lastKey` (`later`).
 
-- [ ] **Step 1: Failing unit tests.** For `groupSchedule`: `puts_past_dates_in_overdue`, `groups_days_in_order`, `leaves_out_empty_days`. For `scheduleWindow`: `ends_on_the_fourteenth_day`, and Review Focus 1, `treats_lagos_today_as_today_after_utc_midnight` (now = `2026-11-11T23:30:00Z` gives todayKey `2026-11-12`, and a row dated `2026-11-12` is in `days`, not `overdue`).
-- [ ] **Step 2: Failing integration tests:** `schedule_leaves_out_cancel_requests_and_other_cooperatives`, `schedule_reports_more_past_fifty_rows` (52 dated orders → 50 shown, `more` 2), `schedule_counts_undated_and_later_orders` (one undated, one dated the fifteenth day), and the table in spec section 3.2: `every_open_order_lands_where_the_table_says` (one order per row of that table across this task's schedule and Task 3's two summaries; `DELIVERED_MARKED` in none).
-- [ ] **Step 3: Run, see them fail. Step 4: implement. Step 5: run, see them pass. Step 6: commit** `feat: the officer's delivery schedule`.
+- [x] **Step 1: Failing unit tests.** For `groupSchedule`: `puts_past_dates_in_overdue`, `groups_days_in_order`, `leaves_out_empty_days`. For `scheduleWindow`: `ends_on_the_fourteenth_day`, and Review Focus 1, `treats_lagos_today_as_today_after_utc_midnight` (now = `2026-11-11T23:30:00Z` gives todayKey `2026-11-12`, and a row dated `2026-11-12` is in `days`, not `overdue`).
+- [x] **Step 2: Failing integration tests:** `schedule_leaves_out_cancel_requests_and_other_cooperatives`, `schedule_reports_more_past_fifty_rows` (52 dated orders → 50 shown, `more` 2), `schedule_counts_undated_and_later_orders` (one undated, one dated the fifteenth day), and the table in spec section 3.2: `every_open_order_lands_where_the_table_says` (one order per row of that table across this task's schedule and Task 3's two summaries; `DELIVERED_MARKED` in none).
+- [x] **Step 3: Run, see them fail. Step 4: implement. Step 5: run, see them pass. Step 6: commit** `feat: the officer's delivery schedule`.
 
 ### Task 5: Buyer summaries
 
@@ -225,8 +225,8 @@ export async function adminHome(actor: Actor, now?: Date): Promise<Tile[]>;
 
 Each starts with `can(actor, "home:view")`, then requires its own role (`ForbiddenError` otherwise), then runs its summaries with `Promise.allSettled` in the spec's tile order (section 3). A rejected summary becomes `{ status: "error" }` and is logged as `console.error("home tile failed", { id })` with nothing else. `officerHome` returns `{ verified: false }` when the cooperative is not verified (read it the way `landing.ts`'s caller does) and calls no summaries; `schedule` is `null` when `deliverySchedule` failed.
 
-- [ ] **Step 1: Failing tests:** `farmer_home_has_its_tiles_in_order`, the same for the other three roles; `a_failing_summary_becomes_an_error_tile_and_the_rest_load` (`vi.spyOn` one summary to reject); `refuses_another_roles_home`; `unverified_officer_gets_no_tiles` (Review Focus 3); `a_count_over_ninety_nine_reaches_the_tile` (101 pending farmers: the tile's `count` is 101, and `countLabel` gives "99+", Review Focus 5).
-- [ ] **Step 2: Run, see them fail. Step 3: implement. Step 4: run, see them pass. Step 5: commit** `feat: the home module`.
+- [x] **Step 1: Failing tests:** `farmer_home_has_its_tiles_in_order`, the same for the other three roles; `a_failing_summary_becomes_an_error_tile_and_the_rest_load` (`vi.spyOn` one summary to reject); `refuses_another_roles_home`; `unverified_officer_gets_no_tiles` (Review Focus 3); `a_count_over_ninety_nine_reaches_the_tile` (101 pending farmers: the tile's `count` is 101, and `countLabel` gives "99+", Review Focus 5).
+- [x] **Step 2: Run, see them fail. Step 3: implement. Step 4: run, see them pass. Step 5: commit** `feat: the home module`.
 
 ---
 
@@ -238,13 +238,13 @@ Each starts with `can(actor, "home:view")`, then requires its own role (`Forbidd
 - Test: `tests/unit/home-copy.test.ts`
 
 Steps:
-- [ ] **Move first, unchanged:** today's `src/app/farmer/page.tsx` becomes `src/app/farmer/profile/page.tsx` (fix its sign-in `next` to `/farmer/profile`), and today's `src/app/buyer/page.tsx` becomes `src/app/buyer/offers/page.tsx`. Commit this move alone (`refactor: move the farm details and offer list to their own pages`) so the review sees a pure move.
-- [ ] **The tile** (`tile.tsx`, server component): heading with the title and `countLabel(count)` for `todo` tiles; up to three `Link` rows in the list-page style (`press press-lift`, `rounded-inner`, `bg-paper`, `min-h-11`); `t("empty.<id>")` when there are none; `t("error")` with the See-all link for `status: "error"`; "See all" link. `farmerLots` shows three labelled numbers. Status codes are translated with the existing order and offer status keys. Long titles wrap (`break-words`, `min-w-0`).
-- [ ] **The schedule** (`schedule.tsx`): "Overdue" group, one group per day (date formatted as the order pages do), the two closing lines, "No deliveries scheduled".
-- [ ] **The officer, buyer and admin pages:** `requireActorForPage()`, role check with `notFound()` as `src/app/officer/orders/page.tsx:21` does, then the role's `*Home`.
-- [ ] **The farmer page is different:** it must not call `requireActorForPage()`, which sends anyone without an actor to sign-in, and a pending or removed farmer has no actor. It reads the session itself (as today's `/farmer` does with `currentUser()`): signed out goes to sign-in with `next=/farmer`; signed in but `getActor()` null or not a FARMER goes to `/farmer/profile`; an active farmer gets `farmerHome`. The join page's links to `/farmer` rely on this. Heading `t("title", { name: firstName })` from `currentUser()`. Grid `grid gap-3 md:grid-cols-2`; schedule full width below. Each page body in `Suspense` with a skeleton, as other pages do. `/buyer` keeps its "Browse lots" `ButtonLink` to `/lots`. `/officer` with `verified: false` shows `t("officer.onboarding")` and a link to `/officer/onboarding`.
-- [ ] **Copy:** `home` block in `messages/en.json`: `title` ("Home, {name}"), one `tiles.<id>` title and one `empty.<id>` line per tile, `seeAll`, `error` ("Couldn't load this"), `counts.pendingReview/live/soldOut`, `schedule.*`, `officer.onboarding` ("Finish onboarding to start selling"). Empty strings in the other locales. Unit test: every `TileId` has a title and an empty line; no `home` string says "escrow".
-- [ ] **Run lint, typecheck, the unit tests; commit** `feat: role home pages`.
+- [x] **Move first, unchanged:** today's `src/app/farmer/page.tsx` becomes `src/app/farmer/profile/page.tsx` (fix its sign-in `next` to `/farmer/profile`), and today's `src/app/buyer/page.tsx` becomes `src/app/buyer/offers/page.tsx`. Commit this move alone (`refactor: move the farm details and offer list to their own pages`) so the review sees a pure move.
+- [x] **The tile** (`tile.tsx`, server component): heading with the title and `countLabel(count)` for `todo` tiles; up to three `Link` rows in the list-page style (`press press-lift`, `rounded-inner`, `bg-paper`, `min-h-11`); `t("empty.<id>")` when there are none; `t("error")` with the See-all link for `status: "error"`; "See all" link. `farmerLots` shows three labelled numbers. Status codes are translated with the existing order and offer status keys. Long titles wrap (`break-words`, `min-w-0`).
+- [x] **The schedule** (`schedule.tsx`): "Overdue" group, one group per day (date formatted as the order pages do), the two closing lines, "No deliveries scheduled".
+- [x] **The officer, buyer and admin pages:** `requireActorForPage()`, role check with `notFound()` as `src/app/officer/orders/page.tsx:21` does, then the role's `*Home`.
+- [x] **The farmer page is different:** it must not call `requireActorForPage()`, which sends anyone without an actor to sign-in, and a pending or removed farmer has no actor. It reads the session itself (as today's `/farmer` does with `currentUser()`): signed out goes to sign-in with `next=/farmer`; signed in but `getActor()` null or not a FARMER goes to `/farmer/profile`; an active farmer gets `farmerHome`. The join page's links to `/farmer` rely on this. Heading `t("title", { name: firstName })` from `currentUser()`. Grid `grid gap-3 md:grid-cols-2`; schedule full width below. Each page body in `Suspense` with a skeleton, as other pages do. `/buyer` keeps its "Browse lots" `ButtonLink` to `/lots`. `/officer` with `verified: false` shows `t("officer.onboarding")` and a link to `/officer/onboarding`.
+- [x] **Copy:** `home` block in `messages/en.json`: `title` ("Home, {name}"), one `tiles.<id>` title and one `empty.<id>` line per tile, `seeAll`, `error` ("Couldn't load this"), `counts.pendingReview/live/soldOut`, `schedule.*`, `officer.onboarding` ("Finish onboarding to start selling"). Empty strings in the other locales. Unit test: every `TileId` has a title and an empty line; no `home` string says "escrow".
+- [x] **Run lint, typecheck, the unit tests; commit** `feat: role home pages`.
 
 ---
 
@@ -254,11 +254,11 @@ Steps:
 - Modify: `src/modules/identity/landing.ts`, `src/components/nav-links.ts`, `src/modules/notifications/views.ts`, the files listed in spec section 4 ("Links into the moved pages"), `docs/architecture.md`
 - Test: `tests/unit/landing.test.ts`, `tests/unit/nav-items.test.ts`, `tests/unit/header-nav.test.ts`, `tests/unit/notification-views.test.ts`, `tests/e2e/journey.ts`, `tests/e2e/name-changes.spec.ts`
 
-- [ ] **Step 1: Update the tests first** to the new addresses: landing ADMIN `/admin`, OFFICER `/officer`, BUYER `/buyer`, FARMER `/farmer` (unchanged), unverified officer and BOARD_ADMIN unchanged; nav: a Home link first for the four roles, buyer "My offers" `/buyer/offers`, farmer "Your farm" `/farmer/profile`, the pending farmer's link `/farmer/profile`; `hrefOf("MEMBERSHIP_REMOVED", null, "m1") === "/farmer/profile"` and the same for the other membership and catalog-decision kinds; `LANDING` in `journey.ts`: admin `/\/admin$/`, officer `/\/officer$/`, buyer `/\/buyer$/`; `name-changes.spec.ts` opens `/farmer/profile`.
-- [ ] **Step 2: Run the unit tests, see them fail.**
-- [ ] **Step 3: Change the code**, including every revalidate and link in spec section 4. Search for `"/farmer"`, `'/farmer'`, `` `/farmer` ``, `"/buyer"` and `#crop-requests` with the `grep` subagent first and handle each hit as spec section 4 says.
-- [ ] **Step 4: Add** the `home` module line to `docs/architecture.md`.
-- [ ] **Step 5: Run the unit tests, see them pass; commit** `feat: land each role on its home page`.
+- [x] **Step 1: Update the tests first** to the new addresses: landing ADMIN `/admin`, OFFICER `/officer`, BUYER `/buyer`, FARMER `/farmer` (unchanged), unverified officer and BOARD_ADMIN unchanged; nav: a Home link first for the four roles, buyer "My offers" `/buyer/offers`, farmer "Your farm" `/farmer/profile`, the pending farmer's link `/farmer/profile`; `hrefOf("MEMBERSHIP_REMOVED", null, "m1") === "/farmer/profile"` and the same for the other membership and catalog-decision kinds; `LANDING` in `journey.ts`: admin `/\/admin$/`, officer `/\/officer$/`, buyer `/\/buyer$/`; `name-changes.spec.ts` opens `/farmer/profile`.
+- [x] **Step 2: Run the unit tests, see them fail.**
+- [x] **Step 3: Change the code**, including every revalidate and link in spec section 4. Search for `"/farmer"`, `'/farmer'`, `` `/farmer` ``, `"/buyer"` and `#crop-requests` with the `grep` subagent first and handle each hit as spec section 4 says.
+- [x] **Step 4: Add** the `home` module line to `docs/architecture.md`.
+- [x] **Step 5: Run the unit tests, see them pass; commit** `feat: land each role on its home page`.
 
 ---
 
@@ -266,13 +266,13 @@ Steps:
 
 **Files:** Create `tests/e2e/home.spec.ts`.
 
-- [ ] **Step 1: The spec** (model the set-up on `tests/e2e/marketplace.spec.ts` and the `journey.ts` helpers; scope locators to `getByRole("main")`):
+- [x] **Step 1: The spec** (model the set-up on `tests/e2e/marketplace.spec.ts` and the `journey.ts` helpers; scope locators to `getByRole("main")`):
   - `each role lands on its home after sign-in`: officer, buyer, farmer, admin (admin after two-factor).
   - `an officer's tile opens the item`: a buyer makes an offer; the officer's "Offers to answer" shows 1 and its row opens `/officer/offers/<id>`.
   - `a pending farmer is sent to the farm page`: a farmer who joined but is not approved opens `/farmer` and lands on `/farmer/profile`.
   - `a farmer using the buyer role is sent to the farm page`: an approved farmer who also holds a buyer membership switches to the buyer role and opens `/farmer`; they land on `/farmer/profile` and see their farm details (Review Focus 2).
   - `the buyer's offers have their own page`: `/buyer/offers` lists the offer.
-- [ ] **Step 2: Run it, see it pass;** then the whole e2e suite once. Fix specs broken by the new addresses; report, without changing, any that fail for another reason.
-- [ ] **Step 3: Click-through** (spec section 8): start `npm run dev` against the local database (create `.claude/launch.json` if missing), create local test accounts, and in the built-in browser pane open each of the four homes at 375×812 and 1280×800, once empty and once with items in every tile (seed with the integration fixtures or a short script). Include a 60-character cooperative name and a count over 99 (Review Focus 4 and 5). Screenshot each. Localhost only; never the public link.
+- [x] **Step 2: Run it, see it pass;** then the whole e2e suite once. Fix specs broken by the new addresses; report, without changing, any that fail for another reason.
+- [x] **Step 3: Click-through** (spec section 8): start `npm run dev` against the local database (create `.claude/launch.json` if missing), create local test accounts, and in the built-in browser pane open each of the four homes at 375×812 and 1280×800, once empty and once with items in every tile (seed with the integration fixtures or a short script). Include a 60-character cooperative name and a count over 99 (Review Focus 4 and 5). Screenshot each. Localhost only; never the public link.
 - [ ] **Step 4:** lint, typecheck, `npm test`, `npx playwright test`; then the `audit` subagent on the committed branch; fix its findings.
 - [ ] **Step 5:** push with `git push -u origin role-dashboards` and open the pull request against `main`: what was built; "No migration"; the spec section 10 choices plus any of yours; deviations from the plan; the click-through results (what each screenshot showed); which subagent ran each search and test run; how each Review Focus item turned out. Then stop. Do not merge.

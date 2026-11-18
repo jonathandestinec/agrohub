@@ -92,7 +92,7 @@ export function BankAccountForm({
   const mismatch = lookupState.state === "found" && !lookupState.preview.matches;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <label htmlFor="bankCode" className="title-4">
           {labels.bank}
@@ -160,7 +160,13 @@ export function BankAccountForm({
           {result.pending ? <p>{labels.pending}</p> : null}
         </div>
       ) : null}
-      <SubmitButton pending={pending} disabled={mismatch} label={labels.save} pendingLabel={labels.saving} />
+      <SubmitButton
+        pending={pending}
+        disabled={mismatch}
+        label={labels.save}
+        pendingLabel={labels.saving}
+        waitForHydration
+      />
     </form>
   );
 }

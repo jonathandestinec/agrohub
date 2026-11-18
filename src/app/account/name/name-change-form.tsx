@@ -88,7 +88,7 @@ export function NameChangePanel({ request, kinds, submit, withdraw }: Props) {
               : t("outcome.WITHDRAWN", { to: request.toName })}
         </p>
       ) : null}
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
         <h3 className="title-2">{t("form.heading")}</h3>
         <Field
           id="newName"
@@ -154,7 +154,12 @@ export function NameChangePanel({ request, kinds, submit, withdraw }: Props) {
           </p>
         </div>
         <FormError message={error} />
-        <SubmitButton pending={pending} label={t("form.submit")} pendingLabel={t("form.submitting")} />
+        <SubmitButton
+          pending={pending}
+          label={t("form.submit")}
+          pendingLabel={t("form.submitting")}
+          waitForHydration
+        />
       </form>
     </div>
   );

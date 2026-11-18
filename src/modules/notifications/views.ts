@@ -34,14 +34,14 @@ const LINKS: Record<AlertKind, Link> = {
   LOT_ORDER_PAID: withId("/farmer/earnings"),
   PAYOUT_SENT: (role, id) =>
     role === "OFFICER" ? `/officer/orders/${id}` : `/farmer/earnings/${id}`,
-  MEMBERSHIP_APPROVED: to("/farmer"),
-  MEMBERSHIP_REJECTED: to("/farmer"),
-  MEMBERSHIP_REMOVED: to("/farmer"),
+  MEMBERSHIP_APPROVED: to("/farmer/profile"),
+  MEMBERSHIP_REJECTED: to("/farmer/profile"),
+  MEMBERSHIP_REMOVED: to("/farmer/profile"),
   BANK_CHANGE_APPLIED: to("/account"),
   NAME_CHANGE_APPROVED: to("/account"),
   NAME_CHANGE_REJECTED: to("/account"),
-  CATALOG_REQUEST_APPROVED: to("/farmer"),
-  CATALOG_REQUEST_DECLINED: to("/farmer"),
+  CATALOG_REQUEST_APPROVED: to("/farmer/profile"),
+  CATALOG_REQUEST_DECLINED: to("/farmer/profile"),
   FARMER_ASKED_TO_JOIN: to("/officer/farmers"),
   FARMER_LEFT: to("/officer/farmers"),
   LOT_SUBMITTED: withId("/officer/lots"),
@@ -98,7 +98,7 @@ export function hrefOf(kind: AlertKind, role: Role | null, subjectId: string): s
 // Delivery dates are Lagos calendar days stored as YYYY-MM-DD, shown like the order pages do.
 const day = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" });
 
-function paramsOf(data: Record<string, unknown>): Record<string, string | number> {
+export function paramsOf(data: Record<string, unknown>): Record<string, string | number> {
   const params: Record<string, string | number> = {};
   for (const [key, value] of Object.entries(data)) {
     if (key === "amountKobo") params.amount = formatNaira(Number(value));

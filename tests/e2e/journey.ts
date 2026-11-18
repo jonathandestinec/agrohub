@@ -10,12 +10,12 @@ export const password = "correct-horse-battery-staple";
 export const HOME = /:3100\/$/;
 // Where each role lands after signing in without an explicit next (see landingPath).
 export const LANDING = {
-  admin: /\/admin\/orders$/,
+  admin: /\/admin$/,
   boardAdmin: /\/board$/,
-  officer: /\/officer\/orders$/,
+  officer: /\/officer$/,
   officerOnboarding: /\/officer\/onboarding$/,
   farmer: /\/farmer$/,
-  buyer: /\/lots$/,
+  buyer: /\/buyer$/,
   twoFactor: /\/two-factor$/,
 } as const;
 
@@ -96,8 +96,8 @@ export async function openNav(page: Page, name: string): Promise<Locator> {
   for (let i = 0; i < (await groups.count()); i++) {
     const group = groups.nth(i);
     await group.click();
-    // The dropdown renders on the next tick (and a click before hydration is replayed late):
-    // give the link a moment to show before moving on to the next group.
+    // The trigger is disabled until the page has hydrated, so the click above waited for that.
+    // The dropdown renders on the next tick: give the link a moment to show before moving on.
     const shown = await link.waitFor({ state: "visible", timeout: 1_500 }).then(
       () => true,
       () => false,
