@@ -139,7 +139,7 @@
       "error": "We could not send the link. Please try again."
     },
     "reset": {
-      "title": "Choose a new password",
+      "title": "Reset your password",
       "lead": "Pick a password you have not used here before.",
       "submit": "Save new password",
       "submitting": "Saving…",

@@ -35,7 +35,7 @@ async function ResetPasswordCard({
     );
   }
   return (
-    <AuthCard title={t("title")} lead={t("lead")} photo="harvest" caption={app("tagline")}>
+    <AuthCard title={t("title")} photo="harvest" caption={app("tagline")}>
       <ResetPasswordForm token={validToken} />
     </AuthCard>
   );

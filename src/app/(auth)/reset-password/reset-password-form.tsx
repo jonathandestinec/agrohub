@@ -57,6 +57,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
+      <p className="body-3 text-ink-soft">{t("lead")}</p>
       <Field
         id="password"
         name="password"
