@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { grantAdmin } from "./grant";
-import { accountButton, completeSignUp, signIn, uniqueEmail } from "./journey";
+import { accountButton, completeSignUp, openNav, signIn, uniqueEmail } from "./journey";
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -295,4 +295,25 @@ test("with the role switcher shown, nothing in the header overlaps", async ({ pa
       await page.getByRole("button", { name: "Close menu" }).click();
     }
   }
+});
+
+// On a slow runner the page's scripts arrive after its HTML. The dropdown buttons and the role
+// switcher must not be pressable until React has attached their handlers: a press before then
+// did nothing (a switch never posted, a dropdown never opened).
+test("the nav dropdowns and role switcher work when the page's scripts load late", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  await signUpOfficerWithAdmin(page, request);
+  const late = (url: URL) => url.pathname.startsWith("/_next/static/") && url.pathname.endsWith(".js");
+  await page.route(late, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 4_000));
+    await route.continue();
+  });
+  await page.goto("/", { waitUntil: "commit" });
+  await openNav(page, "Cooperatives");
+  await page.keyboard.press("Escape");
+
+  await page.reload({ waitUntil: "commit" });
+  const switched = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
+  await switched;
 });
