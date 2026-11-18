@@ -138,6 +138,8 @@ Paystack's written answer on holding funds and manual settlement; brand identity
 
 Decided (Phase 3): the AgroHub fee (default 3%) and the maximum cooperative cut (default 5%) live in the `Setting` table as basis-point strings, editable by admins at `/admin/settings`; so does the price-deviation threshold (default 20%, formerly the constant `DEFAULT_DEVIATION_THRESHOLD_BPS`, which remains as the code default). Lot photos are compressed in the browser with `<canvas>` (`src/lib/image-compress.ts`), so no image dependency was added.
 
+Decided (email design): every email renders through one layout, `src/modules/notifications/email-layout.ts` (tables, inline styles, a plain-text alternative). Its two images, `public/email/mark@2x.png` and `public/email/hero-cooperative.jpg`, are made once by `scripts/email-images.ts` with Playwright's Chromium (already a dev dependency) and committed, so no image dependency was added. They load by absolute URL from `BETTER_AUTH_URL`. `scripts/email-previews.ts` and `scripts/email-screenshots.ts` render and screenshot the emails for review.
+
 ## 12. Dependencies
 
 - create-next-app tooling: next, react, react-dom, typescript, tailwindcss, eslint (+ eslint-config-next), @types/*; the app framework and lint/type tooling.
