@@ -7,7 +7,7 @@ import type { Actor } from "@/modules/identity/policies";
 import { startCheckout } from "@/modules/orders/service";
 import { confirmPayment, handlePaystackWebhook, ledgerBalance, postLedger } from "@/modules/payments/service";
 import { cleanDatabase } from "./helpers";
-import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
+import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld, keepLotOnSale } from "./lot-fixtures";
 
 const MIN = 60_000;
 const T = 65_000_000;
@@ -26,6 +26,7 @@ beforeEach(async () => {
   b = await buyerMember("u-b");
   const lot = await submitLot(w.farmer, w.input({ quantity: 10 }), [PHOTO], NOW);
   await approveLot(w.officer, lot.id, { minOrderQty: 1 }, NOW);
+  await keepLotOnSale(lot.id);
   lotId = lot.id;
 });
 

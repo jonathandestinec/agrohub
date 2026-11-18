@@ -4,7 +4,7 @@ import { approveLot, submitLot } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { startCheckout } from "@/modules/orders/service";
 import { confirmPayment } from "@/modules/payments/service";
-import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
+import { buyerMember, keepLotOnSale, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
 
 export const HOUR = 3_600_000;
 
@@ -18,6 +18,8 @@ export async function paidWorld(options: { quantity?: number; askKobo?: number; 
   const askKobo = options.askKobo ?? 6_500_000;
   const lot = await submitLot(w.farmer, w.input({ quantity: options.quantity ?? 30, askKobo, floorKobo: askKobo - 100 }), [PHOTO], NOW);
   await approveLot(w.officer, lot.id, { minOrderQty: 1 }, NOW);
+  // Checkouts here run at the real clock: a sale window fixed at NOW + 14 days has expired.
+  await keepLotOnSale(lot.id);
   const buyer = await buyerMember("u-buyer");
   return { ...w, buyer, lotId: lot.id };
 }
