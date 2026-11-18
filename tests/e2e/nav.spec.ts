@@ -317,3 +317,19 @@ test("the nav dropdowns and role switcher work when the page's scripts load late
   await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
   await switched;
 });
+
+// The phone menu's round toggle is a plain button too: a tap before React attached its handler
+// did nothing, so the menu never opened.
+test("the phone menu opens when the page's scripts load late", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  await signUpOfficerWithAdmin(page, request);
+  await page.setViewportSize({ width: 375, height: 812 });
+  const late = (url: URL) => url.pathname.startsWith("/_next/static/") && url.pathname.endsWith(".js");
+  await page.route(late, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 4_000));
+    await route.continue();
+  });
+  await page.goto("/", { waitUntil: "commit" });
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await expect(page.locator("#app-menu")).toBeVisible();
+});
