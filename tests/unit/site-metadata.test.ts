@@ -49,3 +49,39 @@ describe("favicon.ico", () => {
     expect(ico.subarray(offset, offset + 4).toString("latin1")).toBe("\x89PNG");
   });
 });
+
+// Reads a baseline or progressive JPEG's size from its first SOF marker.
+function jpegSize(jpg: Buffer): { width: number; height: number } {
+  let i = 2;
+  while (i < jpg.length) {
+    if (jpg[i] !== 0xff) {
+      i++;
+      continue;
+    }
+    const marker = jpg[i + 1];
+    if (marker >= 0xc0 && marker <= 0xc3) {
+      return { height: jpg.readUInt16BE(i + 5), width: jpg.readUInt16BE(i + 7) };
+    }
+    i += 2 + jpg.readUInt16BE(i + 2);
+  }
+  throw new Error("no SOF marker");
+}
+
+describe("opengraph-image.jpg", () => {
+  const jpg = readFileSync(join(process.cwd(), "src/app/opengraph-image.jpg"));
+
+  it("is a 1200x630 JPEG", () => {
+    expect(jpg.subarray(0, 3).toString("hex")).toBe("ffd8ff");
+    expect(jpegSize(jpg)).toEqual({ width: 1200, height: 630 });
+  });
+
+  it("stays under 300 KB, so WhatsApp shows the preview", () => {
+    expect(jpg.length).toBeLessThan(300 * 1024);
+  });
+
+  it("has alt text", () => {
+    const alt = readFileSync(join(process.cwd(), "src/app/opengraph-image.alt.txt"), "utf8").trim();
+    expect(alt.length).toBeGreaterThan(20);
+    expect(alt.toLowerCase()).not.toContain("escrow");
+  });
+});
