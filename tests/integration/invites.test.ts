@@ -230,6 +230,7 @@ describe("inviteFarmerByEmail", () => {
     expect(fakeOutbox.sent[0].to).toBe("farmer@example.com");
     expect(fakeOutbox.sent[0].html).toContain(`${BASE}${invite.token}`);
     expect(fakeOutbox.sent[0].html).toContain(COOP_NAME);
+    expect(fakeOutbox.sent[0].text).toContain(`${BASE}${invite.token}`);
     await expect(resolveInvite(invite.token)).resolves.toMatchObject({
       email: "farmer@example.com",
     });

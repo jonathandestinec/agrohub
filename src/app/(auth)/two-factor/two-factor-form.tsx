@@ -96,7 +96,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
   }
 
   const codeForm = (
-    <form onSubmit={verifyCode} className="flex flex-col gap-4">
+    <form method="post" onSubmit={verifyCode} className="flex flex-col gap-4">
       <OtpInput
         id="code"
         name="code"
@@ -110,7 +110,12 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
           {t("signInAgain")}
         </Link>
       ) : null}
-      <SubmitButton pending={pending} label={t("submit")} pendingLabel={t("submitting")} />
+      <SubmitButton
+        pending={pending}
+        label={t("submit")}
+        pendingLabel={t("submitting")}
+        waitForHydration
+      />
     </form>
   );
 
@@ -127,7 +132,7 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
     return (
       <AuthCard title={t("enrolTitle")}>
         <p className="text-ink-soft">{t("enrolIntro")}</p>
-        <form onSubmit={startEnrolment} className="flex flex-col gap-4">
+        <form method="post" onSubmit={startEnrolment} className="flex flex-col gap-4">
           <Field
             id="password"
             name="password"
@@ -137,7 +142,12 @@ export function TwoFactorForm({ mode }: { mode: "enrol" | "verify" }) {
             required
           />
           <FormError message={error} />
-          <SubmitButton pending={pending} label={t("start")} pendingLabel={t("starting")} />
+          <SubmitButton
+            pending={pending}
+            label={t("start")}
+            pendingLabel={t("starting")}
+            waitForHydration
+          />
         </form>
       </AuthCard>
     );

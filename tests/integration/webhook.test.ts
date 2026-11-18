@@ -7,7 +7,7 @@ import type { Actor } from "@/modules/identity/policies";
 import { startCheckout } from "@/modules/orders/service";
 import { handlePaystackWebhook } from "@/modules/payments/service";
 import { cleanDatabase } from "./helpers";
-import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld } from "./lot-fixtures";
+import { buyerMember, lotWorld, NOW, PHOTO, type LotWorld, keepLotOnSale } from "./lot-fixtures";
 
 let w: LotWorld;
 let buyer: Actor;
@@ -21,6 +21,7 @@ beforeEach(async () => {
   buyer = await buyerMember("u-buyer");
   const lot = await submitLot(w.farmer, w.input({ quantity: 30 }), [PHOTO], NOW);
   await approveLot(w.officer, lot.id, { minOrderQty: 5 }, NOW);
+  await keepLotOnSale(lot.id);
   lotId = lot.id;
 });
 

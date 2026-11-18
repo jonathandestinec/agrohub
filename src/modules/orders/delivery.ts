@@ -5,7 +5,7 @@ import { addDays, isDateKey, lagosDate, lagosDateKey } from "@/lib/lagos-date";
 import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
 import { ensureBuyerThread, postSystemMessage } from "@/modules/messaging/service";
-import { notifyDeliveryDate, notifyOrder } from "./alerts";
+import { emailDeliveryDate, emailOrder, notifyDeliveryDate, notifyOrder } from "./alerts";
 import { completeOrder } from "./complete";
 import { closeTimeout } from "./disputes";
 import { assertTransition } from "./state";
@@ -88,6 +88,7 @@ export async function setDeliveryDate(actor: Actor, orderId: string, date: strin
     meta: { orderId, date },
   });
   await notifyDeliveryDate(prisma, orderId, date, actor.userId);
+  await emailDeliveryDate(orderId, date, actor.userId);
 }
 
 /**
@@ -111,6 +112,7 @@ export async function markDelivered(actor: Actor, orderId: string, deliveredQuan
     meta: { orderId, deliveredQuantity },
   });
   await notifyOrder(prisma, orderId, "ORDER_DELIVERED", ["buyer"], actor.userId);
+  await emailOrder(orderId, "ORDER_DELIVERED", ["buyer"], actor.userId);
 }
 
 /** The buyer confirms they received a delivered order: the payment is released. */
@@ -122,4 +124,5 @@ export async function confirmReceipt(actor: Actor, orderId: string, now: Date = 
   await postToOrderThread(order, actor.userId, "The buyer confirmed receipt. Payment released.", now);
   // Here and not in completeOrder, which the 72-hour timer reaches too: that path tells no one.
   await notifyOrder(prisma, orderId, "ORDER_RECEIPT_CONFIRMED", ["officers"], actor.userId);
+  await emailOrder(orderId, "ORDER_RECEIPT_CONFIRMED", ["officers"], actor.userId);
 }

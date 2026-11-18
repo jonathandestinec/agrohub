@@ -13,6 +13,7 @@ import { lockNameSubject } from "@/lib/subject-lock";
 import { recordAudit } from "@/modules/audit/audit";
 import { namesMatch, payoutAccountFor } from "@/modules/banking/service";
 import { can, type Actor, type Resource } from "@/modules/identity/policies";
+import { sendAlertEmail } from "@/modules/notifications/alert-emails";
 import { activeAdmins, notify, officersOf, person } from "@/modules/notifications/service";
 import {
   COOPERATIVE_DOCUMENT_KINDS,
@@ -419,6 +420,28 @@ async function tellRequester(
   });
 }
 
+// The email twin of tellRequester. Call it after the decision committed. Never throws.
+async function emailRequester(
+  request: NameChangeRequest,
+  kind: "NAME_CHANGE_APPROVED" | "NAME_CHANGE_REJECTED",
+  actorId: string,
+): Promise<void> {
+  try {
+    await sendAlertEmail({
+      kind,
+      subject: { type: "NAME_CHANGE", id: request.id },
+      data: {},
+      to:
+        request.subjectType === "USER"
+          ? [person(request.requestedByUserId)]
+          : await officersOf(prisma, request.subjectId),
+      exclude: actorId,
+    });
+  } catch {
+    console.error("name change email failed", { kind, requestId: request.id });
+  }
+}
+
 // Changes the name only: the payout account (recipient code, account name, bank name) is
 // never touched, so the next bank change is checked against the new name.
 export async function approveNameChange(
@@ -449,6 +472,7 @@ export async function approveNameChange(
     await recordAudit(decisionAudit(actor, request, "name_change.approve"), tx);
     await tellRequester(tx, request, "NAME_CHANGE_APPROVED", actor.userId);
   });
+  await emailRequester(request, "NAME_CHANGE_APPROVED", actor.userId);
   return adminView(actor, await loadRequest(request.id), now);
 }
 
@@ -475,5 +499,8 @@ export async function rejectNameChange(
     await recordAudit(decisionAudit(actor, request, "name_change.reject"), tx);
     await tellRequester(tx, request, "NAME_CHANGE_REJECTED", actor.userId);
   });
+  await emailRequester(request, "NAME_CHANGE_REJECTED", actor.userId);
   return adminView(actor, await loadRequest(request.id), now);
 }
+
+export { nameChangeQueueSummary } from "./summaries";

@@ -246,8 +246,8 @@ async function sendConfirmation(request: BankChangeRequest, ownerName: string): 
     if (!user) return;
     const link = new URL("/bank/confirm", env.BETTER_AUTH_URL);
     link.searchParams.set("token", request.confirmToken);
-    const { subject, html } = bankChangeConfirmEmail({ ownerName, link: link.toString() });
-    await sendEmail({ to: user.email, subject, html });
+    const mail = bankChangeConfirmEmail({ ownerName, link: link.toString() });
+    await sendEmail({ to: user.email, ...mail });
   } catch (err) {
     logEmailFailure("confirm", request.id, err);
   }
@@ -315,14 +315,14 @@ async function alertAdmins(request: BankChangeRequest, effectiveAt: Date): Promi
   try {
     const owner = await loadOwner({ type: request.ownerType, id: request.ownerId });
     const admins = await listActiveAdminEmails();
-    const { subject, html } = bankChangeAdminAlertEmail({
+    const mail = bankChangeAdminAlertEmail({
       ownerName: owner.name,
       accountName: request.newAccountName,
       bankName: request.newBankName,
       effectiveAt,
     });
     const results = await Promise.allSettled(
-      admins.map((to) => sendEmail({ to, subject, html })),
+      admins.map((to) => sendEmail({ to, ...mail })),
     );
     for (const result of results) {
       if (result.status === "rejected") logEmailFailure("admin-alert", request.id, result.reason);

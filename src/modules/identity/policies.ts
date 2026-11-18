@@ -52,7 +52,8 @@ export type Action =
   | "quote:make"
   | "earnings:own"
   | "payout:manage"
-  | "notification:own";
+  | "notification:own"
+  | "home:view";
 
 export type Resource = {
   cooperativeId?: string;
@@ -175,6 +176,14 @@ export function can(
         actor.role === "FARMER" &&
         resource?.ownerUserId !== undefined &&
         resource.ownerUserId === actor.userId
+      );
+    case "home:view":
+      // The four roles with a to-do home page. The board admin lands on /board.
+      return (
+        actor.role === "FARMER" ||
+        actor.role === "OFFICER" ||
+        actor.role === "BUYER" ||
+        actor.role === "ADMIN"
       );
     case "notification:own":
       // Any role, but only the alerts that belong to the actor.

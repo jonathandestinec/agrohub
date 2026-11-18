@@ -1,6 +1,7 @@
 import type { PayoutRecipient } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { sendAlertEmail } from "@/modules/notifications/alert-emails";
 import { payoutAlertEmail, type PayoutAlertKind } from "@/modules/notifications/emails";
 import { listActiveAdminEmails } from "@/modules/notifications/recipients";
 import {
@@ -28,14 +29,14 @@ export type AdminAlert = {
 export async function alertAdmins(alert: AdminAlert): Promise<void> {
   try {
     const admins = await listActiveAdminEmails();
-    const { subject, html } = payoutAlertEmail({
+    const mail = payoutAlertEmail({
       kind: alert.kind,
       orderReference: alert.orderId.slice(-8).toUpperCase(),
       amountKobo: alert.amountKobo,
       recipientType: alert.recipientType,
       detail: alert.detail,
     });
-    const results = await Promise.allSettled(admins.map((to) => sendEmail({ to, subject, html })));
+    const results = await Promise.allSettled(admins.map((to) => sendEmail({ to, ...mail })));
     if (results.some((r) => r.status === "rejected")) {
       console.error("admin alert email failed", { kind: alert.kind, orderId: alert.orderId });
     }
@@ -89,4 +90,44 @@ export async function notifyRefundSent(db: Db, refund: { orderId: string; amount
     data: { crop: order.lot.crop.name, amountKobo: refund.amountKobo.toString() },
     to: [buyer(order.buyerUserId)],
   });
+}
+
+// The email twin of notifyPayoutSent. Call it after the transaction that settled the payout has
+// committed. Never throws.
+export async function emailPayoutSent(payout: PayoutFacts): Promise<void> {
+  try {
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: payout.orderId },
+      select: { cooperativeId: true, lot: { select: { crop: { select: { name: true } } } } },
+    });
+    await sendAlertEmail({
+      kind: "PAYOUT_SENT",
+      subject: { type: "ORDER", id: payout.orderId },
+      data: { crop: order.lot.crop.name, amountKobo: payout.amountKobo.toString() },
+      to:
+        payout.recipientType === "COOPERATIVE"
+          ? await officersOf(prisma, payout.recipientId)
+          : [farmer(payout.recipientId, order.cooperativeId)],
+    });
+  } catch {
+    console.error("payout email failed", { orderId: payout.orderId });
+  }
+}
+
+// The email twin of notifyRefundSent. Call it after the refund's settling transaction committed.
+export async function emailRefundSent(refund: { orderId: string; amountKobo: bigint }): Promise<void> {
+  try {
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: refund.orderId },
+      select: { buyerUserId: true, lot: { select: { crop: { select: { name: true } } } } },
+    });
+    await sendAlertEmail({
+      kind: "REFUND_SENT",
+      subject: { type: "ORDER", id: refund.orderId },
+      data: { crop: order.lot.crop.name, amountKobo: refund.amountKobo.toString() },
+      to: [buyer(order.buyerUserId)],
+    });
+  } catch {
+    console.error("refund email failed", { orderId: refund.orderId });
+  }
 }

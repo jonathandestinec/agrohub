@@ -44,10 +44,15 @@ export function ConfirmForm({ token }: { token: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
       <input type="hidden" name="token" value={token} />
       <FormError message={error} />
-      <SubmitButton pending={pending} label={t("confirm")} pendingLabel={t("confirming")} />
+      <SubmitButton
+        pending={pending}
+        label={t("confirm")}
+        pendingLabel={t("confirming")}
+        waitForHydration
+      />
     </form>
   );
 }

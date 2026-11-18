@@ -1,7 +1,9 @@
 import { Resend } from "resend";
-import { env, type Env } from "@/lib/env";
+import { isReservedDomain } from "@/lib/email-recipients";
+import { DEFAULT_EMAIL_FROM, env, type Env } from "@/lib/env";
 
-export type EmailMessage = { to: string; subject: string; html: string };
+// `text` is the plain-text alternative (multipart/alternative); every template provides one.
+export type EmailMessage = { to: string; subject: string; html: string; text?: string };
 
 export type TransportConfig = {
   appEnv: Env["APP_ENV"];
@@ -10,8 +12,6 @@ export type TransportConfig = {
   // Sender for real sends (EMAIL_FROM). Must be on a domain verified in Resend.
   from?: string;
 };
-
-const DEFAULT_FROM = "AgroHub <noreply@agrohub.example>";
 
 type FakeOutbox = { sent: EmailMessage[]; clear(): void };
 
@@ -41,16 +41,26 @@ export async function sendEmailWith(
   msg: EmailMessage,
 ): Promise<void> {
   if (selectTransport(config) === "fake") {
-    fakeOutbox.sent.push({ to: msg.to, subject: msg.subject, html: msg.html });
+    fakeOutbox.sent.push({
+      to: msg.to,
+      subject: msg.subject,
+      html: msg.html,
+      ...(msg.text ? { text: msg.text } : {}),
+    });
+    return;
+  }
+  if (isReservedDomain(msg.to)) {
+    console.info("email skipped: reserved domain");
     return;
   }
   // Built lazily on the first real send, never at import.
   resendClient ??= new Resend(config.resendApiKey);
   const { error } = await resendClient.emails.send({
-    from: config.from ?? DEFAULT_FROM,
+    from: config.from ?? DEFAULT_EMAIL_FROM,
     to: msg.to,
     subject: msg.subject,
     html: msg.html,
+    ...(msg.text ? { text: msg.text } : {}),
   });
   if (error) {
     throw new Error(`Resend failed to send email (${error.name})`);

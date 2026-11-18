@@ -6,6 +6,8 @@ import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
+import { siteMetadata } from "@/lib/site-metadata";
 import { AppFooter } from "@/components/app-footer";
 import { AppNav, type AppNavItem } from "@/components/app-nav";
 import { OverscrollReveal } from "@/components/overscroll";
@@ -29,10 +31,8 @@ import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
-export const metadata: Metadata = {
-  title: "AgroHub",
-  description: "Farmer cooperatives selling together.",
-};
+// The public origin, so link previews get absolute icon and share-image URLs.
+export const metadata: Metadata = siteMetadata(env.BETTER_AUTH_URL);
 
 async function SwitcherSlot() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -100,7 +100,14 @@ async function NavSlot() {
   const session = await auth.api.getSession({ headers: await headers() });
   let rawItems: NavItem[] = navItemsSignedOut();
   let hasSwitcher = false;
+  // The bell shows for whoever has a working role (see AlertSlot); the phone menu mirrors it.
+  let hasAlerts = false;
   if (session) {
+    try {
+      hasAlerts = Boolean(await getActor());
+    } catch {
+      hasAlerts = false;
+    }
     const memberships = await listMemberships(session.user.id);
     const cookieStore = await cookies();
     const active = pickActiveMembership(
@@ -131,6 +138,8 @@ async function NavSlot() {
       openLabel={t("openMenu")}
       closeLabel={t("closeMenu")}
       hasSwitcher={hasSwitcher}
+      signedIn={Boolean(session)}
+      hasAlerts={hasAlerts}
       switcher={
         <Suspense fallback={null}>
           <SwitcherSlot />

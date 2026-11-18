@@ -1,5 +1,4 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
-import { buttonClass } from "@/components/ui/button";
 import { ClippedPhoto, PhotoCredit } from "@/components/ui/clipped-photo";
 import type { PhotoKey } from "@/components/ui/photo-credits";
 
@@ -75,23 +74,7 @@ export function Field({
   );
 }
 
-export function SubmitButton({
-  pending,
-  label,
-  pendingLabel,
-  disabled = false,
-}: {
-  pending: boolean;
-  label: string;
-  pendingLabel: string;
-  disabled?: boolean;
-}) {
-  return (
-    <button type="submit" disabled={pending || disabled} className={`${buttonClass("ink", "lg")} w-full`}>
-      {pending ? pendingLabel : label}
-    </button>
-  );
-}
+export { SubmitButton } from "@/components/submit-button";
 
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null;

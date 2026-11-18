@@ -47,6 +47,8 @@ export async function joinCooperativeAction(
       new Date(),
     );
     revalidatePath("/farmer");
+
+    revalidatePath("/farmer/profile");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);
@@ -64,6 +66,8 @@ export async function setFarmerBankAccountAction(
       bankCode: text(form, "bankCode"),
     });
     revalidatePath("/farmer");
+
+    revalidatePath("/farmer/profile");
     return { ok: true, data: result };
   } catch (error) {
     return toActionResult(error);
@@ -76,6 +80,8 @@ export async function leaveCooperativeAction(): Promise<ActionResult> {
     const actor = await requireActor();
     await leaveCooperative(actor);
     revalidatePath("/farmer");
+
+    revalidatePath("/farmer/profile");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);
@@ -87,6 +93,8 @@ export async function updateCropsAction(form: FormData): Promise<ActionResult> {
     const actor = await requireActor();
     await updateOwnCrops(actor, cropIdsOf(form));
     revalidatePath("/farmer");
+
+    revalidatePath("/farmer/profile");
     return { ok: true, data: undefined };
   } catch (error) {
     return toActionResult(error);
@@ -104,6 +112,8 @@ export async function requestCatalogItemAction(input: {
       name: typeof input?.name === "string" ? input.name : "",
     });
     revalidatePath("/farmer");
+
+    revalidatePath("/farmer/profile");
     revalidatePath("/officer/farmers");
     return { ok: true, data: undefined };
   } catch (error) {

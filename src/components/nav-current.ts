@@ -45,3 +45,23 @@ export function navBreakpoint(linkCount: number, hasSwitcher: boolean): "lg" | "
   if (crowded && hasSwitcher) return "menu";
   return crowded || hasSwitcher ? "xl" : "lg";
 }
+
+// Pure: whether the bar hands its right side (Sign in, or the alerts bell and the account avatar)
+// to the round menu. While the bar is shrunk on a phone it has room for the logo and the menu
+// button only; the CSS limits this to below the nav breakpoint. With no menu button there is
+// nowhere to hand them to, so they stay.
+export function accountInMenu({ compact, hasMenu }: { compact: boolean; hasMenu: boolean }): boolean {
+  return compact && hasMenu;
+}
+
+// Pure: what the phone menu offers for the account, by copy key. Signed out: Sign in, at the top.
+// Signed in: Alerts and Profile at the top and Sign out at the end, the things the avatar and
+// the bell give in the bar.
+// Alerts only where the bell is: someone with no role yet has none, and /alerts would send them away.
+export function menuAccountEntries({ signedIn, hasAlerts }: { signedIn: boolean; hasAlerts: boolean }): {
+  top: Array<"signIn" | "alerts" | "profile">;
+  bottom: Array<"signOut">;
+} {
+  if (!signedIn) return { top: ["signIn"], bottom: [] };
+  return { top: hasAlerts ? ["alerts", "profile"] : ["profile"], bottom: ["signOut"] };
+}

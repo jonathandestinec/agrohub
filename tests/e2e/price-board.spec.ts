@@ -69,7 +69,10 @@ test("a board admin records a price and a visitor sees it on the board", async (
       page.getByRole("heading", { name: "Set up two-factor authentication" }),
     ).toBeVisible();
     await page.getByLabel("Password").fill(password);
-    await page.getByRole("button", { name: "Get setup key" }).click();
+    // The button stays disabled until the page has hydrated, after the full load from sign-in.
+    const setupKey = page.getByRole("button", { name: "Get setup key" });
+    await expect(setupKey).toBeEnabled();
+    await setupKey.click();
     const secret = (await page.getByTestId("totp-secret").textContent())?.trim() ?? "";
     await page.getByLabel("6-digit code").fill(totp(secret));
     await page.getByRole("button", { name: "Verify" }).click();

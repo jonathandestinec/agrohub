@@ -4,19 +4,16 @@ import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { z } from "zod";
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env, trustedOrigins } from "@/lib/env";
 import { withVerifiedCallback } from "@/lib/verified-callback";
+import { passwordResetEmail, verificationEmail } from "@/modules/notifications/emails";
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+// At most this many reset emails per account per hour. Counted from the verification rows Better
+// Auth writes for each request, so the limit holds across serverless instances without a table.
+const RESET_EMAILS_PER_HOUR = 3;
 
 // WARNING: never run the Better Auth CLI with the repo root as cwd (it loads .env); use `npm run auth:generate`.
 export const auth = betterAuth({
@@ -31,16 +28,45 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      try {
+        const recent = await prisma.verification.count({
+          where: {
+            identifier: { startsWith: "reset-password:" },
+            value: user.id,
+            createdAt: { gte: new Date(Date.now() - 3600_000) },
+          },
+        });
+        if (recent > RESET_EMAILS_PER_HOUR) {
+          console.warn("password reset throttled");
+          return;
+        }
+        await sendEmail({ to: user.email, ...passwordResetEmail({ name: user.name, link: url }) });
+      } catch (error) {
+        console.error("password reset email failed", {
+          error: error instanceof Error ? { name: error.name, message: error.message } : "non-Error thrown",
+        });
+      }
+    },
+  },
+  advanced: {
+    // Better Auth awaits sendResetPassword inline by default; hand it to after() instead so the
+    // response never waits on Resend. Outside a request scope the promise just runs on its own.
+    backgroundTasks: {
+      handler: (promise) => {
+        try {
+          after(() => promise);
+        } catch {
+          void promise;
+        }
+      },
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
-      const href = escapeHtml(withVerifiedCallback(url));
-      await sendEmail({
-        to: user.email,
-        subject: "Verify your AgroHub email address",
-        html: `<p>Welcome to AgroHub.</p><p><a href="${href}">Verify your email address</a> to finish signing up.</p><p>If you did not sign up, you can ignore this email.</p>`,
-      });
+      await sendEmail({ to: user.email, ...verificationEmail({ link: withVerifiedCallback(url) }) });
     },
   },
   // nextCookies must stay last: it copies Set-Cookie from auth.api calls in server actions.

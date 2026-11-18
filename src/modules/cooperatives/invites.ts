@@ -185,11 +185,11 @@ export async function inviteFarmerByEmail(
       where: { id: cooperativeId },
       select: { name: true },
     });
-    const { subject, html } = farmerInviteEmail({
+    const mail = farmerInviteEmail({
       cooperativeName: cooperative.name,
       link: joinUrl(invite.token),
     });
-    await sendEmail({ to: address, subject, html });
+    await sendEmail({ to: address, ...mail });
   } catch (err) {
     logEmailFailure(cooperativeId, invite.id, err);
   }

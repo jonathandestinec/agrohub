@@ -47,7 +47,11 @@ describe("alert kinds", () => {
     expect(hrefOf("PAYOUT_SENT", "OFFICER", "o1")).toBe("/officer/orders/o1");
     expect(hrefOf("ORDER_PROBLEM_REPORTED", "ADMIN", "o1")).toBe("/admin/orders/o1");
     expect(hrefOf("DISPUTE_RESOLVED", "BUYER", "o1")).toBe("/buyer/orders/o1");
-    expect(hrefOf("MEMBERSHIP_REMOVED", null, "m1")).toBe("/farmer");
+    expect(hrefOf("MEMBERSHIP_REMOVED", null, "m1")).toBe("/farmer/profile");
+    expect(hrefOf("MEMBERSHIP_APPROVED", null, "m1")).toBe("/farmer/profile");
+    expect(hrefOf("MEMBERSHIP_REJECTED", null, "m1")).toBe("/farmer/profile");
+    expect(hrefOf("CATALOG_REQUEST_APPROVED", null, "c1")).toBe("/farmer/profile");
+    expect(hrefOf("CATALOG_REQUEST_DECLINED", null, "c1")).toBe("/farmer/profile");
   });
 });
 
