@@ -19,6 +19,30 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+// One layout for every event email: the same sentence the in-app bell shows, plus a link to the page.
+export function alertEmail(input: {
+  subject: string;
+  sentence: string;
+  href: string;
+}): { subject: string; html: string } {
+  return {
+    subject: input.subject,
+    html: `<p>${escapeHtml(input.sentence)}</p><p><a href="${escapeHtml(input.href)}">Open in AgroHub</a></p>`,
+  };
+}
+
+export function passwordResetEmail(input: {
+  name: string;
+  link: string;
+}): { subject: string; html: string } {
+  const name = escapeHtml(input.name);
+  const href = escapeHtml(input.link);
+  return {
+    subject: "Reset your AgroHub password",
+    html: `<p>Hello ${name},</p><p>We got a request to reset your AgroHub password. <a href="${href}">Choose a new password</a>. The link works for one hour.</p><p>If you did not ask for this, you can ignore this email and your password stays the same.</p>`,
+  };
+}
+
 export function cooperativeStatusEmail(
   kind: StatusEmailKind,
   input: StatusEmailInput,

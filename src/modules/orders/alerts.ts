@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/db";
+import { sendAlertEmail } from "@/modules/notifications/alert-emails";
 import {
   activeAdmins,
   buyer,
@@ -88,4 +90,42 @@ export async function notifyDeliveryDate(
     to: await recipientsOf(db, order, ["buyer"]),
     exclude,
   });
+}
+
+// The email twin of notifyOrder. Call it AFTER the change is committed, on the branch where it
+// happened. Reads through prisma, schedules the send, and never throws.
+export async function emailOrder(
+  orderId: string,
+  kind: QtyKind,
+  audience: OrderAudience[],
+  exclude?: string | null,
+): Promise<void> {
+  try {
+    const order = await loadOrderFacts(prisma, orderId);
+    await sendAlertEmail({
+      kind,
+      subject: { type: "ORDER", id: order.id },
+      data: { crop: order.lot.crop.name, quantity: order.quantity, unit: order.lot.unit.name },
+      to: await recipientsOf(prisma, order, audience),
+      exclude,
+    });
+  } catch {
+    console.error("order email failed", { kind, orderId });
+  }
+}
+
+// The email twin of notifyDeliveryDate. Call it after the date is saved. Never throws.
+export async function emailDeliveryDate(orderId: string, date: string, exclude?: string | null): Promise<void> {
+  try {
+    const order = await loadOrderFacts(prisma, orderId);
+    await sendAlertEmail({
+      kind: "DELIVERY_DATE_SET",
+      subject: { type: "ORDER", id: order.id },
+      data: { crop: order.lot.crop.name, quantity: order.quantity, unit: order.lot.unit.name, date },
+      to: await recipientsOf(prisma, order, ["buyer"]),
+      exclude,
+    });
+  } catch {
+    console.error("order email failed", { kind: "DELIVERY_DATE_SET", orderId });
+  }
 }

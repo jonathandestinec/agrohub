@@ -4,6 +4,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@
 import { recordAudit } from "@/modules/audit/audit";
 import { boardReference, type BoardPrice } from "@/modules/board/service";
 import { can, type Actor } from "@/modules/identity/policies";
+import { sendAlertEmail } from "@/modules/notifications/alert-emails";
 import { farmersOfLot, notify, officersOf } from "@/modules/notifications/service";
 import { MAX_PRICE_KOBO } from "./lot-schema";
 import { LOT_INCLUDE, loadLot, loadOwnLot, photoUrlsOf } from "./lots";
@@ -111,6 +112,22 @@ async function tellFarmers(
   });
 }
 
+// The email twin of tellFarmers for the decisions that email (approved, rejected). Call it after
+// the decision's transaction committed. Never throws.
+async function emailFarmers(actor: Actor, kind: "LOT_APPROVED" | "LOT_REJECTED", lot: LotRow): Promise<void> {
+  try {
+    await sendAlertEmail({
+      kind,
+      subject: { type: "LOT", id: lot.id },
+      data: { crop: lot.crop.name },
+      to: await farmersOfLot(prisma, lot.id),
+      exclude: actor.userId,
+    });
+  } catch {
+    console.error("lot email failed", { kind, lotId: lot.id });
+  }
+}
+
 async function officerView(lotId: string): Promise<OfficerLot> {
   const lot = await loadLot(lotId);
   return toOfficerLot(lot, await photoUrlsOf(lot.id));
@@ -143,6 +160,7 @@ export async function approveLot(
     });
     await tellFarmers(tx, actor, "LOT_APPROVED", lot);
   });
+  await emailFarmers(actor, "LOT_APPROVED", lot);
   return officerView(lot.id);
 }
 
@@ -159,6 +177,7 @@ export async function rejectLot(actor: Actor, lotId: string, input: { reason: st
     await audit(tx, actor, "reject", lot);
     await tellFarmers(tx, actor, "LOT_REJECTED", lot);
   });
+  await emailFarmers(actor, "LOT_REJECTED", lot);
   return officerView(lot.id);
 }
 

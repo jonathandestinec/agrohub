@@ -4,10 +4,16 @@ import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { z } from "zod";
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env, trustedOrigins } from "@/lib/env";
 import { withVerifiedCallback } from "@/lib/verified-callback";
+import { passwordResetEmail } from "@/modules/notifications/emails";
+
+// At most this many reset emails per account per hour. Counted from the verification rows Better
+// Auth writes for each request, so the limit holds across serverless instances without a table.
+const RESET_EMAILS_PER_HOUR = 3;
 
 function escapeHtml(value: string): string {
   return value
@@ -31,6 +37,40 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      try {
+        const recent = await prisma.verification.count({
+          where: {
+            identifier: { startsWith: "reset-password:" },
+            value: user.id,
+            createdAt: { gte: new Date(Date.now() - 3600_000) },
+          },
+        });
+        if (recent > RESET_EMAILS_PER_HOUR) {
+          console.warn("password reset throttled");
+          return;
+        }
+        await sendEmail({ to: user.email, ...passwordResetEmail({ name: user.name, link: url }) });
+      } catch (error) {
+        console.error("password reset email failed", {
+          error: error instanceof Error ? { name: error.name, message: error.message } : "non-Error thrown",
+        });
+      }
+    },
+  },
+  advanced: {
+    // Better Auth awaits sendResetPassword inline by default; hand it to after() instead so the
+    // response never waits on Resend. Outside a request scope the promise just runs on its own.
+    backgroundTasks: {
+      handler: (promise) => {
+        try {
+          after(() => promise);
+        } catch {
+          void promise;
+        }
+      },
+    },
   },
   emailVerification: {
     sendOnSignUp: true,

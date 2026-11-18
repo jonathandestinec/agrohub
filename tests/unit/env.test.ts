@@ -47,8 +47,8 @@ describe("parseEnv", () => {
 
   describe("EMAIL_FROM", () => {
     it("defaults to the placeholder sender when unset or empty", () => {
-      expect(parseEnv(validRaw).EMAIL_FROM).toBe("AgroHub <noreply@agrohub.example>");
-      expect(parseEnv({ ...validRaw, EMAIL_FROM: "" }).EMAIL_FROM).toBe("AgroHub <noreply@agrohub.example>");
+      expect(parseEnv(validRaw).EMAIL_FROM).toBe("AgroHub <noreply@agro-hub.com.ng>");
+      expect(parseEnv({ ...validRaw, EMAIL_FROM: "" }).EMAIL_FROM).toBe("AgroHub <noreply@agro-hub.com.ng>");
     });
 
     it("uses the configured sender", () => {

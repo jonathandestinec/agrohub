@@ -4,7 +4,7 @@ import { ConflictError, UnavailableError } from "@/lib/errors";
 import { koboFromDb } from "@/lib/money";
 import { refundTransaction } from "@/lib/paystack";
 import { recordAudit } from "@/modules/audit/audit";
-import { alertAdmins, notifyRefundSent } from "./alerts";
+import { alertAdmins, emailRefundSent, notifyRefundSent } from "./alerts";
 import { postLedger } from "./ledger";
 
 const CLAIM = "claim:";
@@ -119,6 +119,8 @@ export async function settleRefund(
     );
     return "SETTLED" as const;
   });
+  // "SETTLED" is returned only by the call that moved the refund out of PENDING, so a replay adds nothing.
+  if (result === "SETTLED" && outcome === "PROCESSED") await emailRefundSent(refund);
   // A refund Paystack could not complete must be paid back by hand: tell the admins.
   if (result === "SETTLED" && outcome === "FAILED") {
     await alertAdmins({ kind: "REFUND_FAILED", orderId: refund.orderId, amountKobo, recipientType: "BUYER" });

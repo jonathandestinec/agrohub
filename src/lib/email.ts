@@ -1,5 +1,6 @@
 import { Resend } from "resend";
-import { env, type Env } from "@/lib/env";
+import { isReservedDomain } from "@/lib/email-recipients";
+import { DEFAULT_EMAIL_FROM, env, type Env } from "@/lib/env";
 
 export type EmailMessage = { to: string; subject: string; html: string };
 
@@ -10,8 +11,6 @@ export type TransportConfig = {
   // Sender for real sends (EMAIL_FROM). Must be on a domain verified in Resend.
   from?: string;
 };
-
-const DEFAULT_FROM = "AgroHub <noreply@agrohub.example>";
 
 type FakeOutbox = { sent: EmailMessage[]; clear(): void };
 
@@ -44,10 +43,14 @@ export async function sendEmailWith(
     fakeOutbox.sent.push({ to: msg.to, subject: msg.subject, html: msg.html });
     return;
   }
+  if (isReservedDomain(msg.to)) {
+    console.info("email skipped: reserved domain");
+    return;
+  }
   // Built lazily on the first real send, never at import.
   resendClient ??= new Resend(config.resendApiKey);
   const { error } = await resendClient.emails.send({
-    from: config.from ?? DEFAULT_FROM,
+    from: config.from ?? DEFAULT_EMAIL_FROM,
     to: msg.to,
     subject: msg.subject,
     html: msg.html,
