@@ -496,13 +496,13 @@ async function notifyOfficers(
       },
       select: { user: { select: { email: true } } },
     });
-    const { subject, html } = cooperativeStatusEmail(kind, {
+    const mail = cooperativeStatusEmail(kind, {
       cooperativeName: cooperative.name,
       reason,
     });
     const results = await Promise.allSettled(
       officers.map((officer) =>
-        sendEmail({ to: officer.user.email, subject, html }),
+        sendEmail({ to: officer.user.email, ...mail }),
       ),
     );
     for (const result of results) {
