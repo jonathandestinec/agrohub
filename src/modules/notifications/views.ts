@@ -1,3 +1,4 @@
+import { unitLabel } from "@/lib/units";
 import type { Notification } from "@/generated/prisma/client";
 import { formatNaira } from "@/lib/money";
 import type { Role } from "@/modules/identity/policies";
@@ -104,6 +105,11 @@ export function paramsOf(data: Record<string, unknown>): Record<string, string |
     if (key === "amountKobo") params.amount = formatNaira(Number(value));
     else if (key === "date") params.date = day.format(new Date(`${String(value)}T00:00:00Z`));
     else params[key] = value as string | number;
+  }
+  // "50 bags of maize", "1 bag of maize": the catalog gives one unit name, so the rule lives in units.ts.
+  if (typeof params.crop === "string") params.crop = params.crop.toLowerCase();
+  if (typeof params.unit === "string" && typeof params.quantity === "number") {
+    params.unit = unitLabel(params.unit, params.quantity);
   }
   return params;
 }

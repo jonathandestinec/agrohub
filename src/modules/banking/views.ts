@@ -1,4 +1,5 @@
 import type { BankChangeRequest } from "@/generated/prisma/client";
+import { formatLagosWat } from "@/lib/lagos-date";
 
 // What anyone outside the server sees of a payout account: bank and account name only.
 // Recipient codes and confirmation tokens are never part of a view.
@@ -27,13 +28,5 @@ export function toBankAccountView(
 
 // Effective times are shown in Nigerian time with the zone name, e.g. "12 Jun 2031, 13:00 WAT".
 export function formatEffectiveAt(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Africa/Lagos",
-    timeZoneName: "short",
-  }).format(new Date(iso));
+  return formatLagosWat(new Date(iso), locale);
 }

@@ -68,11 +68,10 @@ const CASES: Case[] = [
   },
   {
     name: "bank change admin alert",
-    mail: () =>
-      bankChangeAdminAlertEmail({ ownerName: NAME, accountName: "ADA", bankName: "Access Bank", effectiveAt: day }),
+    mail: () => bankChangeAdminAlertEmail({ ownerName: NAME, effectiveAt: day }),
     action: `${BASE}/admin`,
     hero: false,
-    keeps: "2031-06-12 12:00 UTC",
+    keeps: "12 Jun 2031, 13:00 WAT",
   },
   ...(["approved", "rejected", "removed"] as const).map((kind) => ({
     name: `farmer ${kind}`,
