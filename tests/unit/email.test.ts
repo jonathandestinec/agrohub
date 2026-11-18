@@ -49,6 +49,21 @@ describe("email adapter", () => {
     expect(fakeOutbox.sent).toEqual([]);
   });
 
+  it("keeps the plain-text alternative in the outbox", async () => {
+    await sendEmail({ ...msg, text: "x" });
+    expect(fakeOutbox.sent).toEqual([{ ...msg, text: "x" }]);
+    expect(fakeOutbox.sent[0]).toHaveProperty("text", "x");
+  });
+
+  it("passes the plain-text alternative to Resend, and omits it when there is none", async () => {
+    resendMocks.send.mockResolvedValue({ data: { id: "1" }, error: null });
+    const config = { appEnv: "staging" as const, nodeEnv: "production", resendApiKey: "k" };
+    await sendEmailWith(config, { ...msg, text: "plain" });
+    expect(resendMocks.send).toHaveBeenLastCalledWith(expect.objectContaining({ text: "plain", html: msg.html }));
+    await sendEmailWith(config, msg);
+    expect(resendMocks.send.mock.lastCall?.[0]).not.toHaveProperty("text");
+  });
+
   describe("selectTransport", () => {
     it("local uses the fake outbox, even with a key", () => {
       expect(selectTransport({ appEnv: "local", nodeEnv: "development", resendApiKey: "k" })).toBe("fake");

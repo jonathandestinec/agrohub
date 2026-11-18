@@ -2,7 +2,8 @@ import { Resend } from "resend";
 import { isReservedDomain } from "@/lib/email-recipients";
 import { DEFAULT_EMAIL_FROM, env, type Env } from "@/lib/env";
 
-export type EmailMessage = { to: string; subject: string; html: string };
+// `text` is the plain-text alternative (multipart/alternative); every template provides one.
+export type EmailMessage = { to: string; subject: string; html: string; text?: string };
 
 export type TransportConfig = {
   appEnv: Env["APP_ENV"];
@@ -40,7 +41,12 @@ export async function sendEmailWith(
   msg: EmailMessage,
 ): Promise<void> {
   if (selectTransport(config) === "fake") {
-    fakeOutbox.sent.push({ to: msg.to, subject: msg.subject, html: msg.html });
+    fakeOutbox.sent.push({
+      to: msg.to,
+      subject: msg.subject,
+      html: msg.html,
+      ...(msg.text ? { text: msg.text } : {}),
+    });
     return;
   }
   if (isReservedDomain(msg.to)) {
@@ -54,6 +60,7 @@ export async function sendEmailWith(
     to: msg.to,
     subject: msg.subject,
     html: msg.html,
+    ...(msg.text ? { text: msg.text } : {}),
   });
   if (error) {
     throw new Error(`Resend failed to send email (${error.name})`);

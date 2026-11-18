@@ -296,11 +296,11 @@ async function emailFarmer(
   reason?: string,
 ): Promise<void> {
   try {
-    const { subject, html } = farmerStatusEmail(kind, {
+    const mail = farmerStatusEmail(kind, {
       cooperativeName: membership.cooperative.name,
       reason,
     });
-    await sendEmail({ to: membership.user.email, subject, html });
+    await sendEmail({ to: membership.user.email, ...mail });
   } catch (err) {
     logFarmerEmailFailure(membership.id, kind, err);
   }

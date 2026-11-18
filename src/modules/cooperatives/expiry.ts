@@ -37,7 +37,7 @@ function logEmailFailure(
 async function emailOfficers(
   cooperative: Pick<Cooperative, "id">,
   kind: string,
-  message: { subject: string; html: string },
+  message: { subject: string; html: string; text: string },
 ): Promise<void> {
   try {
     const officers = await prisma.membership.findMany({

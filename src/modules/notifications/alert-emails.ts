@@ -6,7 +6,7 @@ import { sendEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import type { Role } from "@/modules/identity/policies";
 import en from "../../../messages/en.json";
-import { alertEmail } from "./emails";
+import { alertEmail, type Email } from "./emails";
 import type { Recipient } from "./recipients";
 import { DATA, type AlertData, type AlertKind } from "./schema";
 import { hrefOf, paramsOf } from "./views";
@@ -48,7 +48,7 @@ export function buildAlertEmail(
   data: unknown,
   role: Role | null,
   subjectId: string,
-): { subject: string; html: string } | null {
+): Email | null {
   const subject = SUBJECTS[kind];
   const template = SENTENCES[kind];
   if (!subject || !template) return null;

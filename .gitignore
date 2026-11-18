@@ -42,3 +42,6 @@ next-env.d.ts
 
 # generated Prisma client (rebuilt by `npm install` / `npm run db:generate`)
 /src/generated/
+
+# rendered email previews (scripts/email-previews.ts)
+/email-previews/

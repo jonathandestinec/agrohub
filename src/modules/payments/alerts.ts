@@ -29,14 +29,14 @@ export type AdminAlert = {
 export async function alertAdmins(alert: AdminAlert): Promise<void> {
   try {
     const admins = await listActiveAdminEmails();
-    const { subject, html } = payoutAlertEmail({
+    const mail = payoutAlertEmail({
       kind: alert.kind,
       orderReference: alert.orderId.slice(-8).toUpperCase(),
       amountKobo: alert.amountKobo,
       recipientType: alert.recipientType,
       detail: alert.detail,
     });
-    const results = await Promise.allSettled(admins.map((to) => sendEmail({ to, subject, html })));
+    const results = await Promise.allSettled(admins.map((to) => sendEmail({ to, ...mail })));
     if (results.some((r) => r.status === "rejected")) {
       console.error("admin alert email failed", { kind: alert.kind, orderId: alert.orderId });
     }

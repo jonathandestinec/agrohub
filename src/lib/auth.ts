@@ -9,20 +9,11 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { env, trustedOrigins } from "@/lib/env";
 import { withVerifiedCallback } from "@/lib/verified-callback";
-import { passwordResetEmail } from "@/modules/notifications/emails";
+import { passwordResetEmail, verificationEmail } from "@/modules/notifications/emails";
 
 // At most this many reset emails per account per hour. Counted from the verification rows Better
 // Auth writes for each request, so the limit holds across serverless instances without a table.
 const RESET_EMAILS_PER_HOUR = 3;
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 // WARNING: never run the Better Auth CLI with the repo root as cwd (it loads .env); use `npm run auth:generate`.
 export const auth = betterAuth({
@@ -75,12 +66,7 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
-      const href = escapeHtml(withVerifiedCallback(url));
-      await sendEmail({
-        to: user.email,
-        subject: "Verify your AgroHub email address",
-        html: `<p>Welcome to AgroHub.</p><p><a href="${href}">Verify your email address</a> to finish signing up.</p><p>If you did not sign up, you can ignore this email.</p>`,
-      });
+      await sendEmail({ to: user.email, ...verificationEmail({ link: withVerifiedCallback(url) }) });
     },
   },
   // nextCookies must stay last: it copies Set-Cookie from auth.api calls in server actions.
