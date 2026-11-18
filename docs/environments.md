@@ -66,10 +66,12 @@ The two variables to set in Vercel (Project, Settings, Environment Variables), f
 | `STORAGE_REGION` | unset (`auto`) | `<b2-region>` | `<b2-region>` |
 | `EMAIL_FROM` | unset (fake outbox) | `AgroHub <noreply@agro-hub.com.ng>` | same |
 | `RESEND_API_KEY` | empty (fake outbox) | Resend key for `agro-hub.com.ng` | Resend key for `agro-hub.com.ng` |
+| `BETTER_AUTH_URL` | `http://localhost:3000` | unset on previews (the branch URL is used) | `https://www.agro-hub.com.ng` |
 | `PAYSTACK_SECRET_KEY` | empty (fake Paystack) | `sk_test_<...>` (a test key only) | `sk_live_<...>` |
 
 - Mark the secrets as Sensitive in Vercel and scope each to its one environment.
 - The Paystack variable's exact name is `PAYSTACK_SECRET_KEY`. The Vercel project already has `PAYSTACK_TEST_*` variables from earlier setup: the app never reads them, so they can be removed once `PAYSTACK_SECRET_KEY` is set.
+- The public domain is `https://www.agro-hub.com.ng`; the apex `agro-hub.com.ng` redirects to `www`. Production's `BETTER_AUTH_URL` is the `www` address, because sign-in only works from the origin that equals `BETTER_AUTH_URL`. The old Vercel address (`agrohub-theta.vercel.app`) may still answer or redirect, but links in emails and the Paystack webhook must use the custom domain.
 - After changing variables, redeploy: Vercel applies them only to new deployments.
 
 ### Migrations
@@ -87,7 +89,7 @@ Start each command with a space under `HISTCONTROL=ignorespace` to keep the URL 
 
 Payments need no new variable: the webhook signature is checked with `PAYSTACK_SECRET_KEY`, and Paystack sends the buyer back to `<BETTER_AUTH_URL>/buyer/orders/<order>` (on previews, the Vercel branch URL).
 
-1. Paystack dashboard, **Test mode**, Settings, API Keys & Webhooks: set **Test Webhook URL** to `https://<staging-url>/api/paystack/webhook`, where `<staging-url>` is the stable staging address (the branch alias or a custom domain, not a per-deployment hash URL). Paystack keeps one test webhook URL per account. Production later gets the **Live Webhook URL** on its own domain.
+1. Paystack dashboard, **Test mode**, Settings, API Keys & Webhooks: set **Test Webhook URL** to `https://<staging-url>/api/paystack/webhook`, where `<staging-url>` is the stable staging address (the branch alias or a custom domain, not a per-deployment hash URL). Paystack keeps one test webhook URL per account. Production gets the **Live Webhook URL** on its own domain: `https://www.agro-hub.com.ng/api/paystack/webhook`.
 2. If Vercel Deployment Protection is on for previews, Paystack's webhook gets 401 and no order is ever marked paid. Either turn protection off for the staging deployment, or under Project, Settings, Deployment Protection, create a **Protection Bypass for Automation** secret and add `?x-vercel-protection-bypass=<that secret>` to the webhook URL in step 1. Never put that secret in the repo.
 3. Test mode, Settings, Preferences, **Payment channels**: card, bank transfer and USSD on (bulk orders can exceed card limits).
 4. An order is marked paid only by a signed `charge.success` that Paystack's verify call confirms (status success, exact amount in kobo, NGN). Returning from Paystack's page never marks anything paid, so a blocked webhook shows as "We're confirming your payment" for ever (the daily reconciliation confirms it the next morning).
