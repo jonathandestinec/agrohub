@@ -73,6 +73,33 @@ describe("toAlertView", () => {
     expect(toAlertView(row({ kind: "BANK_CHANGE_APPLIED", data: {} })).malformed).toBe(false);
   });
 
+  it("reads_naturally_for_many_and_for_one", () => {
+    const sentence = (kind: "ORDER_PAID" | "PAYMENT_CONFIRMED" | "OFFER_RECEIVED", quantity: number, unit: string) => {
+      const view = toAlertView(row({ kind, data: { crop: "Maize", quantity, unit } }));
+      const template = (en.alerts.kind as Record<string, string>)[kind];
+      return template.replace(/\{(\w+)\}/g, (_, k: string) => String(view.params[k]));
+    };
+    expect(sentence("OFFER_RECEIVED", 50, "Bag")).toBe("New offer for 50 bags of maize.");
+    expect(sentence("OFFER_RECEIVED", 1, "Bag")).toBe("New offer for 1 bag of maize.");
+    expect(sentence("ORDER_PAID", 3, "100kg bag")).toContain("3 100kg bags of maize");
+    expect(sentence("PAYMENT_CONFIRMED", 40, "kg")).toContain("40 kg of maize");
+    expect(sentence("PAYMENT_CONFIRMED", 2, "Box")).toContain("2 boxes of maize");
+  });
+
+  it("lowercases_the_crop_in_every_sentence_and_leaves_other_params_alone", () => {
+    const view = toAlertView(row({ kind: "LOT_APPROVED", data: { crop: "Maize" } }));
+    expect(view.params.crop).toBe("maize");
+    const dated = toAlertView(
+      row({ kind: "DELIVERY_DATE_SET", data: { crop: "Yam", quantity: 1, unit: "Tuber", date: "2026-11-10" } }),
+    );
+    expect(dated.params).toMatchObject({ crop: "yam", quantity: 1, unit: "tuber", date: "Nov 10, 2026" });
+  });
+
+  it("lowercases_a_multi_word_crop", () => {
+    const view = toAlertView(row({ kind: "OFFER_RECEIVED", data: { crop: "Ofada Rice", quantity: 2, unit: "50kg bag" } }));
+    expect(view.params).toMatchObject({ crop: "ofada rice", unit: "50kg bags" });
+  });
+
   it("formats_a_date_and_maps_read_state_and_link", () => {
     const view = toAlertView(
       row({
