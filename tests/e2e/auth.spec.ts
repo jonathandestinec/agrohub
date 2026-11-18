@@ -133,6 +133,9 @@ test("the account menu opens with the keyboard, shows who is signed in, and sign
   await expect(page.getByText("Amina Bello", { exact: true })).toHaveCount(0);
 
   // Enter opens it, ArrowDown walks to the first item, Escape closes it and returns focus.
+  // The trigger stays disabled until hydration (PR #27), and focus(), unlike click(), doesn't
+  // wait for that: on a slow runner the focus landed nowhere and Enter did nothing.
+  await expect(account).toBeEnabled();
   await account.focus();
   await page.keyboard.press("Enter");
   await expect(account).toHaveAttribute("aria-expanded", "true");
