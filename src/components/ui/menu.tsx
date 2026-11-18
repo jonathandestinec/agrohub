@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useHydrated } from "@/lib/use-hydrated";
 import { Chevron } from "./icons";
 import { menuStep } from "./menu-keys";
 
@@ -34,6 +35,7 @@ export function Menu({
   children: ReactNode;
 }) {
   const id = useId();
+  const hydrated = useHydrated();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -110,6 +112,8 @@ export function Menu({
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         aria-label={buttonLabel}
+        // Off until React has attached the handlers: a press before then did nothing.
+        disabled={!hydrated}
         data-current={current ? "" : undefined}
         onClick={() => {
           if (!open) onOpen?.();
