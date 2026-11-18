@@ -317,8 +317,6 @@ async function alertAdmins(request: BankChangeRequest, effectiveAt: Date): Promi
     const admins = await listActiveAdminEmails();
     const mail = bankChangeAdminAlertEmail({
       ownerName: owner.name,
-      accountName: request.newAccountName,
-      bankName: request.newBankName,
       effectiveAt,
     });
     const results = await Promise.allSettled(
