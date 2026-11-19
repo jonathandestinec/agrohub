@@ -17,7 +17,7 @@
 **Answered by the user (relayed 2026-11-19); the plan is approved to build with these changes.**
 
 1. **Messages are near-live via polling; no typing indicators, presence or read receipts.** (The main spec §2 lists "live chat" as a launch non-goal; the user accepts 5 s polling as live enough.)
-2. **Neon.** The project is on the Free plan (`free_v3`, about 100 CU-hours a month, autosuspend after 5 minutes, 0.25 to 2 CU). Polling keeps compute awake while any tab is visible, so the free hours can run out under sustained use; Task 8 must report the measured compute impact. Whether the production `DATABASE_URL` is the pooled one is for the user to check in Vercel (the host must contain `-pooler`). Not a blocker; it is on the PR checklist.
+2. **Neon.** The project is on the Free plan (`free_v3`, about 100 CU-hours a month, autosuspend after 5 minutes, 0.25 to 2 CU). Polling keeps compute awake while any tab is visible, so the free hours can run out under sustained use; Task 8 must report the measured compute impact. **Resolved:** the user confirms the production `DATABASE_URL` is Neon's pooled address.
 3. **Session cookie cache stays OFF.** Every poll pays about 3 identity queries because `src/lib/auth.ts` has no `session.cookieCache`. Task 9 stays optional and unbuilt; decide after Task 8 measures.
 4. **Yes: clear the thread's message alert when the thread is opened.** Added as Task 5A.
 
@@ -154,7 +154,7 @@ Identity ≈ 3 queries per request. Numbers are estimates from the query counts 
 | Admin queue page (60 s + bell 30 s) | 2 | about 14 | about 2 KB |
 | Dashboard, refresh on focus (once per 60 s at most) | bell 2 + one refresh | about 10 + about 25 per refresh | refresh is a full RSC payload (estimate 20 to 60 KB, unmeasured) |
 
-Rough fleet figure: 100 users simultaneously on screen average about 20 queries/min each, so about 2,000 queries/min (about 33/s). One ordinary authenticated page load today costs about 25 to 40 queries, so an hour of one person's polling is worth about 30 to 45 page loads. The real costs are: (a) Neon compute never auto-suspends while anyone has a visible tab, which raises the compute bill; (b) the unpooled-connection risk (decision 2); (c) Vercel function invocations (plan limits not checked). If the user turns on `cookieCache`, auth drops from 3 queries to about 0 for most polls (cuts the figures above by roughly 40 to 60 %).
+Rough fleet figure: 100 users simultaneously on screen average about 20 queries/min each, so about 2,000 queries/min (about 33/s). One ordinary authenticated page load today costs about 25 to 40 queries, so an hour of one person's polling is worth about 30 to 45 page loads. The real costs are: (a) Neon compute never auto-suspends while anyone has a visible tab, which raises the compute bill; (b) connection churn (the production URL is confirmed pooled, decision 2); (c) Vercel function invocations (plan limits not checked). If the user turns on `cookieCache`, auth drops from 3 queries to about 0 for most polls (cuts the figures above by roughly 40 to 60 %).
 
 Safeguards: a cap of 6 topics per request and one poll in flight per tab (client). There is no server-side request limit: an in-process counter is unreliable on serverless, and a shared store is not planned (see Not in this plan, item 9).
 
@@ -283,7 +283,7 @@ Safeguards: a cap of 6 topics per request and one poll in flight per tab (client
 
 - [ ] **Step 1: E2E scenarios**, two browser contexts via `newPage(browser)` (`tests/e2e/journey.ts`), world from `setUpLotWorld`, time advanced with Playwright's `page.clock.install()` before navigation and `page.clock.runFor(16000)` (so tests do not wait real seconds), **no `page.reload()` or `goto` after the action**: (a) officer posts, buyer's open thread updates; (b) officer starts preparing, buyer order page updates; (c) officer counters an offer, buyer offer page updates; (d) farmer submits a lot, officer's open screening queue gains it; (e) tab hidden (`visibilitychange` dispatched) makes zero `/api/live` requests, and visible again makes exactly one; (f) role switched in another tab, the open order page does not loop on errors. Run with `--workers=1`, never alongside integration tests.
 - [ ] **Step 2: Run** the spec. Expected: PASS.
-- [ ] **Step 3: Measure:** with query logging on the test database, record requests and queries for the Task 5 scenarios over one minute and paste the real numbers into the PR description next to the estimates in 2.5, together with the measured Neon compute impact (CU-hours per active hour) against the Free plan's about 100 CU-hours a month. **PR checklist item (both PRs):** the user confirms the production `DATABASE_URL` host contains `-pooler`.
+- [ ] **Step 3: Measure:** with query logging on the test database, record requests and queries for the Task 5 scenarios over one minute and paste the real numbers into the PR description next to the estimates in 2.5, together with the measured Neon compute impact (CU-hours per active hour) against the Free plan's about 100 CU-hours a month.
 - [ ] **Step 4: Update** the two docs; no dependency line is needed.
 - [ ] **Step 5: Run `npm run lint`, `npm run typecheck`, `npm test` and the e2e suite via `test`; commit** `docs: live updates architecture and e2e proof`. Open the PR; stop; do not merge.
 
@@ -308,7 +308,7 @@ What users will **not** get from this plan:
 7. **No live "typing while the other side is editing" conflicts:** two officers on the same offer can still both press a button; the second gets the existing error. The page will usually have updated first, but it is not guaranteed.
 8. **Existing defects found and left alone (follow-ups, not fixes):** the admin lots tile runs a per-lot `membership.count` (unbounded N+1); no server action revalidates `/officer` or `/admin` home; the farmer earnings tile loads up to 100 statements to show 3; no rate limit sits in front of `/api/live`; `NavSlot`'s `hasAlerts` is not live.
 9. **No server-side polling limit.** Serverless gives no reliable in-process counter; a misbehaving client could call `/api/live` often. Mitigated by the 6-topic cap, the client's single-flight loop and browser behaviour only. A proper limit needs a shared store (database or Redis); not planned.
-10. **Cost is real and not capped:** Neon compute stays awake while anyone has a visible tab. The project is on the Neon Free plan (about 100 CU-hours a month), so sustained use can exhaust the free hours; the figures in 2.5 are estimates until Task 8 measures the compute impact; the pooled-URL check (decision 2) is the user's, on the PR checklist.
+10. **Cost is real and not capped:** Neon compute stays awake while anyone has a visible tab. The project is on the Neon Free plan (about 100 CU-hours a month), so sustained use can exhaust the free hours; the figures in 2.5 are estimates until Task 8 measures the compute impact; the pooled URL is confirmed (decision 2).
 
 ## Self-review
 
