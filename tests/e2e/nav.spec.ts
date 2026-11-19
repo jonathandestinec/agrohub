@@ -306,7 +306,7 @@ test("switching from admin to officer on an admin page lands on the officer home
   await enrolTwoFactor(page);
   await page.goto("/admin/orders");
   await page.waitForLoadState("networkidle");
-  await expect(page).toHaveURL(LANDING.admin);
+  await expect(page).toHaveURL(//admin/orders$/);
 
   const switched = page.waitForResponse((r) => r.request().method() === "POST");
   await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
