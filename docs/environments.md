@@ -136,6 +136,7 @@ DATABASE_URL=<database-url> npm run admin:grant -- <email> <ADMIN|BOARD_ADMIN>
 - `POST /api/dev/paystack/accounts` with JSON `{ "bankCode", "accountNumber", "accountName" }` adds an account to the running server's fake Paystack (201; 400 for a bad body). Same guards as the outbox: 404 unless `APP_ENV=local` and `NODE_ENV` is not `production`. The e2e journey uses it so bank account checks resolve.
 - `/dev/paystack/checkout?reference=<pay_...>` stands in for Paystack's checkout page while the fake is in use: "Pay (test)" settles the fake transaction and delivers its signed `charge.success` through the real webhook handler, then returns to the order. It is a 404 unless `APP_ENV=local`, `NODE_ENV` is not `production` and the fake is selected.
 - `npx playwright test` starts its own `next dev` on port 3100 against `agrohub_test`, so a dev server on :3000 is never touched. Integration tests clean that same database, so never run the two at the same time.
+- To run e2e in several worktrees at once, give each its own port and database (migrated with `prisma migrate deploy`): `E2E_PORT=3200 DATABASE_URL=postgresql://agrohub:agrohub@localhost:5432/<private_db> npx playwright test`. `E2E_PORT` (default `3100`) sets the server port, the base URL and `BETTER_AUTH_URL`; `DATABASE_URL` (default `agrohub_test`) is passed to the e2e server. Both are read in `playwright.config.ts` and `tests/e2e/base-url.ts`. CI sets neither port, so it stays on 3100 with `agrohub_test`.
 
 ## Operational notes
 
