@@ -2,6 +2,7 @@
 // Every template writes its body as bare <p>/<ul>/<li>/<strong> html and hands it to
 // renderEmail (email-layout.ts), which adds the branded wrapper, the button and the plain text.
 
+import { formatLagosWat } from "@/lib/lagos-date";
 import { formatNaira } from "@/lib/money";
 import { appUrl, escapeHtml, renderEmail } from "./email-layout";
 
@@ -131,10 +132,6 @@ export function farmerInviteEmail(input: {
 
 // ---- Bank account changes. Never include an account number. ----
 
-function formatUtc(date: Date): string {
-  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
-}
-
 export function bankChangeConfirmEmail(input: {
   ownerName: string;
   link: string;
@@ -152,17 +149,18 @@ export function bankChangeConfirmEmail(input: {
   };
 }
 
+// Bank data (holder, bank, number) leaves the server only through views.ts mappers, so this email
+// names who and when only. Admins see the current account on the cooperative's admin page.
 export function bankChangeAdminAlertEmail(input: {
   ownerName: string;
-  accountName: string;
-  bankName: string;
   effectiveAt: Date;
 }): Email {
+  const at = formatLagosWat(input.effectiveAt);
   return {
     subject: "AgroHub alert: a payout bank account is changing",
     ...renderEmail({
-      preheader: `A confirmed payout account change takes effect at ${formatUtc(input.effectiveAt)}.`,
-      bodyHtml: `<p>A confirmed bank account change for <strong>${escapeHtml(input.ownerName)}</strong> takes effect at ${formatUtc(input.effectiveAt)}.</p><p>New account name: ${escapeHtml(input.accountName)}<br>Bank: ${escapeHtml(input.bankName)}</p><p>If this looks wrong, act before it takes effect.</p>`,
+      preheader: `A confirmed payout account change takes effect at ${at}.`,
+      bodyHtml: `<p>A confirmed payout account change for <strong>${escapeHtml(input.ownerName)}</strong> takes effect at ${at}.</p><p>If you did not expect this change, contact them before then.</p>`,
       action: { label: "Open AgroHub admin", href: appUrl("/admin") },
     }),
   };

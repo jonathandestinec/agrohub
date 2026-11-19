@@ -256,7 +256,10 @@ describe("confirmBankChange", () => {
       "u-admin-2@example.com",
     ]);
     for (const mail of toAdmins) {
-      expect(mail.html).toContain("OGUN FARMERS MULTIPURPOSE COOPERATIVE SOCIETY LTD");
+      // Bank details never go in this email: no holder name, bank name or account number.
+      expect(mail.html).not.toContain("OGUN FARMERS MULTIPURPOSE COOPERATIVE SOCIETY LTD");
+      expect(mail.html).not.toContain("Access Bank");
+      expect(mail.text ?? "").not.toContain("OGUN FARMERS MULTIPURPOSE COOPERATIVE SOCIETY LTD");
       expect(mail.html).not.toContain(NEW_ACCOUNT);
       expect(`${mail.subject} ${mail.html}`).not.toMatch(/escrow/i);
     }
@@ -493,7 +496,8 @@ describe("farmer bank account", () => {
     const toAdmins = fakeOutbox.sent.filter((m) => m.to === "u-admin-1@example.com");
     expect(toAdmins).toHaveLength(1);
     expect(toAdmins[0].html).toContain(FARMER_NAME);
-    expect(toAdmins[0].html).toContain("ADA CHIOMA OKAFOR");
+    expect(toAdmins[0].html).not.toContain("ADA CHIOMA OKAFOR");
+    expect(toAdmins[0].html).not.toContain("Access Bank");
     expect(toAdmins[0].html).not.toContain(FARMER_NEW);
   });
 

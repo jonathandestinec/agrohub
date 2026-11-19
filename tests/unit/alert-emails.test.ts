@@ -70,6 +70,18 @@ describe("buildAlertEmail", () => {
     expect(mail.html).not.toContain("<i>");
   });
 
+  it("reads naturally for many, for one and for odd unit names", async () => {
+    const { buildAlertEmail } = await import("@/modules/notifications/alert-emails");
+    const html = (kind: string, quantity: number, unit: string) =>
+      buildAlertEmail(kind as never, { crop: "Maize", quantity, unit } as never, "BUYER", "o1")!.html;
+    expect(html("PAYMENT_CONFIRMED", 50, "Bag")).toContain("Your payment for 50 bags of maize arrived.");
+    expect(html("PAYMENT_CONFIRMED", 1, "Bag")).toContain("Your payment for 1 bag of maize arrived.");
+    expect(html("ORDER_PAID", 3, "100kg bag")).toContain("3 100kg bags of maize");
+    expect(html("ORDER_PAID", 20, "kg")).toContain("20 kg of maize");
+    expect(html("LOT_ORDER_PAID", 2, "Box")).toContain("2 boxes of your maize");
+    expect(html("PAYMENT_CONFIRMED", 50, "Bag")).not.toContain("Bag of");
+  });
+
   it("links by recipient role", async () => {
     const { buildAlertEmail } = await import("@/modules/notifications/alert-emails");
     const officer = buildAlertEmail("PAYOUT_SENT", { crop: "Maize", amountKobo: "100" } as never, "OFFICER", "o1")!;
