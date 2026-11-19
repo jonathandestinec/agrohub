@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext, type Browser, type Locator, type Page } from "@playwright/test";
+import { E2E_ORIGIN, HOME } from "./base-url";
 import { totp } from "./totp";
 
 // Helpers shared by the end-to-end journeys. Each actor gets their own browser context, so
@@ -7,7 +8,7 @@ import { totp } from "./totp";
 type OutboxMessage = { to: string; subject: string; html: string };
 
 export const password = "correct-horse-battery-staple";
-export const HOME = /:3100\/$/;
+export { HOME };
 // Where each role lands after signing in without an explicit next (see landingPath).
 export const LANDING = {
   admin: /\/admin$/,
@@ -44,7 +45,7 @@ export async function linkFromOutbox(request: APIRequestContext, email: string):
 }
 
 export async function newPage(browser: Browser): Promise<Page> {
-  const context = await browser.newContext({ baseURL: "http://localhost:3100" });
+  const context = await browser.newContext({ baseURL: E2E_ORIGIN });
   return context.newPage();
 }
 

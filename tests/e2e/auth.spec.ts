@@ -1,11 +1,11 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { HOME } from "./base-url";
 import { grantRole } from "./grant";
 import { totp } from "./totp";
 
 type OutboxMessage = { to: string; subject: string; html: string };
 
 const password = "correct-horse-battery-staple";
-const HOME = /:3100\/$/;
 
 // Who is signed in is the account button; Profile and Sign out sit in its dropdown.
 const accountButton = (page: Page) => page.getByRole("button", { name: /^Account:/ });

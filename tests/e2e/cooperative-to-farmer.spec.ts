@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { E2E_ORIGIN } from "./base-url";
 import { grantAdmin } from "./grant";
 import {
   clickNav,
@@ -161,7 +162,7 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
     inviteUrl = await page.evaluate(() => navigator.clipboard.readText());
     await expect(page.getByLabel("Invite link")).toHaveValue(inviteUrl);
-    expect(inviteUrl).toMatch(/^http:\/\/localhost:3100\/join\/[^/]+$/);
+    expect(inviteUrl).toMatch(new RegExp(`^${E2E_ORIGIN}/join/[^/]+$`));
   });
 
   await test.step("4. the farmer opens the link, signs up, completes the profile and bank, and waits", async () => {

@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
+import { HOME } from "./base-url";
 import { grantAdmin } from "./grant";
 import { accountButton, completeSignUp, enrolTwoFactor, LANDING, openNav, signIn, uniqueEmail } from "./journey";
 
@@ -201,7 +202,7 @@ async function signUpOfficerWithAdmin(page: Page, request: APIRequestContext): P
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/:3100\/$/);
+  await expect(page).toHaveURL(HOME);
 
   // Registering a cooperative makes them its officer; the admin grant adds a second membership.
   const tag = Math.random().toString(36).slice(2, 8).toUpperCase();

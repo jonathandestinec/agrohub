@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { E2E_DATABASE_URL, E2E_ORIGIN } from "./base-url";
 
 const run = promisify(execFile);
 
@@ -23,10 +24,9 @@ export async function grantRole(email: string, role: "ADMIN" | "BOARD_ADMIN"): P
       ...process.env,
       // Same values as the webServer env in playwright.config.ts. E2E_DATABASE_URL lets a
       // local config point a run at a private *_test database.
-      DATABASE_URL:
-        process.env.E2E_DATABASE_URL ?? "postgresql://agrohub:agrohub@localhost:5432/agrohub_test",
+      DATABASE_URL: E2E_DATABASE_URL,
       BETTER_AUTH_SECRET: "test-only-secret-not-for-real-use-0123456789",
-      BETTER_AUTH_URL: "http://localhost:3100",
+      BETTER_AUTH_URL: E2E_ORIGIN,
       CRON_SECRET: "test-only-cron-secret",
       APP_ENV: "local",
       E2E_GRANT_EMAIL: email,
