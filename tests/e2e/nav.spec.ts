@@ -315,6 +315,8 @@ test("switching from admin to officer on an admin page lands on the officer home
   await expect(page).toHaveURL(LANDING.officerOnboarding);
   await expect(page.getByText("This page could not be found")).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  // The header follows without a manual reload.
+  await expect(page.getByLabel("Acting as").locator("option:checked")).toHaveText("Cooperative officer");
 });
 
 test("switching from officer to admin on an officer page lands on the admin home", async ({ page, request }) => {
@@ -333,7 +335,7 @@ test("switching from officer to admin on an officer page lands on the admin home
   await page.getByLabel("Acting as").selectOption({ label: "Administrator" });
   await expect(page).toHaveURL(LANDING.admin);
   await expect(page.getByText("This page could not be found")).toHaveCount(0);
-  await expect(page.getByLabel("Acting as")).toHaveValue(/.+/);
+  await expect(page.getByLabel("Acting as").locator("option:checked")).toHaveText("Administrator");
 });
 
 // On a slow runner the page's scripts arrive after its HTML. The dropdown buttons and the role
