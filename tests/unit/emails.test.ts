@@ -66,8 +66,6 @@ describe("bank change emails", () => {
   const alert = () =>
     bankChangeAdminAlertEmail({
       ownerName: "A & B <Farmers>",
-      accountName: "<b>ADA</b>",
-      bankName: "Access Bank",
       effectiveAt: new Date("2031-06-12T12:00:00Z"),
     });
 
@@ -78,12 +76,27 @@ describe("bank change emails", () => {
     expect(html).toMatch(/48 hours/);
   });
 
-  it("gives admins the owner, account name, bank and effective time", () => {
-    const { html } = alert();
+  it("gives admins the owner and the effective time in Lagos time", () => {
+    const { html, text } = alert();
     expect(html).toContain("A &amp; B &lt;Farmers&gt;");
-    expect(html).toContain("&lt;b&gt;ADA&lt;/b&gt;");
-    expect(html).toContain("Access Bank");
-    expect(html).toContain("2031-06-12 12:00 UTC");
+    expect(html).toContain("12 Jun 2031, 13:00 WAT");
+    expect(text).toContain("12 Jun 2031, 13:00 WAT");
+    expect(html).not.toContain("UTC");
+    expect(html).toContain("If you did not expect this change, contact them before then.");
+    expect(html).toMatch(/href="https?:\/\/[^"]+\/admin"/);
+  });
+
+  it("never shows account holder, bank name or account number", () => {
+    const mail = bankChangeAdminAlertEmail({
+      ownerName: "Green Farmers",
+      effectiveAt: new Date("2031-06-12T12:00:00Z"),
+      // Fields from an older caller must not leak even if passed at runtime.
+      ...({ accountName: "ADA OBI", bankName: "Access Bank", accountNumber: "0123456789" } as object),
+    });
+    for (const part of [mail.subject, mail.html, mail.text]) {
+      expect(part).not.toMatch(/ADA OBI|Access Bank|0123456789/);
+      expect(part).not.toMatch(/\b\d{10}\b/);
+    }
   });
 
   it("never uses the word escrow", () => {
