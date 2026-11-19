@@ -9,7 +9,7 @@ import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { formatNaira, lineTotalKobo } from "@/lib/money";
 import { getCooperativeOffer, type OfficerOffer } from "@/modules/marketplace/service";
-import { findBuyerThreadId, getThread } from "@/modules/messaging/service";
+import { findBuyerThreadId, readThread } from "@/modules/messaging/service";
 import { OfficerOfferActions } from "./offer-actions";
 
 export default function OfficerOfferPage({ params }: PageProps<"/officer/offers/[id]">) {
@@ -81,7 +81,7 @@ async function OfficerOfferDetail({ params }: { params: PageProps<"/officer/offe
 
 // The buyer thread for this offer's lot and buyer, if the buyer has written or an answer carried
 // a message.
-async function findOfferThread(actor: Parameters<typeof getThread>[0], offer: OfficerOffer) {
+async function findOfferThread(actor: Parameters<typeof readThread>[0], offer: OfficerOffer) {
   const threadId = await findBuyerThreadId(actor, offer.lotId, offer.buyerUserId);
-  return threadId ? getThread(actor, threadId) : null;
+  return threadId ? readThread(actor, threadId) : null;
 }

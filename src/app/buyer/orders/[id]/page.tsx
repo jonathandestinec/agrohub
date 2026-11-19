@@ -11,7 +11,7 @@ import { NotFoundError } from "@/lib/errors";
 import { formatNaira, refundForUnits } from "@/lib/money";
 import { OrderActionButton, OrderFieldForm } from "@/components/orders/order-actions";
 import { cancelOrderAction, confirmReceiptAction, reportProblemAction } from "../actions";
-import { getThread } from "@/modules/messaging/service";
+import { readThread } from "@/modules/messaging/service";
 import { getOwnOrder, type BuyerOrder } from "@/modules/orders/service";
 
 // Paystack sends the buyer back here. Returning never marks anything paid: the page shows what
@@ -39,7 +39,7 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
   const locale = await getLocale();
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
   const day = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
-  const thread = order.threadId ? await getThread(actor, order.threadId) : null;
+  const thread = order.threadId ? await readThread(actor, order.threadId) : null;
   const unpaid = order.status === "AWAITING_PAYMENT" || order.status === "PAYMENT_EXPIRED";
 
   return (

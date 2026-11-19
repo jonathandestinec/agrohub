@@ -89,6 +89,16 @@ export async function markRead(actor: Actor, id: string): Promise<{ href: string
   return { href: toAlertView(row).href };
 }
 
+// Opening a thread reads its message alert: the actor's own unread MESSAGE_RECEIVED alert for that
+// thread, and no one else's. It touches nothing for a thread the actor has no alert on.
+export async function markThreadAlertsRead(actor: Actor, threadId: string): Promise<void> {
+  requireOwn(actor, actor.userId);
+  await prisma.notification.updateMany({
+    where: { ...visibleTo(actor), kind: "MESSAGE_RECEIVED", subjectType: "THREAD", subjectId: threadId, readAt: null },
+    data: { readAt: new Date() },
+  });
+}
+
 export async function markAllRead(actor: Actor): Promise<void> {
   requireOwn(actor, actor.userId);
   await prisma.notification.updateMany({

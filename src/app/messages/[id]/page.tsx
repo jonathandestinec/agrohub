@@ -7,7 +7,7 @@ import { ThreadPanel } from "@/components/messages/thread-panel";
 import { QuoteForm } from "@/components/orders/quote-form";
 import { PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
-import { getThread, type ThreadView } from "@/modules/messaging/service";
+import { readThread, type ThreadView } from "@/modules/messaging/service";
 
 export default function ThreadPage({ params }: PageProps<"/messages/[id]">) {
   return (
@@ -22,7 +22,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
   const { id } = await params;
   let thread: ThreadView;
   try {
-    thread = await getThread(actor, id);
+    thread = await readThread(actor, id);
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
     throw error;

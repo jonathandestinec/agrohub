@@ -5,7 +5,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@
 import { lotNegotiationFacts, type NegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { holdsCooperativeRole } from "@/modules/identity/service";
-import { notify, threadAudience } from "@/modules/notifications/service";
+import { markThreadAlertsRead, notify, threadAudience } from "@/modules/notifications/service";
 import { hasContactDetails, mentionsAmount } from "./guards";
 import { toThreadSummary, toThreadView, type ThreadSummary, type ThreadView } from "./views";
 import { threadWhereFor } from "./where";
@@ -205,6 +205,14 @@ export async function getThread(actor: Actor, threadId: string): Promise<ThreadV
     take: THREAD_MESSAGES,
   });
   return toThreadView(thread, latest.reverse(), actor);
+}
+
+// What a person sees when they open a thread to read it: the thread, and the thread's message
+// alert for them marked read. getThread alone writes nothing (orders and admin use it to look).
+export async function readThread(actor: Actor, threadId: string): Promise<ThreadView> {
+  const view = await getThread(actor, threadId);
+  await markThreadAlertsRead(actor, threadId);
+  return view;
 }
 
 // A string that changes whenever a message is added to the thread: the last-message time and the

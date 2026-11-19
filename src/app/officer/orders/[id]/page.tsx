@@ -9,7 +9,7 @@ import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { lagosDateKey } from "@/lib/lagos-date";
 import { formatNaira } from "@/lib/money";
-import { getThread } from "@/modules/messaging/service";
+import { readThread } from "@/modules/messaging/service";
 import { getCooperativeOrder, type OfficerOrder } from "@/modules/orders/service";
 import { answerCancelRequestAction, cancelOrderAction, markDeliveredAction, setDeliveryDateAction, startPreparingAction } from "../actions";
 
@@ -36,7 +36,7 @@ async function OfficerOrderDetail({ params }: { params: PageProps<"/officer/orde
   const t = await getTranslations("orders");
   const locale = await getLocale();
   const day = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
-  const thread = order.threadId ? await getThread(actor, order.threadId) : null;
+  const thread = order.threadId ? await readThread(actor, order.threadId) : null;
   const deliverable = order.orderStatus === "PAID_HELD" || order.orderStatus === "PREPARING";
 
   return (

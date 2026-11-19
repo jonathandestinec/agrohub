@@ -13,7 +13,7 @@ import { formatNaira } from "@/lib/money";
 import { getPublicLot } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { getOwnOffer, type BuyerOffer } from "@/modules/marketplace/service";
-import { findBuyerThreadId, getThread } from "@/modules/messaging/service";
+import { findBuyerThreadId, readThread } from "@/modules/messaging/service";
 import { listUsableQuotes } from "@/modules/orders/service";
 import { BuyerOfferActions } from "./counter-response";
 
@@ -40,7 +40,7 @@ async function BuyerOfferDetail({ params }: { params: PageProps<"/buyer/offers/[
   const locale = await getLocale();
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
   const threadId = await findBuyerThreadId(actor, offer.lot.id, actor.userId);
-  const thread = threadId ? await getThread(actor, threadId) : null;
+  const thread = threadId ? await readThread(actor, threadId) : null;
   const live = offer.status === "WAITING" || offer.status === "COUNTERED";
 
   return (
