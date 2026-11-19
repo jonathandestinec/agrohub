@@ -207,6 +207,32 @@ export async function getThread(actor: Actor, threadId: string): Promise<ThreadV
   return toThreadView(thread, latest.reverse(), actor);
 }
 
+// A string that changes whenever a message is added to the thread: the last-message time and the
+// message count (two messages can share a time). Same access check as loadThread; a thread the
+// actor is not in looks missing. It reads timestamps and a count only, never message text.
+export async function threadVersion(actor: Actor, threadId: string): Promise<string> {
+  const thread = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: {
+      kind: true,
+      cooperativeId: true,
+      counterpartUserId: true,
+      lastMessageAt: true,
+      _count: { select: { messages: true } },
+    },
+  });
+  if (!thread || !participates(actor, thread)) throw new NotFoundError("THREAD_NOT_FOUND");
+  return `${thread.lastMessageAt.getTime()}:${thread._count.messages}`;
+}
+
+// A string that changes when a thread appears in the actor's inbox or its last message moves.
+// A superset of the inbox's own filter, so it can only over-report, never miss.
+export async function inboxVersion(actor: Actor): Promise<string> {
+  const where = threadWhereFor(actor);
+  const summary = await prisma.thread.aggregate({ where, _count: { _all: true }, _max: { lastMessageAt: true } });
+  return `${summary._count._all}:${summary._max.lastMessageAt?.getTime() ?? 0}`;
+}
+
 // The threads the actor takes part in, newest activity first: a buyer's or farmer's own, an
 // officer's cooperative's, or (for an admin) the latest 100 anywhere.
 export async function listOwnThreads(actor: Actor): Promise<ThreadSummary[]> {

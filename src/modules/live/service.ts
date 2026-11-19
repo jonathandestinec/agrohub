@@ -1,6 +1,7 @@
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { parseTopic, type ParsedTopic } from "@/lib/live/topics";
 import type { Actor } from "@/modules/identity/policies";
+import { inboxVersion, threadVersion } from "@/modules/messaging/service";
 import { alertsVersion, ownAlertsSummary } from "@/modules/notifications/service";
 import type { AlertSummary } from "@/modules/notifications/views";
 
@@ -20,6 +21,10 @@ async function answer(actor: Actor, topic: ParsedTopic, since: string | undefine
       if (version === since) return { version };
       return { version, data: await ownAlertsSummary(actor) };
     }
+    case "thread":
+      return { version: await threadVersion(actor, topic.id) };
+    case "threads":
+      return { version: await inboxVersion(actor) };
     default:
       // Topics added by later tasks.
       throw new NotFoundError();
