@@ -1,11 +1,11 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { HOME } from "./base-url";
 import { totp } from "./totp";
 
 type OutboxMessage = { to: string; subject: string; html: string };
 
 const password = "correct-horse-battery-staple";
 const newPassword = "a-brand-new-passphrase-2026";
-const HOME = /:3100\/$/;
 
 function uniqueEmail(): string {
   return `e2e-reset-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;

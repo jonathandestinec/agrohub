@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 import { E2E_DATABASE_URL, E2E_ORIGIN, E2E_PORT } from "./tests/e2e/base-url";
 
 // Port 3100 by default (CI), not 3000: a developer's own `npm run dev` on :3000 is never touched.
-// Set E2E_PORT and DATABASE_URL to run another worktree's e2e at the same time (docs/environments.md).
+// Set E2E_PORT and E2E_DATABASE_URL to run another worktree's e2e at the same time (docs/environments.md).
 // The default database is agrohub_test, which integration tests also clean, so never run both at once.
 export default defineConfig({
   testDir: "tests/e2e",
