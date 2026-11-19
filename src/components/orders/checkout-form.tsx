@@ -4,11 +4,14 @@ import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { FormError } from "@/components/auth-ui";
 import { Button } from "@/components/ui";
+import { useHydrated } from "@/lib/use-hydrated";
 import { formatNaira, lineTotalKobo, sumKobo } from "@/lib/money";
 import { startCheckoutAction } from "@/app/buyer/orders/actions";
 import { orderErrorKey } from "./error-key";
 
-const FIELD = "min-h-11 w-full rounded-tile bg-paper px-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink";
+const FIELD = "min-h-11 w-full rounded-tile bg-paper px-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-progress";
+// While React hydrates the pay button waits without the dimmed look: a progress cursor, not grey.
+const WAITING = "disabled:pointer-events-auto! disabled:cursor-progress disabled:opacity-100!";
 
 export type CheckoutQuote = { id: string; amountKobo: number; until: string };
 
@@ -41,6 +44,9 @@ export function CheckoutForm({
   const [quantity, setQuantity] = useState(String(fixedQuantity ?? minQuantity));
   const [quoteId, setQuoteId] = useState("");
   const [pending, setPending] = useState(false);
+  // Until React hydrates, a typed quantity would be reset to the default and a click would
+  // submit the page natively, so the field and the pay button wait.
+  const hydrated = useHydrated();
   const [error, setError] = useState<string | null>(null);
   const quote = quotes.find((q) => q.id === quoteId);
   const goods = /^\d{1,7}$/.test(quantity.trim()) ? lineTotalKobo(unitKobo, Number(quantity.trim())) : null;
@@ -76,6 +82,7 @@ export function CheckoutForm({
             value={quantity}
             onChange={(event) => setQuantity(event.target.value)}
             required
+            disabled={!hydrated}
             className={FIELD}
           />
           <span className="text-ink-soft">{t("checkout.quantityHint", { min: minQuantity, max: maxQuantity })}</span>
@@ -84,12 +91,12 @@ export function CheckoutForm({
       <fieldset className="flex flex-col gap-2">
         <legend className="body-6 mb-1">{t("checkout.delivery")}</legend>
         <label className="flex min-h-11 items-center gap-2 body-4">
-          <input type="radio" name="delivery" value="" checked={quoteId === ""} onChange={() => setQuoteId("")} />
+          <input type="radio" name="delivery" value="" checked={quoteId === ""} disabled={!hydrated} className="disabled:cursor-progress" onChange={() => setQuoteId("")} />
           {pickupLabel}
         </label>
         {quotes.map((q) => (
           <label key={q.id} className="flex min-h-11 items-center gap-2 body-4">
-            <input type="radio" name="delivery" value={q.id} checked={quoteId === q.id} onChange={() => setQuoteId(q.id)} />
+            <input type="radio" name="delivery" value={q.id} checked={quoteId === q.id} disabled={!hydrated} className="disabled:cursor-progress" onChange={() => setQuoteId(q.id)} />
             {t("checkout.deliveryQuote", { amount: formatNaira(q.amountKobo), time: q.until })}
           </label>
         ))}
@@ -102,7 +109,7 @@ export function CheckoutForm({
       <p className="body-6 text-ink-soft">{t("checkout.reserved")}</p>
       <FormError message={error} />
       <div>
-        <Button type="submit" tone="ink" size="lg" disabled={pending}>
+        <Button type="submit" tone="ink" size="lg" disabled={!hydrated || pending} className={hydrated ? "" : WAITING}>
           {pending ? t("checkout.redirecting") : t("checkout.submit")}
         </Button>
       </div>
