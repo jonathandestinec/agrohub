@@ -9,7 +9,7 @@ import { formatNaira, lineTotalKobo, sumKobo } from "@/lib/money";
 import { startCheckoutAction } from "@/app/buyer/orders/actions";
 import { orderErrorKey } from "./error-key";
 
-const FIELD = "min-h-11 w-full rounded-tile bg-paper px-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-progress";
+const FIELD = "min-h-11 w-full rounded-tile bg-paper px-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink disabled:cursor-progress disabled:text-ink disabled:opacity-100";
 // While React hydrates the pay button waits without the dimmed look: a progress cursor, not grey.
 const WAITING = "disabled:pointer-events-auto! disabled:cursor-progress disabled:opacity-100!";
 
@@ -91,12 +91,12 @@ export function CheckoutForm({
       <fieldset className="flex flex-col gap-2">
         <legend className="body-6 mb-1">{t("checkout.delivery")}</legend>
         <label className="flex min-h-11 items-center gap-2 body-4">
-          <input type="radio" name="delivery" value="" checked={quoteId === ""} disabled={!hydrated} className="disabled:cursor-progress" onChange={() => setQuoteId("")} />
+          <input type="radio" name="delivery" value="" checked={quoteId === ""} disabled={!hydrated} className="disabled:cursor-progress disabled:opacity-100" onChange={() => setQuoteId("")} />
           {pickupLabel}
         </label>
         {quotes.map((q) => (
           <label key={q.id} className="flex min-h-11 items-center gap-2 body-4">
-            <input type="radio" name="delivery" value={q.id} checked={quoteId === q.id} disabled={!hydrated} className="disabled:cursor-progress" onChange={() => setQuoteId(q.id)} />
+            <input type="radio" name="delivery" value={q.id} checked={quoteId === q.id} disabled={!hydrated} className="disabled:cursor-progress disabled:opacity-100" onChange={() => setQuoteId(q.id)} />
             {t("checkout.deliveryQuote", { amount: formatNaira(q.amountKobo), time: q.until })}
           </label>
         ))}
