@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { grantAdmin } from "./grant";
-import { accountButton, completeSignUp, openNav, signIn, uniqueEmail } from "./journey";
+import { accountButton, completeSignUp, enrolTwoFactor, LANDING, openNav, signIn, uniqueEmail } from "./journey";
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -295,6 +295,47 @@ test("with the role switcher shown, nothing in the header overlaps", async ({ pa
       await page.getByRole("button", { name: "Close menu" }).click();
     }
   }
+});
+
+// An admin page 404s for the officer role, so switching roles there must not reload in place.
+test("switching from admin to officer on an admin page lands on the officer home", async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await signUpOfficerWithAdmin(page, request);
+  // An admin without two-factor is sent to enrol before the queue opens.
+  await page.goto("/admin/orders");
+  await enrolTwoFactor(page);
+  await page.goto("/admin/orders");
+  await page.waitForLoadState("networkidle");
+  await expect(page).toHaveURL(/\/admin\/orders$/);
+
+  const switched = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
+  await switched;
+
+  await expect(page).toHaveURL(LANDING.officerOnboarding);
+  await expect(page.getByText("This page could not be found")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  // The header follows without a manual reload.
+  await expect(page.getByLabel("Acting as").locator("option:checked")).toHaveText("Cooperative officer");
+});
+
+test("switching from officer to admin on an officer page lands on the admin home", async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await signUpOfficerWithAdmin(page, request);
+  await page.goto("/admin/orders");
+  await enrolTwoFactor(page);
+  await page.goto("/admin/orders");
+  await page.waitForLoadState("networkidle");
+
+  // Acting as the officer lands on the officer home (onboarding: this cooperative is not verified yet).
+  await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
+  await expect(page).toHaveURL(LANDING.officerOnboarding);
+
+  // And back: the officer page would 404 for the admin role.
+  await page.getByLabel("Acting as").selectOption({ label: "Administrator" });
+  await expect(page).toHaveURL(LANDING.admin);
+  await expect(page.getByText("This page could not be found")).toHaveCount(0);
+  await expect(page.getByLabel("Acting as").locator("option:checked")).toHaveText("Administrator");
 });
 
 // On a slow runner the page's scripts arrive after its HTML. The dropdown buttons and the role
