@@ -282,6 +282,18 @@ export async function buyerThreadIdOf(lotId: string, buyerUserId: string): Promi
 }
 
 /**
+ * The version of the buyer's thread on a lot, or "none" before it exists. For order and offer
+ * versions, which have already checked the actor may read the order or offer the thread belongs to.
+ */
+export async function buyerThreadVersionOf(lotId: string, buyerUserId: string): Promise<string> {
+  const thread = await prisma.thread.findUnique({
+    where: { lotId_kind_counterpartUserId: { lotId, kind: "BUYER_COOPERATIVE", counterpartUserId: buyerUserId } },
+    select: { lastMessageAt: true, _count: { select: { messages: true } } },
+  });
+  return thread ? `${thread.lastMessageAt.getTime()}:${thread._count.messages}` : "none";
+}
+
+/**
  * Writes text the caller composed (for example a delivery quote line) as the actor, under the
  * hourly limit. The caller has already checked the actor may post and passed any free text it
  * contains through assertMessageAllowed.

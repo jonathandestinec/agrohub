@@ -1,9 +1,9 @@
-import type { OrderStatus } from "@/generated/prisma/client";
+import type { OrderStatus, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { koboFromDb, orderSplit } from "@/lib/money";
 import { can, type Actor } from "@/modules/identity/policies";
-import { buyerThreadIdOf } from "@/modules/messaging/service";
+import { buyerThreadIdOf, buyerThreadVersionOf } from "@/modules/messaging/service";
 import { toBuyerOrder, toOfficerOrder, type BuyerOrder, type OfficerOrder } from "./views";
 
 // What every order view loads with the order: the lot's names (never its floor), the
@@ -99,6 +99,61 @@ async function officerView(order: CooperativeOrderRow, now: Date): Promise<Offic
       .filter((s): s is { c: (typeof contributions)[number]; amountKobo: number } => s.amountKobo !== null)
       .map(({ c, amountKobo }) => ({ farmerName: nameOf.get(c.farmerUserId) ?? "", quantity: c.quantity, amountKobo })),
   });
+}
+
+// A string that changes whenever the order page would show something different. The row's
+// updatedAt covers every status step and date. Disputes and refunds are counted too, because an
+// after-completion report, a note decision and a refund's own progress leave the order row alone.
+// The buyer's thread on the lot is included because the page shows it. Same access as the page
+// (the buyer's own order; the cooperative's paid orders); anyone else gets "not found".
+export async function orderVersion(actor: Actor, orderId: string): Promise<string> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      buyerUserId: true,
+      cooperativeId: true,
+      lotId: true,
+      paidAt: true,
+      status: true,
+      updatedAt: true,
+      disputes: { select: { status: true } },
+      refunds: { select: { status: true } },
+    },
+  });
+  const mayRead =
+    order !== null &&
+    (actor.role === "BUYER"
+      ? can(actor, "order:own", { ownerUserId: order.buyerUserId })
+      : actor.role === "OFFICER" &&
+        order.paidAt !== null &&
+        COOPERATIVE_STATUSES.includes(order.status) &&
+        can(actor, "order:manage", { cooperativeId: order.cooperativeId }));
+  if (!order || !mayRead) throw new NotFoundError("ORDER_NOT_FOUND");
+  const openDisputes = order.disputes.filter((d) => d.status === "OPEN").length;
+  const doneRefunds = order.refunds.filter((r) => r.status === "PROCESSED").length;
+  const thread = await buyerThreadVersionOf(order.lotId, order.buyerUserId);
+  return [
+    order.updatedAt.getTime(),
+    `${order.disputes.length}/${openDisputes}`,
+    `${order.refunds.length}/${doneRefunds}`,
+    thread,
+  ].join("|");
+}
+
+// A string that changes when an order in the actor's list is added or changes: how many there
+// are and the newest updatedAt. A superset of what the list shows (it lists the latest 50
+// finished), so it can only over-report.
+export async function ordersListVersion(actor: Actor): Promise<string> {
+  let where: Prisma.OrderWhereInput;
+  if (actor.role === "BUYER" && can(actor, "order:own", { ownerUserId: actor.userId })) {
+    where = { buyerUserId: actor.userId };
+  } else if (actor.role === "OFFICER" && actor.cooperativeId && can(actor, "order:manage", { cooperativeId: actor.cooperativeId })) {
+    where = { cooperativeId: actor.cooperativeId, paidAt: { not: null }, status: { in: [...COOPERATIVE_STATUSES] } };
+  } else {
+    throw new ForbiddenError();
+  }
+  const summary = await prisma.order.aggregate({ where, _count: { _all: true }, _max: { updatedAt: true } });
+  return `${summary._count._all}:${summary._max.updatedAt?.getTime() ?? 0}`;
 }
 
 // The buyer's own order; another buyer's order and a missing one look the same.

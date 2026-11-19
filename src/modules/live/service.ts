@@ -1,7 +1,9 @@
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { parseTopic, type ParsedTopic } from "@/lib/live/topics";
 import type { Actor } from "@/modules/identity/policies";
+import { offerVersion, offersListVersion } from "@/modules/marketplace/service";
 import { inboxVersion, threadVersion } from "@/modules/messaging/service";
+import { orderVersion, ordersListVersion } from "@/modules/orders/service";
 import { alertsVersion, ownAlertsSummary } from "@/modules/notifications/service";
 import type { AlertSummary } from "@/modules/notifications/views";
 
@@ -25,6 +27,12 @@ async function answer(actor: Actor, topic: ParsedTopic, since: string | undefine
       return { version: await threadVersion(actor, topic.id) };
     case "threads":
       return { version: await inboxVersion(actor) };
+    case "order":
+      return { version: await orderVersion(actor, topic.id) };
+    case "offer":
+      return { version: await offerVersion(actor, topic.id) };
+    case "list":
+      return { version: topic.list === "orders" ? await ordersListVersion(actor) : await offersListVersion(actor) };
     default:
       // Topics added by later tasks.
       throw new NotFoundError();
