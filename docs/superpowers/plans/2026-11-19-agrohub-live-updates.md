@@ -14,10 +14,14 @@
 
 ## Decisions the user must make before build (the orchestrator will list these)
 
-1. **Live chat is a launch non-goal** (main spec §2: "SMS or WhatsApp notifications, live chat"). An open thread polled every 5 s feels close to chat. This plan keeps it to polling with no typing indicators, no presence, no read receipts. Confirm that is acceptable.
-2. **Is the production Neon URL the pooled one?** The repo cannot tell (`src/lib/db.ts` just reads `DATABASE_URL`). Polling raises connection churn; it must be the pooler URL. Check in the Vercel and Neon dashboards before build.
-3. **Session cookie cache (optional, default OFF).** Every poll pays about 3 identity queries because `src/lib/auth.ts` has no `session.cookieCache`. Turning it on for 60 s cuts poll cost by roughly half, but a revoked session or removed membership stays valid up to 60 s. Not in the plan unless the user says yes (Task 9, optional).
-4. **Clear the message alert when a thread is opened?** Today opening `/messages/[id]` does not clear its bell alert (only clicking the alert does). With live threads the bell will light up for a message already on screen. Not in this plan (it is a read that writes); say if you want it added as Task 10.
+**Answered by the user (relayed 2026-11-19); the plan is approved to build with these changes.**
+
+1. **Messages are near-live via polling; no typing indicators, presence or read receipts.** (The main spec §2 lists "live chat" as a launch non-goal; the user accepts 5 s polling as live enough.)
+2. **Neon.** The project is on the Free plan (`free_v3`, about 100 CU-hours a month, autosuspend after 5 minutes, 0.25 to 2 CU). Polling keeps compute awake while any tab is visible, so the free hours can run out under sustained use; Task 8 must report the measured compute impact. Whether the production `DATABASE_URL` is the pooled one is for the user to check in Vercel (the host must contain `-pooler`). Not a blocker; it is on the PR checklist.
+3. **Session cookie cache stays OFF.** Every poll pays about 3 identity queries because `src/lib/auth.ts` has no `session.cookieCache`. Task 9 stays optional and unbuilt; decide after Task 8 measures.
+4. **Yes: clear the thread's message alert when the thread is opened.** Added as Task 5A.
+
+**Delivery in two PRs.** PR 1 = Tasks 1 to 5 + 5A (core loop, `/api/live`, alerts, threads, inbox, orders, offers). PR 2 = Tasks 6 to 8 (queues, dashboards, full e2e and cost measurement). The branch is rebased onto `origin/main` (PRs #36 and #37 merged) before building; e2e runs use `E2E_PORT` and `E2E_DATABASE_URL` with a private port and database.
 
 ## Global Constraints
 
@@ -129,7 +133,7 @@ Visible tab only. Hidden tabs poll nothing.
 
 | Screen | Interval | Why |
 | --- | --- | --- |
-| Open thread | 5 s, backing off to 15 s | The only place a person is waiting on another person. Not chat (decision 1) |
+| Open thread | 5 s, backing off to 15 s | The only place a person is waiting on another person. Near-live messages; no typing, presence or receipts (decision 1) |
 | Order/offer detail | 15 s | A status change matters within seconds to a minute, not instantly. 5 s while a buyer's order is `PENDING_PAYMENT` (they have just come back from Paystack and are waiting for the webhook) |
 | Bell, `/alerts` | 30 s | An alert is already a summary; the bell is on every page so it is the most-run poll |
 | Inbox, lists, screening queue | 30 s (inbox 15 s) | Browsing screens; stale for half a minute is harmless |
@@ -239,6 +243,18 @@ Safeguards: a cap of 6 topics per request and one poll in flight per tab (client
 - [ ] **Step 4: Run.** Expected: PASS, plus the scroll/skeleton check from Review Focus 2.
 - [ ] **Step 5: Commit** `feat: live updates for bell, threads, orders and offers`.
 
+### Task 5A: Opening a thread clears that thread's message alert
+
+**Files:** Modify `src/modules/notifications/service.ts`, `src/modules/messaging/service.ts` (`getThread`), `src/app/messages/[id]/page.tsx`. Test: `tests/integration/alerts-messages.test.ts` (extend).
+
+**Interfaces:** Produces `markThreadAlertsRead(actor: Actor, threadId: string): Promise<void>` in `notifications/service.ts` (calls `can(actor, "notification:own", …)`, scoped by `visibleTo(actor)`, kind `MESSAGE_RECEIVED`, subject `THREAD`, subjectId = threadId, `readAt: null`).
+
+- [ ] **Step 1: Failing tests:** opening the thread as its recipient sets `readAt` on that thread's unread `MESSAGE_RECEIVED` alert and the unread count drops; another participant's alert for the same thread is untouched; an alert for a different thread is untouched; a non-participant cannot open the thread (NotFound) and clears nothing; opening twice is harmless.
+- [ ] **Step 2: Run** `npx vitest run tests/integration/alerts-messages.test.ts`. Expected: FAIL.
+- [ ] **Step 3: Implement** the function and call it from the thread page (a server-side write on render, done once per view, after `getThread` has passed `participates`); `revalidatePath` is not needed because the bell learns of it from the next `alerts` poll or navigation.
+- [ ] **Step 4: Run.** Expected: PASS.
+- [ ] **Step 5: Commit** `feat: opening a thread clears its message alert`.
+
 ### Task 6: Screening and admin queue versions and wiring
 
 **Files:** Modify `src/modules/catalog/screening.ts`, `src/modules/payments/admin.ts`, `src/modules/orders/disputes.ts` (queue aggregate), `src/modules/cooperatives/service.ts`, `src/modules/name-changes/service.ts`; wire pages `src/app/officer/lots/page.tsx`, `officer/lots/[id]`, `admin/lots`, `admin/orders`, `admin/payouts`, `admin/cooperatives`, `admin/names`. Test: `tests/integration/live-queues.test.ts`.
@@ -267,7 +283,7 @@ Safeguards: a cap of 6 topics per request and one poll in flight per tab (client
 
 - [ ] **Step 1: E2E scenarios**, two browser contexts via `newPage(browser)` (`tests/e2e/journey.ts`), world from `setUpLotWorld`, time advanced with Playwright's `page.clock.install()` before navigation and `page.clock.runFor(16000)` (so tests do not wait real seconds), **no `page.reload()` or `goto` after the action**: (a) officer posts, buyer's open thread updates; (b) officer starts preparing, buyer order page updates; (c) officer counters an offer, buyer offer page updates; (d) farmer submits a lot, officer's open screening queue gains it; (e) tab hidden (`visibilitychange` dispatched) makes zero `/api/live` requests, and visible again makes exactly one; (f) role switched in another tab, the open order page does not loop on errors. Run with `--workers=1`, never alongside integration tests.
 - [ ] **Step 2: Run** the spec. Expected: PASS.
-- [ ] **Step 3: Measure:** with query logging on the test database, record requests and queries for the Task 5 scenarios over one minute and paste the real numbers into the PR description next to the estimates in 2.5.
+- [ ] **Step 3: Measure:** with query logging on the test database, record requests and queries for the Task 5 scenarios over one minute and paste the real numbers into the PR description next to the estimates in 2.5, together with the measured Neon compute impact (CU-hours per active hour) against the Free plan's about 100 CU-hours a month. **PR checklist item (both PRs):** the user confirms the production `DATABASE_URL` host contains `-pooler`.
 - [ ] **Step 4: Update** the two docs; no dependency line is needed.
 - [ ] **Step 5: Run `npm run lint`, `npm run typecheck`, `npm test` and the e2e suite via `test`; commit** `docs: live updates architecture and e2e proof`. Open the PR; stop; do not merge.
 
@@ -283,16 +299,16 @@ Server-Sent Events and a hosted realtime service (Pusher, Ably, Supabase Realtim
 
 What users will **not** get from this plan:
 
-1. **No instant delivery.** The slowest update is up to 60 s on admin queues, 30 s on the bell, lists and screening, 15 s on order and offer pages, and 5 to 15 s in a thread. It is not real time, and not live chat (no typing indicator, no "online" dot, no read receipts).
+1. **No instant delivery.** The slowest update is up to 60 s on admin queues, 30 s on the bell, lists and screening, 15 s on order and offer pages, and 5 to 15 s in a thread. It is not real time: messages are near-live via polling, with no typing indicator, no "online" dot and no read receipts.
 2. **Hidden tabs get nothing.** A phone with the browser in the background, or another tab in front, receives no updates until the person comes back; then it refreshes once. No push notifications, SMS or WhatsApp (all launch non-goals).
 3. **No unread markers in the inbox.** The brief mentions unread counts in `/messages`, but no per-thread read state exists (only the bell's `MESSAGE_RECEIVED` alert). The inbox will show new threads and new last messages live, but not "3 unread" per thread. Adding that needs a schema change and read tracking.
-4. **The message alert is not cleared by opening the thread** (decision 4). With live threads the bell can show an unread message the person is already reading.
+4. ~~The message alert is not cleared by opening the thread.~~ Now in scope as Task 5A.
 5. **Dashboard tiles that raise no alert update only on focus or navigation,** not while you stare at the page. Tiles fed by the alerts topic update within 30 s.
 6. **Screens not in the brief's list and not made live:** farmer lot list and lot detail except the offer decision (row 9), farmer earnings, officer farmers list and catalog requests, officer onboarding, admin cooperative detail, admin names detail and settings, board admin pages, the receipt page, the public `/lots`, `/prices`, `/cooperatives` pages, and `/account`. They update on reload or navigation as today.
 7. **No live "typing while the other side is editing" conflicts:** two officers on the same offer can still both press a button; the second gets the existing error. The page will usually have updated first, but it is not guaranteed.
 8. **Existing defects found and left alone (follow-ups, not fixes):** the admin lots tile runs a per-lot `membership.count` (unbounded N+1); no server action revalidates `/officer` or `/admin` home; the farmer earnings tile loads up to 100 statements to show 3; no rate limit sits in front of `/api/live`; `NavSlot`'s `hasAlerts` is not live.
 9. **No server-side polling limit.** Serverless gives no reliable in-process counter; a misbehaving client could call `/api/live` often. Mitigated by the 6-topic cap, the client's single-flight loop and browser behaviour only. A proper limit needs a shared store (database or Redis); not planned.
-10. **Cost is real and not capped:** Neon compute stays awake while anyone has a visible tab; the figures in 2.5 are estimates until Task 8 measures them; the pooled-URL question (decision 2) is unresolved.
+10. **Cost is real and not capped:** Neon compute stays awake while anyone has a visible tab. The project is on the Neon Free plan (about 100 CU-hours a month), so sustained use can exhaust the free hours; the figures in 2.5 are estimates until Task 8 measures the compute impact; the pooled-URL check (decision 2) is the user's, on the PR checklist.
 
 ## Self-review
 
