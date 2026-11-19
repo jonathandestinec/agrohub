@@ -7,7 +7,7 @@ import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, buyerThreadIdOf, ensureBuyerThread, getThread, postSystemMessage } from "@/modules/messaging/service";
 import type { ThreadMessage } from "@/modules/messaging/views";
 import { ledgerBalance, listPayoutIssues, listReconciliationIssues } from "@/modules/payments/service";
-import { notifyOrder } from "./alerts";
+import { emailOrder, notifyOrder } from "./alerts";
 import { refundInFull } from "./cancel";
 import { completeOrder } from "./complete";
 import { loadOwnOrder } from "./delivery";
@@ -61,6 +61,7 @@ export async function reportProblem(actor: Actor, orderId: string, reason: strin
   await recordAudit({ actorId: actor.userId, action: "order.dispute_open", entity: "order", entityId: orderId, meta: { orderId, kind } });
   // Last: both branches wrote a dispute row by here.
   await notifyOrder(prisma, orderId, "ORDER_PROBLEM_REPORTED", ["officers", "admins"], actor.userId);
+  await emailOrder(orderId, "ORDER_PROBLEM_REPORTED", ["officers", "admins"], actor.userId);
 }
 
 /**
@@ -221,6 +222,7 @@ export async function resolveDispute(actor: Actor, disputeId: string, decision: 
   // Last, after the try/catch (a decision that failed and was reverted tells no one) and after the
   // other disputes are closed, the thread line is posted and the audit row is written.
   await notifyOrder(prisma, order.id, "DISPUTE_RESOLVED", ["buyer", "officers"], actor.userId);
+  await emailOrder(order.id, "DISPUTE_RESOLVED", ["buyer", "officers"], actor.userId);
 }
 
 const DECISION_LINE: Record<DisputeOutcome, string> = {

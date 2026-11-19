@@ -46,7 +46,8 @@ agrohub/
       reviews/
       analytics/
       inputs/                input orders, signups, loans (tracking only)
-      notifications/         email events, and in-app alerts: `notify` (written by other services in their own transaction), the bell and /alerts reads, and `GET /api/alerts/summary` for the bell's count
+      home/                  the four role home pages' tiles: `farmerHome`, `officerHome`, `buyerHome`, `adminHome` assemble the other modules' `*Summary` reads (count plus three items) with `Promise.allSettled`; holds no queries
+      notifications/         email events, and in-app alerts: `notify` (written by other services in their own transaction), the bell and /alerts reads, and `GET /api/alerts/summary` for the bell's count. Key events also email the people involved: `sendAlertEmail` (`alert-emails.ts`) is called by the service after its transaction commits, on the branch that wrote the alert, builds the email from the same strict `data` shape and bell sentence, and sends one email at a time in a single task handed to Next's `after()` (`src/lib/defer.ts`), so a mail failure never blocks or rolls back the action. The real transport skips reserved-domain recipients such as the seeded `example.com` accounts. Password reset uses Better Auth's `sendResetPassword`, throttled to 3 emails per account per hour from its `verification` rows
       support/               reports, disputes
       audit/                 append-only audit log
     styles/tokens.css        brand token slot (brand identity arrives later)
@@ -136,6 +137,8 @@ Scheduled jobs: offer expiry (`offer-expiry`, daily 04:30 UTC; every action also
 Paystack's written answer on holding funds and manual settlement; brand identity; weather alerts (deferred).
 
 Decided (Phase 3): the AgroHub fee (default 3%) and the maximum cooperative cut (default 5%) live in the `Setting` table as basis-point strings, editable by admins at `/admin/settings`; so does the price-deviation threshold (default 20%, formerly the constant `DEFAULT_DEVIATION_THRESHOLD_BPS`, which remains as the code default). Lot photos are compressed in the browser with `<canvas>` (`src/lib/image-compress.ts`), so no image dependency was added.
+
+Decided (email design): every email renders through one layout, `src/modules/notifications/email-layout.ts` (tables, inline styles, a plain-text alternative). Its two images, `public/email/mark@2x.png` and `public/email/hero-cooperative.jpg`, are made once by `scripts/email-images.ts` with Playwright's Chromium (already a dev dependency) and committed, so no image dependency was added. They load by absolute URL from `BETTER_AUTH_URL`. `scripts/email-previews.ts` and `scripts/email-screenshots.ts` render and screenshot the emails for review.
 
 ## 12. Dependencies
 

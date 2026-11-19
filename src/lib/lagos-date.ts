@@ -41,3 +41,21 @@ export function formatLagosDateTime(at: Date): string {
   }).format(at);
   return `${text} Lagos time`;
 }
+
+/**
+ * An instant as Lagos wall-clock time with the zone written out: "12 Jun 2031, 13:00 WAT".
+ * The zone is a literal because Intl's short name varies by runtime ("WAT" or "GMT+1"), and
+ * Nigeria has no daylight saving, so WAT is always right. The locale only orders the date.
+ */
+export function formatLagosWat(at: Date, locale = "en-GB"): string {
+  const text = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Africa/Lagos",
+  }).format(at);
+  return `${text} WAT`;
+}

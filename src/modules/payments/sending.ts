@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { koboFromDb } from "@/lib/money";
 import { recordAudit } from "@/modules/audit/audit";
 import type { PayoutAlertKind } from "@/modules/notifications/emails";
-import { alertAdmins, notifyPayoutSent } from "./alerts";
+import { alertAdmins, emailPayoutSent, notifyPayoutSent } from "./alerts";
 import { postLedger } from "./ledger";
 import { payoutGateway, type PayoutGateway } from "./payout-gateway";
 
@@ -36,6 +36,8 @@ export async function settleAttempt(
   const amountKobo = koboFromDb(payout.amountKobo);
   const account = payableAccount(payout.recipientType);
   let alert: PayoutAlertKind | null = null;
+  // Set beside each in-app "payout sent" alert below, so the email goes out after the commit.
+  let payoutSent = false;
   const result = await prisma.$transaction(async (tx): Promise<SettleResult> => {
     if (outcome === "REVERSED" && attempt.status === "SUCCEEDED") {
       // Paystack took back a transfer it had completed: the payout is owed again.
@@ -92,6 +94,7 @@ export async function settleAttempt(
         });
         // A real repair: the alert goes out here, and only here, so a replay adds nothing.
         await notifyPayoutSent(tx, payout);
+        payoutSent = true;
         return "SETTLED";
       }
       return "ALREADY_SETTLED";
@@ -112,6 +115,7 @@ export async function settleAttempt(
           tx,
         );
         await notifyPayoutSent(tx, payout);
+        payoutSent = true;
       }
       return "SETTLED";
     }
@@ -123,6 +127,7 @@ export async function settleAttempt(
     alert = "FAILED";
     return "SETTLED";
   });
+  if (payoutSent) await emailPayoutSent(payout);
   if (alert) await alertAdmins({ kind: alert, orderId: payout.orderId, amountKobo, recipientType: payout.recipientType });
   return result;
 }

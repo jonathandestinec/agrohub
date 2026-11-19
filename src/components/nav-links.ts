@@ -10,6 +10,7 @@ export type NavLabelKey =
   | "farm"
   | "registerCooperative"
   | "yourFarm"
+  | "roleHome"
   | "prices"
   | "priceEntry"
   | "cropsUnits"
@@ -51,10 +52,11 @@ const group = (labelKey: NavGroupKey, links: Array<[string, NavLabelKey]>): NavI
   links: links.map(([href, key]) => ({ href, labelKey: key })),
 });
 
-// At most three items a role, so the bar stays clear. Every list or queue page a role can
+// Home and at most three more items a role, so the bar stays clear. Every list or queue page a role can
 // open is in here, either as an item or inside a group.
 const ITEMS: Partial<Record<Role, NavItem[]>> = {
   ADMIN: [
+    link("/admin", "roleHome"),
     group("groupReview", [
       ["/admin/cooperatives", "adminCooperatives"],
       ["/admin/names", "nameChanges"],
@@ -70,6 +72,7 @@ const ITEMS: Partial<Record<Role, NavItem[]>> = {
     ]),
   ],
   OFFICER: [
+    link("/officer", "roleHome"),
     group("groupCooperative", [
       ["/officer/onboarding", "cooperative"],
       ["/officer/farmers", "farmers"],
@@ -84,7 +87,8 @@ const ITEMS: Partial<Record<Role, NavItem[]>> = {
     link("/messages", "messages"),
   ],
   FARMER: [
-    link("/farmer", "farm"),
+    link("/farmer", "roleHome"),
+    link("/farmer/profile", "yourFarm"),
     group("groupSelling", [
       ["/farmer/lots", "myLots"],
       ["/farmer/earnings", "earnings"],
@@ -95,9 +99,10 @@ const ITEMS: Partial<Record<Role, NavItem[]>> = {
     ]),
   ],
   BUYER: [
+    link("/buyer", "roleHome"),
     link("/lots", "browseLots"),
     group("groupBuying", [
-      ["/buyer", "myOffers"],
+      ["/buyer/offers", "myOffers"],
       ["/buyer/orders", "myOrders"],
     ]),
     group("groupMore", [
@@ -137,7 +142,7 @@ export function navLinksWithoutActiveMembership(
   memberships: Array<{ role: Role; status: MembershipStatus }>,
 ): NavLink[] {
   if (memberships.some((m) => m.role === "FARMER" && m.status === "PENDING")) {
-    return [{ href: "/farmer", labelKey: "yourFarm" }];
+    return [{ href: "/farmer/profile", labelKey: "yourFarm" }];
   }
   if (!memberships.some((m) => m.role === "OFFICER" || m.role === "FARMER")) {
     return [

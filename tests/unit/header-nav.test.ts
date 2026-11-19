@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { navLinksWithoutActiveMembership } from "@/components/nav-links";
-import { centreNavLinks, isCurrent, navBreakpoint, showRoleSwitcher } from "@/components/nav-current";
+import { accountInMenu, centreNavLinks, isCurrent, menuAccountEntries, navBreakpoint, showRoleSwitcher } from "@/components/nav-current";
 
 describe("navLinksWithoutActiveMembership", () => {
   const register = [
     { href: "/officer/onboarding", labelKey: "registerCooperative" },
     { href: "/buyer/join", labelKey: "buyProduce" },
   ];
-  const yourFarm = [{ href: "/farmer", labelKey: "yourFarm" }];
+  const yourFarm = [{ href: "/farmer/profile", labelKey: "yourFarm" }];
 
   it("offers to register a cooperative or buy produce to a user with no officer or farmer membership", () => {
     expect(navLinksWithoutActiveMembership([])).toEqual(register);
@@ -80,5 +80,39 @@ describe("navBreakpoint", () => {
   it("fits six links from xl, and never beside the role switcher", () => {
     expect(navBreakpoint(6, false)).toBe("xl");
     expect(navBreakpoint(6, true)).toBe("menu");
+  });
+});
+
+describe("accountInMenu", () => {
+  it("moves the right side of the bar into the menu while the bar is shrunk", () => {
+    expect(accountInMenu({ compact: true, hasMenu: true })).toBe(true);
+  });
+
+  it("keeps the bar as it is at full size", () => {
+    expect(accountInMenu({ compact: false, hasMenu: true })).toBe(false);
+  });
+
+  it("never hides the account controls when there is no menu button to find them in", () => {
+    expect(accountInMenu({ compact: true, hasMenu: false })).toBe(false);
+  });
+});
+
+describe("menuAccountEntries", () => {
+  it("offers Sign in to a signed-out visitor", () => {
+    expect(menuAccountEntries({ signedIn: false, hasAlerts: false })).toEqual({ top: ["signIn"], bottom: [] });
+  });
+
+  it("offers Alerts and Profile, then Sign out, to someone signed in who has alerts", () => {
+    expect(menuAccountEntries({ signedIn: true, hasAlerts: true })).toEqual({
+      top: ["alerts", "profile"],
+      bottom: ["signOut"],
+    });
+  });
+
+  it("leaves out Alerts for someone signed in with no role yet, who has no bell either", () => {
+    expect(menuAccountEntries({ signedIn: true, hasAlerts: false })).toEqual({
+      top: ["profile"],
+      bottom: ["signOut"],
+    });
   });
 });

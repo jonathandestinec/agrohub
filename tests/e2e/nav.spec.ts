@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { HOME } from "./base-url";
 import { grantAdmin } from "./grant";
+import { accountButton, completeSignUp, enrolTwoFactor, LANDING, openNav, signIn, uniqueEmail } from "./journey";
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -24,6 +25,148 @@ test("the nav narrows on scroll down and comes back on scroll up", async ({ page
   await expect(bar).not.toHaveAttribute("data-compact", /.*/);
   // Still pinned: the bar stays at the top of the screen.
   expect((await bar.boundingBox())!.y).toBeLessThan(40);
+});
+
+// On a phone the shrunk bar holds the logo and the menu button only: Sign in (or the bell and the
+// avatar) wait in the menu. The menu button stays inside the bar at every phone width.
+const PHONE_WIDTHS = [320, 360, 375, 414];
+
+async function shrinkOnPhone(page: Page): Promise<Locator> {
+  await page.evaluate(() => {
+    document.body.style.minHeight = "4000px";
+  });
+  const bar = page.locator(".nav-bar");
+  await page.mouse.move(100, 400);
+  await expect
+    .poll(async () => {
+      await page.mouse.wheel(0, 400);
+      return bar.getAttribute("data-compact");
+    })
+    .not.toBeNull();
+  // The bar narrows over about half a second; measure it where it comes to rest.
+  await expect.poll(async () => Math.round((await bar.boundingBox())!.width)).toBeLessThanOrEqual(280);
+  return bar;
+}
+
+async function expectMenuButtonInside(page: Page, width: number, state: string): Promise<void> {
+  for (const [name, scope] of [
+    ["bar", ".nav-bar"],
+    ["header", "header"],
+  ] as const) {
+    // Retried: the bar's width eases over about half a second after it changes size.
+    await expect
+      .poll(
+        async () => {
+          const toggle = (await page.locator(".nav-bar button[aria-controls='app-menu']").boundingBox())!;
+          const outer = (await page.locator(scope).first().boundingBox())!;
+          return toggle.x >= outer.x && toggle.x + toggle.width <= outer.x + outer.width;
+        },
+        { message: `menu button inside the ${name} at ${width}px, ${state}` },
+      )
+      .toBe(true);
+  }
+}
+
+test("on a phone the shrunk bar shows the logo and the menu button, and Sign in waits in the menu", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const barSignIn = page.locator('.nav-bar a[href="/sign-in"]');
+  await expect(barSignIn).toBeVisible();
+
+  await shrinkOnPhone(page);
+  await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
+  await expectMenuButtonInside(page, 375, "shrunk");
+  await expect(barSignIn).toBeHidden();
+
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const menu = page.locator("#app-menu");
+  await expect(menu.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+  await menu.getByRole("link", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test("signed out, the menu button stays inside the bar at every phone width, shrunk or not", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  for (const width of PHONE_WIDTHS) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator(".nav-bar")).not.toHaveAttribute("data-compact", /.*/);
+    await expectMenuButtonInside(page, width, "full size");
+    await shrinkOnPhone(page);
+    await expectMenuButtonInside(page, width, "shrunk");
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await expect(page.locator("#app-menu")).toBeVisible();
+    await expectMenuButtonInside(page, width, "open");
+    await page.getByRole("button", { name: "Close menu" }).click();
+  }
+});
+
+test("tabbing into the shrunk phone bar brings the full bar back, with the menu button inside it", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 812 });
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const bar = await shrinkOnPhone(page);
+  await expect(page.locator('.nav-bar a[href="/sign-in"]')).toBeHidden();
+  await expect
+    .poll(async () => {
+      await page.keyboard.press("Tab");
+      return page.evaluate(() => Boolean(document.activeElement?.closest(".nav-bar")));
+    })
+    .toBe(true);
+  await expect(bar).not.toHaveAttribute("data-compact", /.*/);
+  await expect(page.locator('.nav-bar a[href="/sign-in"]')).toBeVisible();
+  await expectMenuButtonInside(page, 320, "focused");
+});
+
+test("signed in, the shrunk phone bar hides the bell and avatar, and the menu offers them", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  const user = { name: "Ada Obi", email: uniqueEmail("nav-compact") };
+  await page.goto("/sign-up");
+  await completeSignUp(page, request, user);
+  await signIn(page, user.email);
+  await expect(accountButton(page)).toBeVisible();
+
+  // With no role yet there is no bell, so the menu offers Profile and Sign out but not Alerts.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await shrinkOnPhone(page);
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const bare = page.locator("#app-menu");
+  await expect(bare.getByRole("link", { name: "Profile", exact: true })).toBeVisible();
+  await expect(bare.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await expect(bare.getByRole("link", { name: "Alerts", exact: true })).toHaveCount(0);
+
+  // A buyer has alerts, so the bar carries the bell as well as the avatar.
+  await page.goto("/buyer/join");
+  await page.getByRole("main").getByRole("button", { name: "Start buying" }).click();
+  await expect(page).toHaveURL(/\/buyer$/);
+  await expect(page.getByRole("main").getByRole("heading", { name: /^Home/ })).toBeVisible();
+
+  for (const width of PHONE_WIDTHS) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator(".nav-bar")).not.toHaveAttribute("data-compact", /.*/);
+    await expect(accountButton(page)).toBeVisible();
+    await expectMenuButtonInside(page, width, "full size");
+    await shrinkOnPhone(page);
+    await expectMenuButtonInside(page, width, "shrunk");
+    await expect(accountButton(page)).toBeHidden();
+    await expect(page.locator('.nav-bar a[href="/alerts"]')).toBeHidden();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const menu = page.locator("#app-menu");
+    await expect(menu.getByRole("link", { name: "Alerts", exact: true })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Profile", exact: true })).toHaveAttribute("href", "/account");
+    await expect(menu.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expectMenuButtonInside(page, width, "open");
+    await page.getByRole("button", { name: "Close menu" }).click();
+  }
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await shrinkOnPhone(page);
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await page.locator("#app-menu").getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
 });
 
 // With two memberships the header also carries the role switcher. Nothing in it may overlap
@@ -153,4 +296,82 @@ test("with the role switcher shown, nothing in the header overlaps", async ({ pa
       await page.getByRole("button", { name: "Close menu" }).click();
     }
   }
+});
+
+// An admin page 404s for the officer role, so switching roles there must not reload in place.
+test("switching from admin to officer on an admin page lands on the officer home", async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await signUpOfficerWithAdmin(page, request);
+  // An admin without two-factor is sent to enrol before the queue opens.
+  await page.goto("/admin/orders");
+  await enrolTwoFactor(page);
+  await page.goto("/admin/orders");
+  await page.waitForLoadState("networkidle");
+  await expect(page).toHaveURL(/\/admin\/orders$/);
+
+  const switched = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
+  await switched;
+
+  await expect(page).toHaveURL(LANDING.officerOnboarding);
+  await expect(page.getByText("This page could not be found")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  // The header follows without a manual reload.
+  await expect(page.getByLabel("Acting as").locator("option:checked")).toHaveText("Cooperative officer");
+});
+
+test("switching from officer to admin on an officer page lands on the admin home", async ({ page, request }) => {
+  test.setTimeout(180_000);
+  await signUpOfficerWithAdmin(page, request);
+  await page.goto("/admin/orders");
+  await enrolTwoFactor(page);
+  await page.goto("/admin/orders");
+  await page.waitForLoadState("networkidle");
+
+  // Acting as the officer lands on the officer home (onboarding: this cooperative is not verified yet).
+  await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
+  await expect(page).toHaveURL(LANDING.officerOnboarding);
+
+  // And back: the officer page would 404 for the admin role.
+  await page.getByLabel("Acting as").selectOption({ label: "Administrator" });
+  await expect(page).toHaveURL(LANDING.admin);
+  await expect(page.getByText("This page could not be found")).toHaveCount(0);
+  await expect(page.getByLabel("Acting as").locator("option:checked")).toHaveText("Administrator");
+});
+
+// On a slow runner the page's scripts arrive after its HTML. The dropdown buttons and the role
+// switcher must not be pressable until React has attached their handlers: a press before then
+// did nothing (a switch never posted, a dropdown never opened).
+test("the nav dropdowns and role switcher work when the page's scripts load late", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  await signUpOfficerWithAdmin(page, request);
+  const late = (url: URL) => url.pathname.startsWith("/_next/static/") && url.pathname.endsWith(".js");
+  await page.route(late, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 4_000));
+    await route.continue();
+  });
+  await page.goto("/", { waitUntil: "commit" });
+  await openNav(page, "Cooperatives");
+  await page.keyboard.press("Escape");
+
+  await page.reload({ waitUntil: "commit" });
+  const switched = page.waitForResponse((r) => r.request().method() === "POST");
+  await page.getByLabel("Acting as").selectOption({ label: "Cooperative officer" });
+  await switched;
+});
+
+// The phone menu's round toggle is a plain button too: a tap before React attached its handler
+// did nothing, so the menu never opened.
+test("the phone menu opens when the page's scripts load late", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  await signUpOfficerWithAdmin(page, request);
+  await page.setViewportSize({ width: 375, height: 812 });
+  const late = (url: URL) => url.pathname.startsWith("/_next/static/") && url.pathname.endsWith(".js");
+  await page.route(late, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 4_000));
+    await route.continue();
+  });
+  await page.goto("/", { waitUntil: "commit" });
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await expect(page.locator("#app-menu")).toBeVisible();
 });

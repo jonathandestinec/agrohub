@@ -5,11 +5,11 @@ describe("landingPath", () => {
   it("sends each role to the page they work from when nothing was asked for", () => {
     const go = (role: Parameters<typeof landingPath>[0]["role"], cooperativeVerified = true) =>
       landingPath({ next: "/", role, cooperativeVerified });
-    expect(go("ADMIN")).toBe("/admin/orders");
+    expect(go("ADMIN")).toBe("/admin");
     expect(go("BOARD_ADMIN")).toBe("/board");
-    expect(go("OFFICER")).toBe("/officer/orders");
+    expect(go("OFFICER")).toBe("/officer");
     expect(go("FARMER")).toBe("/farmer");
-    expect(go("BUYER")).toBe("/lots");
+    expect(go("BUYER")).toBe("/buyer");
   });
 
   it("sends an officer of a cooperative that is not verified to onboarding", () => {
@@ -26,7 +26,7 @@ describe("landingPath", () => {
   });
 
   it("ignores a next that is not a safe path on this site", () => {
-    expect(landingPath({ next: "https://evil.example", role: "BUYER", cooperativeVerified: true })).toBe("/lots");
+    expect(landingPath({ next: "https://evil.example", role: "BUYER", cooperativeVerified: true })).toBe("/buyer");
     expect(landingPath({ next: "//evil.example", role: "FARMER", cooperativeVerified: true })).toBe("/farmer");
     expect(landingPath({ next: "", role: "FARMER", cooperativeVerified: true })).toBe("/farmer");
   });

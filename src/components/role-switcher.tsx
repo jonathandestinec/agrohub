@@ -2,7 +2,10 @@
 
 import { useId, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { useHydrated } from "@/lib/use-hydrated";
 import { setActiveRole } from "@/app/actions/active-role";
+import { resolveLanding } from "@/app/actions/landing";
 import type { Role } from "@/modules/identity/policies";
 
 export type SwitcherMembership = {
@@ -20,9 +23,11 @@ export function RoleSwitcher({
 }) {
   const t = useTranslations("roleSwitcher");
   const roles = useTranslations("roles");
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const selectId = useId();
   const [failed, setFailed] = useState(false);
+  const hydrated = useHydrated();
 
   return (
     <div className="flex items-center gap-2">
@@ -32,15 +37,23 @@ export function RoleSwitcher({
       <select
         id={selectId}
         value={activeId}
-        disabled={pending}
+        // Off until hydrated: a change before then would have no handler and be lost. It looks
+        // normal meanwhile (only the pending state fades).
+        disabled={pending || !hydrated}
         onChange={(event) => {
           const id = event.target.value;
           startTransition(async () => {
             const result = await setActiveRole(id);
             setFailed(!result.ok);
+            // The old page may be closed to the new role (it would 404), so go to the new
+            // role's home, the same page sign-in uses. Staying pending keeps a second change out.
+            if (result.ok) {
+              router.replace(await resolveLanding("/"));
+              router.refresh();
+            }
           });
         }}
-        className="press min-h-11 rounded-full bg-step px-4 title-4 text-ink hover:bg-step-deep disabled:opacity-50"
+        className={`press min-h-11 rounded-full bg-step px-4 title-4 text-ink hover:bg-step-deep disabled:cursor-progress ${pending ? "opacity-50" : ""}`}
       >
         {memberships.map((m) => (
           <option key={m.id} value={m.id}>

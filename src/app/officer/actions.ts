@@ -252,6 +252,8 @@ async function decideRequest(
     await work(actor, typeof input?.id === "string" ? input.id : "");
     revalidatePath("/officer/farmers");
     revalidatePath("/farmer");
+
+    revalidatePath("/farmer/profile");
     revalidatePath("/board/crops");
     return { ok: true, data: undefined };
   } catch (error) {

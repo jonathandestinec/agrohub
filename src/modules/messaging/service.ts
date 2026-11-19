@@ -8,6 +8,7 @@ import { holdsCooperativeRole } from "@/modules/identity/service";
 import { notify, threadAudience } from "@/modules/notifications/service";
 import { hasContactDetails, mentionsAmount } from "./guards";
 import { toThreadSummary, toThreadView, type ThreadSummary, type ThreadView } from "./views";
+import { threadWhereFor } from "./where";
 
 export type { ThreadSummary, ThreadView, ThreadMessage } from "./views";
 
@@ -209,13 +210,7 @@ export async function getThread(actor: Actor, threadId: string): Promise<ThreadV
 // The threads the actor takes part in, newest activity first: a buyer's or farmer's own, an
 // officer's cooperative's, or (for an admin) the latest 100 anywhere.
 export async function listOwnThreads(actor: Actor): Promise<ThreadSummary[]> {
-  let where: Prisma.ThreadWhereInput;
-  if (actor.role === "BUYER") where = { kind: "BUYER_COOPERATIVE", counterpartUserId: actor.userId };
-  else if (actor.role === "FARMER" && actor.cooperativeId) {
-    where = { kind: "FARMER_COOPERATIVE", counterpartUserId: actor.userId, cooperativeId: actor.cooperativeId };
-  } else if (actor.role === "OFFICER" && actor.cooperativeId) where = { cooperativeId: actor.cooperativeId };
-  else if (actor.role === "ADMIN") where = {};
-  else throw new ForbiddenError();
+  const where = threadWhereFor(actor);
   const threads = await prisma.thread.findMany({
     where,
     include: { ...THREAD_INCLUDE, messages: { orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 1 } },
@@ -287,3 +282,5 @@ export async function threadParties(
     select: { kind: true, lotId: true, cooperativeId: true, counterpartUserId: true },
   });
 }
+
+export { latestThreads } from "./summaries";

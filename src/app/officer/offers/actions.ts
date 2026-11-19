@@ -39,6 +39,8 @@ export async function respondToOfferAction(input: {
     revalidatePath(`/officer/offers/${input.offerId}`);
     revalidatePath("/farmer/lots");
     revalidatePath("/buyer");
+
+    revalidatePath("/buyer/offers");
     revalidatePath("/messages");
     return { ok: true, data: undefined };
   } catch (error) {
