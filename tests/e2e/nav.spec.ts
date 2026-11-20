@@ -137,6 +137,33 @@ test("after Start buying the header shows the buyer role without a reload", asyn
   await expect(account.locator("xpath=..").getByText("Buyer", { exact: true })).toBeVisible();
 });
 
+// The nav streams in and hydrates after the page body, so a client navigation can land first (a
+// quick tap on a form or link in the body). The nav must then show the new page as current, not
+// keep the server's highlight for the old one: React does not patch attributes that differ at
+// hydration. Moving the URL before the scripts run stands in for that race, deterministically.
+test("a URL change before the nav hydrates still highlights the page shown", async ({ page, request }) => {
+  test.setTimeout(120_000);
+  const user = { name: "Ada Obi", email: uniqueEmail("nav-early-url") };
+  await page.goto("/sign-up");
+  await completeSignUp(page, request, user);
+  await signIn(page, user.email);
+  await expect(accountButton(page)).toBeVisible();
+  await page.goto("/buyer/join");
+  await page.getByRole("main").getByRole("button", { name: "Start buying" }).click();
+  await expect(page).toHaveURL(/\/buyer$/);
+
+  await page.addInitScript(() => {
+    if (location.pathname === "/buyer") history.replaceState(history.state, "", "/buyer/orders");
+  });
+  await page.goto("/buyer");
+  await expect(page).toHaveURL(/\/buyer\/orders$/);
+  const bar = page.getByRole("navigation", { name: "Main" });
+  // The group trigger is enabled once the nav has hydrated.
+  await expect(bar.getByRole("button", { name: "My buying" })).toBeEnabled();
+  await expect(bar.getByRole("button", { name: "My buying" })).toHaveAttribute("data-current", "");
+  await expect(bar.getByRole("link", { name: "Home", exact: true })).not.toHaveAttribute("aria-current", /.*/);
+});
+
 test("signed in, the shrunk phone bar hides the bell and avatar, and the menu offers them", async ({ page, request }) => {
   test.setTimeout(120_000);
   const user = { name: "Ada Obi", email: uniqueEmail("nav-compact") };
