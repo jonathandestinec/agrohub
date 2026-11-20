@@ -19,11 +19,25 @@ function psql(sql: string): void {
   execSync(`docker exec ${CONTAINER} psql -U agrohub -d postgres -c "${sql}"`, { stdio: "ignore" });
 }
 
-function statementsSince(unixSeconds: number): number {
+function statementLinesSince(unixSeconds: number): string[] {
   const log = execSync(`docker logs ${CONTAINER} --since ${unixSeconds} 2>&1`, { encoding: "utf8", maxBuffer: 1 << 28 });
   return log
     .split("\n")
-    .filter((line) => /LOG:\s+(execute [^:]*|statement):/.test(line) && !/:\s*(BEGIN|COMMIT|ROLLBACK)\b/i.test(line)).length;
+    .filter((line) => /LOG:\s+(execute [^:]*|statement):/.test(line) && !/:\s*(BEGIN|COMMIT|ROLLBACK)\b/i.test(line));
+}
+
+function statementsSince(unixSeconds: number): number {
+  return statementLinesSince(unixSeconds).length;
+}
+
+// Statements grouped by the first table they touch, most first: which tiles' queries dominate a load.
+function statementsByTable(unixSeconds: number): Record<string, number> {
+  const counts = new Map<string, number>();
+  for (const line of statementLinesSince(unixSeconds)) {
+    const table = /(?:FROM|INTO|UPDATE)\s+"public"\."(\w+)"/i.exec(line)?.[1] ?? "(other)";
+    counts.set(table, (counts.get(table) ?? 0) + 1);
+  }
+  return Object.fromEntries([...counts].sort((a, b) => b[1] - a[1]));
 }
 
 type Row = { label: string; seconds: number; livePosts: number; statements: number; statementsPerMinute: number; postsPerMinute: number };
@@ -53,13 +67,13 @@ async function measure(page: Page, label: string, url: string): Promise<void> {
   });
 }
 
-async function pageLoadStatements(page: Page, url: string): Promise<number> {
+async function pageLoadStatements(page: Page, url: string): Promise<{ statements: number; byTable: Record<string, number> }> {
   await page.goto("about:blank");
   const startedAt = Math.floor(Date.now() / 1000);
   await page.goto(url);
   await page.waitForLoadState("load");
   await page.waitForTimeout(3_000);
-  return statementsSince(startedAt);
+  return { statements: statementsSince(startedAt), byTable: statementsByTable(startedAt) };
 }
 
 test.describe("live cost", () => {
@@ -94,14 +108,17 @@ test.describe("live cost", () => {
       thread: await pageLoadStatements(officerPage, threadHref),
     };
 
+    if (!process.env.LIVE_COST_ONLY_LOADS) {
     await measure(officerPage, "bell only (a public page)", "/prices");
     await measure(officerPage, "offer page (offer 15 s + bell 30 s)", offerHref);
     await measure(officerPage, "open thread, first minute (5 s, backing off)", threadHref);
     await measure(officerPage, "screening queue (30 s + bell)", "/officer/lots");
     await measure(officerPage, "officer home (bell 30 s; refreshes on a new alert)", "/officer");
+    }
 
     mkdirSync("test-results", { recursive: true });
-    writeFileSync("test-results/live-cost.json", JSON.stringify({ windowSeconds: WINDOW_SECONDS, pageLoadStatements: loads, rows }, null, 2));
+    const out = process.env.LIVE_COST_ONLY_LOADS ? "test-results/live-cost-loads.json" : "test-results/live-cost.json";
+    writeFileSync(out, JSON.stringify({ windowSeconds: WINDOW_SECONDS, pageLoadStatements: loads, rows }, null, 2));
     console.log(JSON.stringify({ pageLoadStatements: loads, rows }, null, 2));
   });
 });
