@@ -160,6 +160,7 @@ export {
   listScreeningQueue,
   rejectLot,
   respondToCounter,
+  screeningVersion,
   type ScreeningLot,
 } from "./screening";
 export { decideRevision, requestRevision, withdrawLot } from "./revisions";

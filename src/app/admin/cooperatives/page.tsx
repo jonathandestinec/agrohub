@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { ArrowUpRight, Chip, PageHeading } from "@/components/ui";
-import { listVerificationQueue } from "@/modules/cooperatives/service";
+import { listVerificationQueue, verificationQueueVersion } from "@/modules/cooperatives/service";
 
 export default function QueuePage() {
   return (
@@ -23,10 +24,12 @@ async function Queue() {
     new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
       new Date(iso),
     );
+  const version = await verificationQueueVersion(actor);
   const queue = await listVerificationQueue(actor, new Date());
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="queue:verification" intervalMs={60_000} initialVersion={version} />
       <PageHeading title={t("title")} />
       {queue.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("empty")}</p>

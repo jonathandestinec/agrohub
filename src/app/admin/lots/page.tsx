@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
+import { screeningVersion } from "@/modules/catalog/service";
 import { ScreeningQueue } from "@/components/lots/screening-pages";
 
 export default function LotQueuePage() {
@@ -14,5 +16,11 @@ export default function LotQueuePage() {
 async function Queue() {
   const actor = await requireActorForPage();
   if (actor.role !== "ADMIN") notFound();
-  return <ScreeningQueue actor={actor} basePath="/admin/lots" />;
+  const version = await screeningVersion(actor);
+  return (
+    <>
+      <LiveRefresh topic="queue:screening" intervalMs={30_000} initialVersion={version} />
+      <ScreeningQueue actor={actor} basePath="/admin/lots" />
+    </>
+  );
 }

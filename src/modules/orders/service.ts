@@ -5,6 +5,7 @@ export { answerCancelRequest, cancelOrder, cooperativeCancellations, refundInFul
 export { completeOrder, type CompletedBy } from "./complete";
 export { confirmReceipt, DELIVERY_DATE_MAX_DAYS, markDelivered, setDeliveryDate, startPreparing } from "./delivery";
 export {
+  adminOrdersQueueVersion,
   AUTO_RELEASE_HOURS,
   DELIVERY_TIMEOUT_DAYS,
   freezeOrdersOfCooperative,

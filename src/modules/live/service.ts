@@ -1,9 +1,13 @@
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
-import { parseTopic, type ParsedTopic } from "@/lib/live/topics";
+import { parseTopic, type ParsedTopic, type QueueName } from "@/lib/live/topics";
 import type { Actor } from "@/modules/identity/policies";
+import { screeningVersion } from "@/modules/catalog/service";
+import { verificationQueueVersion } from "@/modules/cooperatives/service";
 import { offerVersion, offersListVersion } from "@/modules/marketplace/service";
 import { inboxVersion, threadVersion } from "@/modules/messaging/service";
-import { orderVersion, ordersListVersion } from "@/modules/orders/service";
+import { nameQueueVersion } from "@/modules/name-changes/service";
+import { adminOrdersQueueVersion, orderVersion, ordersListVersion } from "@/modules/orders/service";
+import { payoutIssuesVersion } from "@/modules/payments/service";
 import { alertsVersion, ownAlertsSummary } from "@/modules/notifications/service";
 import type { AlertSummary } from "@/modules/notifications/views";
 
@@ -33,9 +37,23 @@ async function answer(actor: Actor, topic: ParsedTopic, since: string | undefine
       return { version: await offerVersion(actor, topic.id) };
     case "list":
       return { version: topic.list === "orders" ? await ordersListVersion(actor) : await offersListVersion(actor) };
-    default:
-      // Topics added by later tasks.
-      throw new NotFoundError();
+    case "queue":
+      return { version: await queueVersion(actor, topic.queue) };
+  }
+}
+
+function queueVersion(actor: Actor, queue: QueueName): Promise<string> {
+  switch (queue) {
+    case "screening":
+      return screeningVersion(actor);
+    case "admin-orders":
+      return adminOrdersQueueVersion(actor);
+    case "payouts":
+      return payoutIssuesVersion(actor);
+    case "verification":
+      return verificationQueueVersion(actor);
+    case "names":
+      return nameQueueVersion(actor);
   }
 }
 

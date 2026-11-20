@@ -362,6 +362,18 @@ async function adminView(actor: Actor, row: NameChangeRequest, now: Date): Promi
   });
 }
 
+// A string that changes when a request joins or leaves the name-change queue: the pending count
+// and the newest createdAt. One aggregate.
+export async function nameQueueVersion(actor: Actor): Promise<string> {
+  if (!can(actor, "name:queue")) throw new ForbiddenError();
+  const summary = await prisma.nameChangeRequest.aggregate({
+    where: { status: "PENDING" },
+    _count: { _all: true },
+    _max: { createdAt: true },
+  });
+  return `${summary._count._all}:${summary._max.createdAt?.getTime() ?? 0}`;
+}
+
 export async function listNameChangeQueue(
   actor: Actor,
   now: Date = new Date(),

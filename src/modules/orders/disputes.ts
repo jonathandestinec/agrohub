@@ -6,7 +6,7 @@ import { recordAudit } from "@/modules/audit/audit";
 import { can, type Actor } from "@/modules/identity/policies";
 import { assertMessageAllowed, buyerThreadIdOf, ensureBuyerThread, getThread, postSystemMessage } from "@/modules/messaging/service";
 import type { ThreadMessage } from "@/modules/messaging/views";
-import { ledgerBalance, listPayoutIssues, listReconciliationIssues } from "@/modules/payments/service";
+import { ledgerBalance, listPayoutIssues, listReconciliationIssues, payoutIssuesVersion, reconciliationVersion } from "@/modules/payments/service";
 import { emailOrder, notifyOrder } from "./alerts";
 import { refundInFull } from "./cancel";
 import { completeOrder } from "./complete";
@@ -299,6 +299,18 @@ export type AdminOrder = {
 const ACCOUNTS: LedgerAccount[] = ["PAYSTACK_BALANCE", "HELD", "COOPERATIVE_PAYABLE", "FARMER_PAYABLE", "PLATFORM_FEE", "PAYSTACK_FEES", "REFUND_PAYABLE"];
 
 /** An admin's view of one order: its thread, delivery marks, ledger totals, payouts and disputes. No bank data. */
+// A string that changes when something joins or leaves the admin's order queue: open disputes (count
+// and newest createdAt), unresolved reconciliation issues, and payout problems. Aggregates only.
+export async function adminOrdersQueueVersion(actor: Actor, now: Date = new Date()): Promise<string> {
+  if (!can(actor, "order:admin")) throw new ForbiddenError();
+  const [disputes, reconciliation, payouts] = await Promise.all([
+    prisma.dispute.aggregate({ where: { status: "OPEN" }, _count: { _all: true }, _max: { createdAt: true } }),
+    reconciliationVersion(actor),
+    payoutIssuesVersion(actor, now),
+  ]);
+  return `${disputes._count._all}:${disputes._max.createdAt?.getTime() ?? 0}|${reconciliation}|${payouts}`;
+}
+
 export async function getOrderForAdmin(actor: Actor, orderId: string): Promise<AdminOrder> {
   if (!can(actor, "order:admin")) throw new ForbiddenError();
   const order = await prisma.order.findUnique({

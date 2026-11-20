@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { ArrowUpRight, Chip, PageHeading } from "@/components/ui";
-import { listNameChangeQueue } from "@/modules/name-changes/service";
+import { listNameChangeQueue, nameQueueVersion } from "@/modules/name-changes/service";
 
 export default function NameChangeQueuePage() {
   return (
@@ -18,10 +19,12 @@ async function Queue() {
   const actor = await requireActorForPage();
   if (actor.role !== "ADMIN") notFound();
   const t = await getTranslations("admin.names");
+  const version = await nameQueueVersion(actor);
   const queue = await listNameChangeQueue(actor, new Date());
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="queue:names" intervalMs={60_000} initialVersion={version} />
       <PageHeading title={t("title")} lead={t("lead")} />
       {queue.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("empty")}</p>
