@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { Breakdown } from "@/components/lots/breakdown";
 import { lotErrorKey } from "@/components/lots/error-key";
@@ -163,174 +164,176 @@ export function LotForm({ context, states }: { context: LotFormContext; states: 
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="cropId" className="title-4">
-            {t("form.crop")}
-          </label>
-          <select id="cropId" required className={selectClass} {...bind("cropId")}>
-            <option value="" disabled>
-              {t("form.choose")}
-            </option>
-            {context.crops.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+      <HydrationGate>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="cropId" className="title-4">
+              {t("form.crop")}
+            </label>
+            <select id="cropId" required className={selectClass} {...bind("cropId")}>
+              <option value="" disabled>
+                {t("form.choose")}
               </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <label htmlFor="unitId" className="title-4">
-            {t("form.unit")}
-          </label>
-          <select id="unitId" required className={selectClass} {...bind("unitId")}>
-            <option value="" disabled>
-              {t("form.choose")}
-            </option>
-            {context.units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
+              {context.crops.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="unitId" className="title-4">
+              {t("form.unit")}
+            </label>
+            <select id="unitId" required className={selectClass} {...bind("unitId")}>
+              <option value="" disabled>
+                {t("form.choose")}
               </option>
-            ))}
-          </select>
+              {context.units.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
-      <p className="body-6 text-ink-soft">
-        <Link href="/farmer/profile#crop-requests" className="underline underline-offset-4">
-          {t("form.notListed")}
-        </Link>
-      </p>
+        <p className="body-6 text-ink-soft">
+          <Link href="/farmer/profile#crop-requests" className="underline underline-offset-4">
+            {t("form.notListed")}
+          </Link>
+        </p>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field id="quantity" label={t("form.quantity")} hint={t("form.quantityHint")} inputMode="numeric" required {...bind("quantity")} />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field id="quantity" label={t("form.quantity")} hint={t("form.quantityHint")} inputMode="numeric" required {...bind("quantity")} />
+          <div className="flex flex-col gap-2">
+            <label htmlFor="grade" className="title-4">
+              {t("form.grade")}
+            </label>
+            <select id="grade" required className={selectClass} {...bind("grade")}>
+              {GRADES.map((g) => (
+                <option key={g} value={g}>
+                  {t(`grade.${g}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field id="ask" label={t("form.ask")} hint={t("form.askHint")} inputMode="decimal" required {...bind("ask")} />
+          <Field id="floor" label={t("form.floor")} hint={t("form.floorHint")} inputMode="decimal" required {...bind("floor")} />
+        </div>
+
+        {warned ? (
+          <div role="status" className="flex flex-col gap-2 rounded-inner bg-step p-4 body-3">
+            <p>{deviation === "HIGH" ? t("form.warningHigh") : t("form.warningLow")}</p>
+            <ul className="body-6 text-ink-soft">
+              {board.map((b) => (
+                <li key={b.market}>
+                  {t("form.boardPrice", { market: b.market, price: formatNaira(b.priceKobo), week: formatWeek(b.weekOf) })}
+                </li>
+              ))}
+            </ul>
+            <p className="body-6">{t("form.warningNote")}</p>
+          </div>
+        ) : null}
+
+        {askKobo !== null && quantity !== null && quantity > 0 ? (
+          <section className="flex flex-col gap-2">
+            <h2 className="title-3">{t("form.breakdownHeading")}</h2>
+            <Breakdown
+              askKobo={askKobo}
+              quantity={quantity}
+              cutBps={context.quotedCutBps}
+              feeBps={context.platformFeeBps}
+              unit={unitName || t("form.unitFallback")}
+            />
+          </section>
+        ) : null}
+
         <div className="flex flex-col gap-2">
-          <label htmlFor="grade" className="title-4">
-            {t("form.grade")}
+          <label htmlFor="note" className="title-4">
+            {warned ? t("form.noteRequired") : t("form.note")}
           </label>
-          <select id="grade" required className={selectClass} {...bind("grade")}>
-            {GRADES.map((g) => (
-              <option key={g} value={g}>
-                {t(`grade.${g}`)}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field id="ask" label={t("form.ask")} hint={t("form.askHint")} inputMode="decimal" required {...bind("ask")} />
-        <Field id="floor" label={t("form.floor")} hint={t("form.floorHint")} inputMode="decimal" required {...bind("floor")} />
-      </div>
-
-      {warned ? (
-        <div role="status" className="flex flex-col gap-2 rounded-inner bg-step p-4 body-3">
-          <p>{deviation === "HIGH" ? t("form.warningHigh") : t("form.warningLow")}</p>
-          <ul className="body-6 text-ink-soft">
-            {board.map((b) => (
-              <li key={b.market}>
-                {t("form.boardPrice", { market: b.market, price: formatNaira(b.priceKobo), week: formatWeek(b.weekOf) })}
-              </li>
-            ))}
-          </ul>
-          <p className="body-6">{t("form.warningNote")}</p>
-        </div>
-      ) : null}
-
-      {askKobo !== null && quantity !== null && quantity > 0 ? (
-        <section className="flex flex-col gap-2">
-          <h2 className="title-3">{t("form.breakdownHeading")}</h2>
-          <Breakdown
-            askKobo={askKobo}
-            quantity={quantity}
-            cutBps={context.quotedCutBps}
-            feeBps={context.platformFeeBps}
-            unit={unitName || t("form.unitFallback")}
+          <textarea
+            id="note"
+            rows={3}
+            maxLength={500}
+            required={warned}
+            minLength={warned ? 10 : undefined}
+            className="w-full rounded-input bg-step px-4 py-3 body-3 text-ink"
+            {...bind("note")}
           />
-        </section>
-      ) : null}
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="note" className="title-4">
-          {warned ? t("form.noteRequired") : t("form.note")}
-        </label>
-        <textarea
-          id="note"
-          rows={3}
-          maxLength={500}
-          required={warned}
-          minLength={warned ? 10 : undefined}
-          className="w-full rounded-input bg-step px-4 py-3 body-3 text-ink"
-          {...bind("note")}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="pickupState" className="title-4">
+              {t("form.pickupState")}
+            </label>
+            <select id="pickupState" required className={selectClass} {...bind("pickupState")}>
+              <option value="" disabled>
+                {t("form.choose")}
+              </option>
+              {states.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Field id="pickupLga" label={t("form.pickupLga")} maxLength={80} required {...bind("pickupLga")} />
+        </div>
+        <Field id="pickupNote" label={t("form.pickupNote")} hint={t("form.pickupNoteHint")} maxLength={120} {...bind("pickupNote")} />
+        <Field
+          id="availableUntil"
+          type="date"
+          label={t("form.availableUntil")}
+          hint={t("form.availableUntilHint")}
+          min={context.today}
+          max={addDays(context.today, 90)}
+          required
+          {...bind("availableUntil")}
         />
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="pickupState" className="title-4">
-            {t("form.pickupState")}
-          </label>
-          <select id="pickupState" required className={selectClass} {...bind("pickupState")}>
-            <option value="" disabled>
-              {t("form.choose")}
-            </option>
-            {states.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Field id="pickupLga" label={t("form.pickupLga")} maxLength={80} required {...bind("pickupLga")} />
-      </div>
-      <Field id="pickupNote" label={t("form.pickupNote")} hint={t("form.pickupNoteHint")} maxLength={120} {...bind("pickupNote")} />
-      <Field
-        id="availableUntil"
-        type="date"
-        label={t("form.availableUntil")}
-        hint={t("form.availableUntilHint")}
-        min={context.today}
-        max={addDays(context.today, 90)}
-        required
-        {...bind("availableUntil")}
-      />
+        <fieldset className="flex flex-col gap-2">
+          <legend className="title-4">{t("form.photos")}</legend>
+          <p className="body-6 text-ink-soft">{t("form.photosHint")}</p>
+          {photos.length > 0 ? (
+            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {photos.map((photo, i) => (
+                <li key={photo.url} className="flex flex-col gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a local preview blob */}
+                  <img src={photo.url} alt={t("form.photoAlt", { n: i + 1 })} className="aspect-square w-full rounded-inner object-cover" />
+                  <button type="button" className="min-h-11 body-6 underline" onClick={() => removePhoto(i)}>
+                    {t("form.removePhoto")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {photos.length < 4 ? (
+            <input
+              id="photoPicker"
+              name="photoPicker"
+              type="file"
+              accept="image/jpeg,image/webp,image/*"
+              multiple
+              aria-label={t("form.addPhotos")}
+              disabled={compressing}
+              onChange={(e) => {
+                void addPhotos(e.target.files);
+                e.target.value = "";
+              }}
+              className="min-h-12 body-6"
+            />
+          ) : null}
+          {compressing ? <p className="body-6 text-ink-soft">{t("form.compressing")}</p> : null}
+        </fieldset>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="title-4">{t("form.photos")}</legend>
-        <p className="body-6 text-ink-soft">{t("form.photosHint")}</p>
-        {photos.length > 0 ? (
-          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {photos.map((photo, i) => (
-              <li key={photo.url} className="flex flex-col gap-1">
-                {/* eslint-disable-next-line @next/next/no-img-element -- a local preview blob */}
-                <img src={photo.url} alt={t("form.photoAlt", { n: i + 1 })} className="aspect-square w-full rounded-inner object-cover" />
-                <button type="button" className="min-h-11 body-6 underline" onClick={() => removePhoto(i)}>
-                  {t("form.removePhoto")}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {photos.length < 4 ? (
-          <input
-            id="photoPicker"
-            name="photoPicker"
-            type="file"
-            accept="image/jpeg,image/webp,image/*"
-            multiple
-            aria-label={t("form.addPhotos")}
-            disabled={compressing}
-            onChange={(e) => {
-              void addPhotos(e.target.files);
-              e.target.value = "";
-            }}
-            className="min-h-12 body-6"
-          />
-        ) : null}
-        {compressing ? <p className="body-6 text-ink-soft">{t("form.compressing")}</p> : null}
-      </fieldset>
-
-      <FormError message={error} />
-      <SubmitButton pending={pending || compressing} label={t("form.submit")} pendingLabel={t("form.submitting")} />
+        <FormError message={error} />
+        <SubmitButton pending={pending || compressing} label={t("form.submit")} pendingLabel={t("form.submitting")} />
+      </HydrationGate>
     </form>
   );
 }

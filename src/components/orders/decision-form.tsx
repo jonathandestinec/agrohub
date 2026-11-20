@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { FormError } from "@/components/auth-ui";
 import { Button } from "@/components/ui";
 import type { ActionResult } from "@/lib/action-result";
@@ -48,31 +49,33 @@ export function DecisionForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-inner bg-paper/60 p-4 md:p-6">
-      <fieldset className="flex flex-col gap-2">
-        <legend className="title-2">{t("decide")}</legend>
-        {outcomes.map((o) => (
-          <label key={o} className="flex min-h-11 items-center gap-3 body-4">
-            <input type="radio" name={`outcome-${disputeId}`} value={o} checked={outcome === o} onChange={() => setOutcome(o)} className="size-5" />
-            {t(`outcome.${o}`)}
+      <HydrationGate>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="title-2">{t("decide")}</legend>
+          {outcomes.map((o) => (
+            <label key={o} className="flex min-h-11 items-center gap-3 body-4">
+              <input type="radio" name={`outcome-${disputeId}`} value={o} checked={outcome === o} onChange={() => setOutcome(o)} className="size-5" />
+              {t(`outcome.${o}`)}
+            </label>
+          ))}
+        </fieldset>
+        {outcome === "REFUND_UNITS" ? (
+          <label className="flex flex-col gap-1 body-6">
+            {t("units")}
+            <input name="units" inputMode="numeric" value={units} onChange={(e) => setUnits(e.target.value)} required className={FIELD} />
           </label>
-        ))}
-      </fieldset>
-      {outcome === "REFUND_UNITS" ? (
+        ) : null}
         <label className="flex flex-col gap-1 body-6">
-          {t("units")}
-          <input name="units" inputMode="numeric" value={units} onChange={(e) => setUnits(e.target.value)} required className={FIELD} />
+          {t("note")}
+          <textarea name="note" value={note} onChange={(e) => setNote(e.target.value)} required maxLength={1000} rows={3} className={`${FIELD} py-2`} />
         </label>
-      ) : null}
-      <label className="flex flex-col gap-1 body-6">
-        {t("note")}
-        <textarea name="note" value={note} onChange={(e) => setNote(e.target.value)} required maxLength={1000} rows={3} className={`${FIELD} py-2`} />
-      </label>
-      <FormError message={error} />
-      <div>
-        <Button type="submit" tone="ink" disabled={pending}>
-          {t("submit")}
-        </Button>
-      </div>
+        <FormError message={error} />
+        <div>
+          <Button type="submit" tone="ink" disabled={pending}>
+            {t("submit")}
+          </Button>
+        </div>
+      </HydrationGate>
     </form>
   );
 }

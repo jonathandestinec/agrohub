@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { currentWeekKey, toWeekKey, weekStart } from "@/modules/board/week";
 import type { CatalogItem } from "@/modules/catalog/views";
@@ -77,95 +78,97 @@ export function PriceForm({
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="cropId" className="title-4">
-            {t("entry.crop")}
-          </label>
-          <select id="cropId" name="cropId" required defaultValue="" className={selectClass}>
-            <option value="" disabled>
-              {t("entry.choose")}
-            </option>
-            {crops.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+      <HydrationGate>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="cropId" className="title-4">
+              {t("entry.crop")}
+            </label>
+            <select id="cropId" name="cropId" required defaultValue="" className={selectClass}>
+              <option value="" disabled>
+                {t("entry.choose")}
               </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <label htmlFor="unitId" className="title-4">
-            {t("entry.unit")}
-          </label>
-          <select id="unitId" name="unitId" required defaultValue="" className={selectClass}>
-            <option value="" disabled>
-              {t("entry.choose")}
-            </option>
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
+              {crops.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="unitId" className="title-4">
+              {t("entry.unit")}
+            </label>
+            <select id="unitId" name="unitId" required defaultValue="" className={selectClass}>
+              <option value="" disabled>
+                {t("entry.choose")}
               </option>
-            ))}
-          </select>
+              {units.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
-      <Field
-        id="market"
-        name="market"
-        label={t("entry.market")}
-        hint={t("entry.marketHint")}
-        required
-        maxLength={80}
-        autoComplete="off"
-        list={markets.length > 0 ? "known-markets" : undefined}
-      />
-      {markets.length > 0 ? (
-        <datalist id="known-markets" aria-label={t("entry.marketsLabel")}>
-          {markets.map((m) => (
-            <option key={m} value={m} />
-          ))}
-        </datalist>
-      ) : null}
-      <div className="grid gap-4 md:grid-cols-2">
         <Field
-          id="weekOf"
-          name="weekOf"
-          type="date"
-          label={t("entry.week")}
-          hint={t("entry.weekHint")}
+          id="market"
+          name="market"
+          label={t("entry.market")}
+          hint={t("entry.marketHint")}
           required
-          value={week}
-          onChange={(e) => {
-            setWeek(e.target.value);
-            setWeekTouched(true);
-          }}
-        />
-        <Field
-          id="price"
-          name="price"
-          label={t("entry.price")}
-          hint={t("entry.priceHint")}
-          required
-          inputMode="decimal"
+          maxLength={80}
           autoComplete="off"
+          list={markets.length > 0 ? "known-markets" : undefined}
         />
-      </div>
-      {savesTo ? (
-        <p className="body-6 text-ink-soft">
-          {t("entry.savesTo", {
-            date: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
-              new Date(`${savesTo}T00:00:00Z`),
-            ),
-          })}
-        </p>
-      ) : null}
-      <FormError message={error} />
-      {saved ? (
-        <p role="status" className="body-6 text-ink-soft">
-          {t("entry.saved")}
-        </p>
-      ) : null}
-      <SubmitButton pending={pending} label={t("entry.save")} pendingLabel={t("entry.saving")} />
+        {markets.length > 0 ? (
+          <datalist id="known-markets" aria-label={t("entry.marketsLabel")}>
+            {markets.map((m) => (
+              <option key={m} value={m} />
+            ))}
+          </datalist>
+        ) : null}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field
+            id="weekOf"
+            name="weekOf"
+            type="date"
+            label={t("entry.week")}
+            hint={t("entry.weekHint")}
+            required
+            value={week}
+            onChange={(e) => {
+              setWeek(e.target.value);
+              setWeekTouched(true);
+            }}
+          />
+          <Field
+            id="price"
+            name="price"
+            label={t("entry.price")}
+            hint={t("entry.priceHint")}
+            required
+            inputMode="decimal"
+            autoComplete="off"
+          />
+        </div>
+        {savesTo ? (
+          <p className="body-6 text-ink-soft">
+            {t("entry.savesTo", {
+              date: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(
+                new Date(`${savesTo}T00:00:00Z`),
+              ),
+            })}
+          </p>
+        ) : null}
+        <FormError message={error} />
+        {saved ? (
+          <p role="status" className="body-6 text-ink-soft">
+            {t("entry.saved")}
+          </p>
+        ) : null}
+        <SubmitButton pending={pending} label={t("entry.save")} pendingLabel={t("entry.saving")} />
+      </HydrationGate>
     </form>
   );
 }

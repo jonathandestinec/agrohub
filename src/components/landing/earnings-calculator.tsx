@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { formatNaira, saleBreakdown, toKobo } from "@/lib/money";
 
 // An example only: real fee terms are set per cooperative and locked to each lot.
@@ -49,47 +50,49 @@ export function EarningsCalculator() {
       </div>
 
       <form onSubmit={(e) => e.preventDefault()} aria-label={t("formLabel")} className="grid grid-cols-2 items-end gap-x-2.5 gap-y-3 pt-1 sm:grid-cols-[7rem_minmax(0,1fr)_10rem]">
-        <div className="grid min-w-0 gap-1.5">
-          <label className="caption-4" htmlFor={`${id}-qty`}>
-            {t("quantity")}
-          </label>
-          <input
-            id={`${id}-qty`}
-            inputMode="numeric"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            aria-invalid={qty === null}
-            className="calc-pill w-full min-w-0 text-center"
-          />
-        </div>
-        <div className="order-first col-span-2 grid min-w-0 gap-1.5 sm:order-none sm:col-span-1">
-          <label className="caption-4" htmlFor={`${id}-crop`}>
-            {t("crop")}
-          </label>
-          <select id={`${id}-crop`} value={cropId} onChange={(e) => setCropId(e.target.value as CropId)} className="calc-pill w-full min-w-0">
-            {CROPS.map((c) => (
-              <option key={c} value={c}>
-                {t("cropOption", { unit: t(`crops.${c}.unit`), crop: t(`crops.${c}.name`) })}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="grid min-w-0 gap-1.5">
-          <label className="caption-4" htmlFor={`${id}-price`}>
-            {t("priceShort")}
-          </label>
-          <span className="calc-pill w-full min-w-0 flex items-center gap-1">
-            ₦
+        <HydrationGate>
+          <div className="grid min-w-0 gap-1.5">
+            <label className="caption-4" htmlFor={`${id}-qty`}>
+              {t("quantity")}
+            </label>
             <input
-              id={`${id}-price`}
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              aria-invalid={askKobo === null}
-              className="w-full min-w-0 bg-transparent font-semibold outline-none"
+              id={`${id}-qty`}
+              inputMode="numeric"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              aria-invalid={qty === null}
+              className="calc-pill w-full min-w-0 text-center"
             />
-          </span>
-        </div>
+          </div>
+          <div className="order-first col-span-2 grid min-w-0 gap-1.5 sm:order-none sm:col-span-1">
+            <label className="caption-4" htmlFor={`${id}-crop`}>
+              {t("crop")}
+            </label>
+            <select id={`${id}-crop`} value={cropId} onChange={(e) => setCropId(e.target.value as CropId)} className="calc-pill w-full min-w-0">
+              {CROPS.map((c) => (
+                <option key={c} value={c}>
+                  {t("cropOption", { unit: t(`crops.${c}.unit`), crop: t(`crops.${c}.name`) })}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid min-w-0 gap-1.5">
+            <label className="caption-4" htmlFor={`${id}-price`}>
+              {t("priceShort")}
+            </label>
+            <span className="calc-pill w-full min-w-0 flex items-center gap-1">
+              ₦
+              <input
+                id={`${id}-price`}
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                aria-invalid={askKobo === null}
+                className="w-full min-w-0 bg-transparent font-semibold outline-none"
+              />
+            </span>
+          </div>
+        </HydrationGate>
       </form>
 
       {b ? (
