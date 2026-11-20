@@ -21,6 +21,7 @@ function harness(options: { visible?: boolean; online?: boolean; slow?: boolean 
   let auto: ((keys: { key: string; since?: string }[]) => LiveResponse | Error) | null = null;
   const changes: { key: string; version: string; data?: unknown }[] = [];
   const baselines: (boolean | undefined)[] = [];
+  const sentAts: (number | undefined)[] = [];
   const stops: { key: string; reason: string }[] = [];
 
   const deps: LiveDeps = {
@@ -47,9 +48,10 @@ function harness(options: { visible?: boolean; online?: boolean; slow?: boolean 
     isOnline: () => state.online,
     slow: () => state.slow,
     random: () => 0.5, // jitter factor 1.0
-    onChange: (key, version, data, baseline) => {
+    onChange: (key, version, data, baseline, sentAt) => {
       changes.push({ key, version, data });
       baselines.push(baseline);
+      sentAts.push(sentAt);
     },
     onStop: (key, reason) => stops.push({ key, reason }),
   };
@@ -80,6 +82,7 @@ function harness(options: { visible?: boolean; online?: boolean; slow?: boolean 
     timers,
     changes,
     baselines,
+    sentAts,
     stops,
     flush,
     advance,
@@ -314,6 +317,18 @@ describe("createLiveController", () => {
     expect(h.baselines).toEqual([true]);
     await h.advance(1000);
     expect(h.calls[1].keys).toEqual([{ key: "a", since: "7" }]);
+  });
+
+  it("tells the listener when the request that brought the answer was sent", async () => {
+    const h = harness();
+    let version = "1";
+    h.autoAnswer(() => h.ok({ a: { version } }));
+    const c = createLiveController(h.deps);
+    c.subscribe({ key: "a", intervalMs: 1000, initialVersion: "1" });
+    const start = 1_000_000;
+    version = "2";
+    await h.advance(1000);
+    expect(h.sentAts).toEqual([start + 1000]);
   });
 
   it("an initialVersion that matches prevents a false first change", async () => {

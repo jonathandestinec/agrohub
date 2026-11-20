@@ -25,14 +25,21 @@ test.describe("alerts", () => {
       await expect(bell(page, "Alerts, 2 unread")).toBeVisible();
     });
 
-    await test.step("opening the offer alert lands on the offer and the count drops", async () => {
+    await test.step("opening the offer alert lands on the offer and the count drops to none", async () => {
       await bell(page, "Alerts, 2 unread").click();
       await bar(page).getByRole("button", { name: /New offer for 10/ }).click();
       await expect(page).toHaveURL(/\/officer\/offers\/[^/]+$/);
-      await expect(bell(page, "Alerts, 1 unread")).toBeVisible();
+      // The offer page shows the buyer's thread, so opening it reads the message alert too.
+      await expect(bell(page, "Alerts, none unread")).toBeVisible();
     });
 
-    await test.step("Mark all as read clears it", async () => {
+    await test.step("Mark all as read clears a new alert", async () => {
+      // Leave the offer page (which would read a new message at once), then the buyer writes again.
+      await clickNav(page, "Orders");
+      await expect(page).toHaveURL(/\/officer\/orders$/);
+      await writeToCooperative(world.buyerPage, "Is the delivery date fixed?");
+      await clickNav(page, "Messages");
+      await expect(bell(page, "Alerts, 1 unread")).toBeVisible();
       await bell(page, "Alerts, 1 unread").click();
       await bar(page).getByRole("button", { name: "Mark all as read" }).click();
       await expect(bell(page, "Alerts, none unread")).toBeVisible();

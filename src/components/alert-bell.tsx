@@ -50,18 +50,32 @@ export function AlertBell({ initial }: { initial: AlertSummary }) {
     setSummary(initial);
   }
 
+  // When the request behind what is shown was sent. An answer to an older request (a slow live
+  // poll that left before an alert was written) must not replace a newer one.
+  const shownSentAt = useRef(0);
+
   const refresh = useCallback(async () => {
+    const sentAt = Date.now();
     try {
       const response = await fetch("/api/alerts/summary", { cache: "no-store" });
       // Signed out, or a network error: keep what is shown.
-      if (response.ok) setSummary((await response.json()) as AlertSummary);
+      if (response.ok) {
+        const next = (await response.json()) as AlertSummary;
+        if (sentAt >= shownSentAt.current) {
+          shownSentAt.current = sentAt;
+          setSummary(next);
+        }
+      }
     } catch {
       // keep what is shown
     }
   }, []);
 
-  useLiveTopic({ key: "alerts", intervalMs: 30_000 }, (_version, data) => {
-    if (data) setSummary(data as AlertSummary);
+  useLiveTopic({ key: "alerts", intervalMs: 30_000 }, (_version, data, _baseline, sentAt) => {
+    if (data && sentAt >= shownSentAt.current) {
+      shownSentAt.current = sentAt;
+      setSummary(data as AlertSummary);
+    }
   });
 
   const mounted = useRef(false);

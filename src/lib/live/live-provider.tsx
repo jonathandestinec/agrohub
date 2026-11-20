@@ -8,7 +8,7 @@ import { createLiveController, type LiveController, type TopicSpec } from "./con
 // Visibility API, the network state and fetch. All the timing rules live in controller.ts, which
 // has unit tests; this file only connects them to the browser (covered by the e2e tests).
 
-type Listener = (version: string, data: unknown, baseline: boolean) => void;
+type Listener = (version: string, data: unknown, baseline: boolean, sentAt: number) => void;
 
 type Registry = {
   subscribe(spec: TopicSpec, listener: Listener): () => void;
@@ -52,8 +52,8 @@ function createRegistry(): Registry {
       isOnline: () => navigator.onLine,
       slow: isSlowConnection,
       random: Math.random,
-      onChange: (key, version, data, baseline) => {
-        topics.get(key)?.listeners.forEach((listener) => listener(version, data, baseline === true));
+      onChange: (key, version, data, baseline, sentAt) => {
+        topics.get(key)?.listeners.forEach((listener) => listener(version, data, baseline === true, sentAt ?? Date.now()));
       },
       // The session ended, or the person may no longer see this page (another tab switched role):
       // stop asking, and let the server decide what the page should now be (sign-in, 404).
@@ -135,7 +135,7 @@ export function useLiveTopic(spec: TopicSpec, onChange: Listener): void {
   useEffect(() => {
     return registry?.subscribe(
       { key, intervalMs, initialVersion, minGapMs, backoffSteps: steps ? steps.split(",").map(Number) : undefined },
-      (version, data, baseline) => handler.current(version, data, baseline),
+      (version, data, baseline, sentAt) => handler.current(version, data, baseline, sentAt),
     );
   }, [registry, key, intervalMs, initialVersion, minGapMs, steps]);
 }

@@ -23,7 +23,9 @@ export type LiveDeps = {
   random(): number;
   // `baseline` is true for the first answer of a topic that had no initialVersion: nothing
   // changed, the page just learned where it stands (the bell uses the data; pages ignore it).
-  onChange(key: string, version: string, data?: unknown, baseline?: boolean): void;
+  // `sentAt` is when the request that brought this answer was sent, so a listener that also has
+  // another source can ignore an answer that is older than one it already applied.
+  onChange(key: string, version: string, data?: unknown, baseline?: boolean, sentAt?: number): void;
   // key is a topic key, or "all" when the session is gone.
   onStop(key: string, reason: "unauthenticated" | "forbidden" | "not_found"): void;
 };
@@ -105,6 +107,7 @@ export function createLiveController(deps: LiveDeps): LiveController {
     }
     const controller = new AbortController();
     inFlight = controller;
+    const sentAt = now;
     for (const t of due) t.lastRunAt = now;
     let response: LiveResponse | null = null;
     let failed = false;
@@ -162,12 +165,12 @@ export function createLiveController(deps: LiveDeps): LiveController {
       }
       if (t.lastVersion === undefined) {
         t.lastVersion = result.version;
-        if (result.data !== undefined) deps.onChange(t.spec.key, result.version, result.data, true);
+        if (result.data !== undefined) deps.onChange(t.spec.key, result.version, result.data, true, sentAt);
         t.unchanged += 1;
       } else if (result.version !== t.lastVersion) {
         t.lastVersion = result.version;
         t.unchanged = 0;
-        deps.onChange(t.spec.key, result.version, result.data, false);
+        deps.onChange(t.spec.key, result.version, result.data, false, sentAt);
       } else {
         t.unchanged += 1;
       }
