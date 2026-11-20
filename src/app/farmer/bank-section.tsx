@@ -44,15 +44,14 @@ export async function FarmerBankSection({
           {t("confirmed", { date: formatEffectiveAt(bank.change.effectiveAt, locale) })}
         </p>
       ) : null}
-      {canChange ? (
-        banks ? (
-          <FarmerBankForm banks={banks} />
-        ) : (
-          <p role="alert" className="body-3">
-            {t("unavailable")}
-          </p>
-        )
+      {canChange && !banks ? (
+        <p role="alert" className="body-3">
+          {t("unavailable")}
+        </p>
       ) : null}
+      {/* Always rendered, so the form and its "Saved" confirmation outlive the refresh after a
+          save, even where that refresh stops offering the form (the join page). */}
+      <FarmerBankForm banks={canChange ? banks : null} />
     </section>
   );
 }
