@@ -120,6 +120,23 @@ test("tabbing into the shrunk phone bar brings the full bar back, with the menu 
   await expectMenuButtonInside(page, 320, "focused");
 });
 
+test("after Start buying the header shows the buyer role without a reload", async ({ page, request }) => {
+  // The join action reads the signed-in user before it writes the membership, then the page
+  // refreshes: the layout must show the new role, not an earlier cached read of the memberships.
+  test.setTimeout(120_000);
+  const user = { name: "Ada Obi", email: uniqueEmail("nav-buyer-role") };
+  await page.goto("/sign-up");
+  await completeSignUp(page, request, user);
+  await signIn(page, user.email);
+  await expect(accountButton(page)).toBeVisible();
+  await page.goto("/buyer/join");
+  await page.getByRole("main").getByRole("button", { name: "Start buying" }).click();
+  await expect(page).toHaveURL(/\/buyer$/);
+  const account = accountButton(page);
+  await account.click();
+  await expect(account.locator("xpath=..").getByText("Buyer", { exact: true })).toBeVisible();
+});
+
 test("signed in, the shrunk phone bar hides the bell and avatar, and the menu offers them", async ({ page, request }) => {
   test.setTimeout(120_000);
   const user = { name: "Ada Obi", email: uniqueEmail("nav-compact") };
