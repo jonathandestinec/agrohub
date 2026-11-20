@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { isBaselineForListener } from "./baseline";
 import { createLiveController, type LiveController, type TopicSpec } from "./controller";
 
 // The browser half of live updates: one controller per tab, fed by the real clock, the Page
@@ -135,7 +136,8 @@ export function useLiveTopic(spec: TopicSpec, onChange: Listener): void {
   useEffect(() => {
     return registry?.subscribe(
       { key, intervalMs, initialVersion, minGapMs, backoffSteps: steps ? steps.split(",").map(Number) : undefined },
-      (version, data, baseline, sentAt) => handler.current(version, data, baseline, sentAt),
+      (version, data, baseline, sentAt) =>
+        handler.current(version, data, isBaselineForListener(baseline, version, initialVersion), sentAt),
     );
   }, [registry, key, intervalMs, initialVersion, minGapMs, steps]);
 }

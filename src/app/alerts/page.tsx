@@ -6,7 +6,7 @@ import { LiveRefresh } from "@/components/live-refresh";
 import { AlertList } from "@/components/alert-list";
 import { MarkAllReadButton } from "@/components/mark-all-read-button";
 import { PageHeading } from "@/components/ui";
-import { listOwnAlerts } from "@/modules/notifications/service";
+import { alertsVersion, listOwnAlerts } from "@/modules/notifications/service";
 
 // Every alert for the role in use, newest first, twenty to a page.
 export default function AlertsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
@@ -23,11 +23,12 @@ async function Alerts({ searchParams }: { searchParams: Promise<{ page?: string 
   const { page } = await searchParams;
   const t = await getTranslations("alerts");
   // A bad ?page= (text, zero, negative, past the end) shows the nearest page that exists.
+  const alertsAt = await alertsVersion(actor);
   const result = await listOwnAlerts(actor, Number(page ?? 1));
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
-      <LiveRefresh topic="alerts" intervalMs={30_000} />
+      <LiveRefresh topic="alerts" intervalMs={30_000} initialVersion={alertsAt} />
       <PageHeading title={t("title")} />
       {result.alerts.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("empty")}</p>
