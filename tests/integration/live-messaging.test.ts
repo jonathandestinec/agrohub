@@ -128,6 +128,21 @@ describe("inboxVersion", () => {
   it("is_forbidden_for_a_role_without_an_inbox", async () => {
     const board: Actor = { ...w.board };
     await expect(inboxVersion(board)).rejects.toBeInstanceOf(ForbiddenError);
+    const answers = await readTopics(board, [{ key: "threads" }]);
+    expect(answers.threads).toEqual({ error: "forbidden" });
+  });
+
+  it("is_forbidden_for_an_officer_or_farmer_with_no_cooperative", async () => {
+    for (const role of ["OFFICER", "FARMER"] as const) {
+      const actor: Actor = { userId: "u-nobody", role, cooperativeId: null, twoFactorEnabled: true };
+      await expect(inboxVersion(actor)).rejects.toBeInstanceOf(ForbiddenError);
+    }
+  });
+
+  it("is_allowed_for_every_role_that_has_an_inbox", async () => {
+    for (const actor of [buyer, w.farmer, w.officer, w.admin]) {
+      await expect(inboxVersion(actor)).resolves.toEqual(expect.any(String));
+    }
   });
 });
 

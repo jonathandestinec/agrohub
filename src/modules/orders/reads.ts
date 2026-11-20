@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { koboFromDb, orderSplit } from "@/lib/money";
 import { can, type Actor } from "@/modules/identity/policies";
-import { buyerThreadIdOf, buyerThreadVersionOf } from "@/modules/messaging/service";
+import { buyerThreadIdOf, buyerThreadVersion } from "@/modules/messaging/service";
 import { toBuyerOrder, toOfficerOrder, type BuyerOrder, type OfficerOrder } from "./views";
 
 // What every order view loads with the order: the lot's names (never its floor), the
@@ -131,7 +131,7 @@ export async function orderVersion(actor: Actor, orderId: string): Promise<strin
   if (!order || !mayRead) throw new NotFoundError("ORDER_NOT_FOUND");
   const openDisputes = order.disputes.filter((d) => d.status === "OPEN").length;
   const doneRefunds = order.refunds.filter((r) => r.status === "PROCESSED").length;
-  const thread = await buyerThreadVersionOf(order.lotId, order.buyerUserId);
+  const thread = await buyerThreadVersion(actor, order.lotId, order.buyerUserId);
   return [
     order.updatedAt.getTime(),
     `${order.disputes.length}/${openDisputes}`,

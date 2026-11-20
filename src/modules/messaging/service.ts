@@ -233,9 +233,22 @@ export async function threadVersion(actor: Actor, threadId: string): Promise<str
   return `${thread.lastMessageAt.getTime()}:${thread._count.messages}`;
 }
 
+// Who has an inbox, decided by the thread policy itself: the actor asks whether they could take part
+// in a thread of their own (their own user, their own cooperative, the kind their role uses).
+function requireInbox(actor: Actor): void {
+  const threadKind = actor.role === "FARMER" ? "FARMER_COOPERATIVE" : "BUYER_COOPERATIVE";
+  const allowed = can(actor, "thread:participate", {
+    cooperativeId: actor.cooperativeId ?? undefined,
+    ownerUserId: actor.userId,
+    threadKind,
+  });
+  if (!allowed) throw new ForbiddenError();
+}
+
 // A string that changes when a thread appears in the actor's inbox or its last message moves.
 // A superset of the inbox's own filter, so it can only over-report, never miss.
 export async function inboxVersion(actor: Actor): Promise<string> {
+  requireInbox(actor);
   const where = threadWhereFor(actor);
   const summary = await prisma.thread.aggregate({ where, _count: { _all: true }, _max: { lastMessageAt: true } });
   return `${summary._count._all}:${summary._max.lastMessageAt?.getTime() ?? 0}`;
@@ -290,15 +303,22 @@ export async function buyerThreadIdOf(lotId: string, buyerUserId: string): Promi
 }
 
 /**
- * The version of the buyer's thread on a lot, or "none" before it exists. For order and offer
- * versions, which have already checked the actor may read the order or offer the thread belongs to.
+ * The version of the buyer's thread on a lot, or "none" when it does not exist or the actor does not
+ * take part in it (the same rule as findBuyerThreadId). For the order and offer versions.
  */
-export async function buyerThreadVersionOf(lotId: string, buyerUserId: string): Promise<string> {
+export async function buyerThreadVersion(actor: Actor, lotId: string, buyerUserId: string): Promise<string> {
   const thread = await prisma.thread.findUnique({
     where: { lotId_kind_counterpartUserId: { lotId, kind: "BUYER_COOPERATIVE", counterpartUserId: buyerUserId } },
-    select: { lastMessageAt: true, _count: { select: { messages: true } } },
+    select: {
+      kind: true,
+      cooperativeId: true,
+      counterpartUserId: true,
+      lastMessageAt: true,
+      _count: { select: { messages: true } },
+    },
   });
-  return thread ? `${thread.lastMessageAt.getTime()}:${thread._count.messages}` : "none";
+  if (!thread || !participates(actor, thread)) return "none";
+  return `${thread.lastMessageAt.getTime()}:${thread._count.messages}`;
 }
 
 /**

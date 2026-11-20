@@ -2,7 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { can, type Actor } from "@/modules/identity/policies";
-import { buyerThreadVersionOf } from "@/modules/messaging/service";
+import { buyerThreadVersion } from "@/modules/messaging/service";
 
 // A string that changes whenever the offer page would show something different: the offer's
 // updatedAt (every answer, counter, withdrawal and expiry writes it) and the buyer's thread on the
@@ -19,7 +19,7 @@ export async function offerVersion(actor: Actor, offerId: string): Promise<strin
       ? can(actor, "offer:own", { ownerUserId: offer.buyerUserId })
       : actor.role === "OFFICER" && can(actor, "offer:respond", { cooperativeId: offer.cooperativeId }));
   if (!offer || !mayRead) throw new NotFoundError("OFFER_NOT_FOUND");
-  return `${offer.updatedAt.getTime()}|${await buyerThreadVersionOf(offer.lotId, offer.buyerUserId)}`;
+  return `${offer.updatedAt.getTime()}|${await buyerThreadVersion(actor, offer.lotId, offer.buyerUserId)}`;
 }
 
 // A string that changes when an offer in the actor's list is added or changes: how many there are
