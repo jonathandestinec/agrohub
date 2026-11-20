@@ -350,7 +350,7 @@ export function AppNav({
   ) : null;
 
   return (
-    <header data-rendered-path={pathname} className="relative z-30 h-[52px]">
+    <header data-nav-path={pathname} className="relative z-30 h-[52px]">
       {bar}
       {panel}
     </header>
