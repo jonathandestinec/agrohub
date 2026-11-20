@@ -5,7 +5,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@
 import { lotNegotiationFacts, type NegotiationFacts } from "@/modules/catalog/service";
 import { can, type Actor } from "@/modules/identity/policies";
 import { holdsCooperativeRole } from "@/modules/identity/service";
-import { notify, threadAudience } from "@/modules/notifications/service";
+import { markThreadAlertsRead, notify, threadAudience } from "@/modules/notifications/service";
 import { hasContactDetails, mentionsAmount } from "./guards";
 import { toThreadSummary, toThreadView, type ThreadSummary, type ThreadView } from "./views";
 import { threadWhereFor } from "./where";
@@ -207,6 +207,53 @@ export async function getThread(actor: Actor, threadId: string): Promise<ThreadV
   return toThreadView(thread, latest.reverse(), actor);
 }
 
+// What a person sees when they open a thread to read it: the thread, and the thread's message
+// alert for them marked read. getThread alone writes nothing (orders and admin use it to look).
+export async function readThread(actor: Actor, threadId: string): Promise<ThreadView> {
+  const view = await getThread(actor, threadId);
+  await markThreadAlertsRead(actor, threadId);
+  return view;
+}
+
+// A string that changes whenever a message is added to the thread: the last-message time and the
+// message count (two messages can share a time). Same access check as loadThread; a thread the
+// actor is not in looks missing. It reads timestamps and a count only, never message text.
+export async function threadVersion(actor: Actor, threadId: string): Promise<string> {
+  const thread = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: {
+      kind: true,
+      cooperativeId: true,
+      counterpartUserId: true,
+      lastMessageAt: true,
+      _count: { select: { messages: true } },
+    },
+  });
+  if (!thread || !participates(actor, thread)) throw new NotFoundError("THREAD_NOT_FOUND");
+  return `${thread.lastMessageAt.getTime()}:${thread._count.messages}`;
+}
+
+// Who has an inbox, decided by the thread policy itself: the actor asks whether they could take part
+// in a thread of their own (their own user, their own cooperative, the kind their role uses).
+function requireInbox(actor: Actor): void {
+  const threadKind = actor.role === "FARMER" ? "FARMER_COOPERATIVE" : "BUYER_COOPERATIVE";
+  const allowed = can(actor, "thread:participate", {
+    cooperativeId: actor.cooperativeId ?? undefined,
+    ownerUserId: actor.userId,
+    threadKind,
+  });
+  if (!allowed) throw new ForbiddenError();
+}
+
+// A string that changes when a thread appears in the actor's inbox or its last message moves.
+// A superset of the inbox's own filter, so it can only over-report, never miss.
+export async function inboxVersion(actor: Actor): Promise<string> {
+  requireInbox(actor);
+  const where = threadWhereFor(actor);
+  const summary = await prisma.thread.aggregate({ where, _count: { _all: true }, _max: { lastMessageAt: true } });
+  return `${summary._count._all}:${summary._max.lastMessageAt?.getTime() ?? 0}`;
+}
+
 // The threads the actor takes part in, newest activity first: a buyer's or farmer's own, an
 // officer's cooperative's, or (for an admin) the latest 100 anywhere.
 export async function listOwnThreads(actor: Actor): Promise<ThreadSummary[]> {
@@ -253,6 +300,25 @@ export async function buyerThreadIdOf(lotId: string, buyerUserId: string): Promi
     select: { id: true },
   });
   return thread?.id ?? null;
+}
+
+/**
+ * The version of the buyer's thread on a lot, or "none" when it does not exist or the actor does not
+ * take part in it (the same rule as findBuyerThreadId). For the order and offer versions.
+ */
+export async function buyerThreadVersion(actor: Actor, lotId: string, buyerUserId: string): Promise<string> {
+  const thread = await prisma.thread.findUnique({
+    where: { lotId_kind_counterpartUserId: { lotId, kind: "BUYER_COOPERATIVE", counterpartUserId: buyerUserId } },
+    select: {
+      kind: true,
+      cooperativeId: true,
+      counterpartUserId: true,
+      lastMessageAt: true,
+      _count: { select: { messages: true } },
+    },
+  });
+  if (!thread || !participates(actor, thread)) return "none";
+  return `${thread.lastMessageAt.getTime()}:${thread._count.messages}`;
 }
 
 /**

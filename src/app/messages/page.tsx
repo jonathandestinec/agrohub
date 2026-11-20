@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { ArrowUpRight, PageHeading } from "@/components/ui";
-import { listOwnThreads } from "@/modules/messaging/service";
+import { inboxVersion, listOwnThreads } from "@/modules/messaging/service";
 
 const ROLES_WITH_THREADS = ["BUYER", "FARMER", "OFFICER", "ADMIN"];
 
@@ -22,10 +23,12 @@ async function Messages() {
   const t = await getTranslations("messages");
   const locale = await getLocale();
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
+  const version = await inboxVersion(actor);
   const threads = await listOwnThreads(actor);
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="threads" intervalMs={15_000} initialVersion={version} />
       <PageHeading title={t("title")} lead={t("lead")} />
       {threads.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("empty")}</p>

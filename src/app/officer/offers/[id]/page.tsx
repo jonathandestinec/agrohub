@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { ThreadPanel } from "@/components/messages/thread-panel";
 import { OFFICER_STATUS_TONE } from "@/components/offers/status";
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { NotFoundError } from "@/lib/errors";
 import { formatNaira, lineTotalKobo } from "@/lib/money";
-import { getCooperativeOffer, type OfficerOffer } from "@/modules/marketplace/service";
-import { findBuyerThreadId, getThread } from "@/modules/messaging/service";
+import { getCooperativeOffer, offerVersion, type OfficerOffer } from "@/modules/marketplace/service";
+import { findBuyerThreadId, readThread } from "@/modules/messaging/service";
 import { OfficerOfferActions } from "./offer-actions";
 
 export default function OfficerOfferPage({ params }: PageProps<"/officer/offers/[id]">) {
@@ -25,7 +26,9 @@ async function OfficerOfferDetail({ params }: { params: PageProps<"/officer/offe
   if (actor.role !== "OFFICER") notFound();
   const { id } = await params;
   let offer: OfficerOffer;
+  let version: string;
   try {
+    version = await offerVersion(actor, id);
     offer = await getCooperativeOffer(actor, id);
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
@@ -39,6 +42,7 @@ async function OfficerOfferDetail({ params }: { params: PageProps<"/officer/offe
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic={`offer:${id}`} intervalMs={15_000} initialVersion={version} />
       <PageHeading
         title={t("summary", { quantity: offer.quantity, unit: offer.unit, crop: offer.crop })}
         lead={t("officer.from", { buyer: offer.buyerName })}
@@ -81,7 +85,7 @@ async function OfficerOfferDetail({ params }: { params: PageProps<"/officer/offe
 
 // The buyer thread for this offer's lot and buyer, if the buyer has written or an answer carried
 // a message.
-async function findOfferThread(actor: Parameters<typeof getThread>[0], offer: OfficerOffer) {
+async function findOfferThread(actor: Parameters<typeof readThread>[0], offer: OfficerOffer) {
   const threadId = await findBuyerThreadId(actor, offer.lotId, offer.buyerUserId);
-  return threadId ? getThread(actor, threadId) : null;
+  return threadId ? readThread(actor, threadId) : null;
 }

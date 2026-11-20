@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { OpenThreadButton } from "@/components/messages/open-thread-button";
 import { ThreadPanel } from "@/components/messages/thread-panel";
 import { BUYER_ORDER_TONE, buyerOrderStatusKey } from "@/components/orders/status";
@@ -11,8 +12,8 @@ import { NotFoundError } from "@/lib/errors";
 import { formatNaira, refundForUnits } from "@/lib/money";
 import { OrderActionButton, OrderFieldForm } from "@/components/orders/order-actions";
 import { cancelOrderAction, confirmReceiptAction, reportProblemAction } from "../actions";
-import { getThread } from "@/modules/messaging/service";
-import { getOwnOrder, type BuyerOrder } from "@/modules/orders/service";
+import { readThread } from "@/modules/messaging/service";
+import { getOwnOrder, orderVersion, type BuyerOrder } from "@/modules/orders/service";
 
 // Paystack sends the buyer back here. Returning never marks anything paid: the page shows what
 // the server knows, which changes only when Paystack's webhook arrives.
@@ -29,7 +30,9 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
   if (actor.role !== "BUYER") notFound();
   const { id } = await params;
   let order: BuyerOrder;
+  let version: string;
   try {
+    version = await orderVersion(actor, id);
     order = await getOwnOrder(actor, id);
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
@@ -39,11 +42,12 @@ async function BuyerOrderDetail({ params }: { params: PageProps<"/buyer/orders/[
   const locale = await getLocale();
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
   const day = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
-  const thread = order.threadId ? await getThread(actor, order.threadId) : null;
+  const thread = order.threadId ? await readThread(actor, order.threadId) : null;
   const unpaid = order.status === "AWAITING_PAYMENT" || order.status === "PAYMENT_EXPIRED";
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic={`order:${id}`} intervalMs={order.status === "AWAITING_PAYMENT" ? 5000 : 15_000} initialVersion={version} />
       <PageHeading
         title={t("summary", { quantity: order.quantity, unit: order.lot.unit, crop: order.lot.crop })}
         lead={`${order.lot.cooperativeName} · ${t("reference", { reference: order.reference })}`}

@@ -18,3 +18,4 @@ export {
 } from "./views";
 export type { MakeOfferInput, RespondToOfferInput } from "./schema";
 export { buyerOffersToActSummary, farmerOffersSummary, officerOffersSummary } from "./summaries";
+export { offerVersion, offersListVersion } from "./versions";

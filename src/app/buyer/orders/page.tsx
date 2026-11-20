@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { BUYER_ORDER_TONE, buyerOrderStatusKey } from "@/components/orders/status";
 import { ArrowUpRight, ButtonLink, Chip, PageHeading } from "@/components/ui";
 import { formatNaira } from "@/lib/money";
-import { listOwnOrders } from "@/modules/orders/service";
+import { listOwnOrders, ordersListVersion } from "@/modules/orders/service";
 
 export default function BuyerOrdersPage() {
   return (
@@ -21,10 +22,12 @@ async function BuyerOrders() {
   if (actor.role !== "BUYER") notFound();
   const t = await getTranslations("orders");
   const tn = await getTranslations("nav");
+  const version = await ordersListVersion(actor);
   const orders = await listOwnOrders(actor);
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="list:orders" intervalMs={30_000} initialVersion={version} />
       <PageHeading title={t("buyer.title")} lead={t("buyer.lead")}>
         <ButtonLink href="/lots" tone="ink">
           {tn("browseLots")}

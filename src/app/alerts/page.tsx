@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { AlertList } from "@/components/alert-list";
 import { MarkAllReadButton } from "@/components/mark-all-read-button";
 import { PageHeading } from "@/components/ui";
@@ -26,6 +27,7 @@ async function Alerts({ searchParams }: { searchParams: Promise<{ page?: string 
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="alerts" intervalMs={30_000} />
       <PageHeading title={t("title")} />
       {result.alerts.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("empty")}</p>

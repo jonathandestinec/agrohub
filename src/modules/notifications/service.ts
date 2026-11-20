@@ -5,7 +5,7 @@ import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { can, type Actor } from "@/modules/identity/policies";
 import { DATA, type AlertData, type AlertKind } from "./schema";
 import type { Db, Recipient } from "./recipients";
-import { toAlertView, type AlertView } from "./views";
+import { toAlertView, type AlertSummary, type AlertView } from "./views";
 
 export const ALERTS_PER_PAGE = 20;
 const LATEST = 5;
@@ -41,6 +41,24 @@ export async function latestOwnAlerts(actor: Actor): Promise<AlertView[]> {
   return rows.map(toAlertView);
 }
 
+// A string that changes whenever the bell would show something different: the unread count, and
+// the newest createdAt. The newest createdAt matters because a repeat message in a thread moves
+// its one unread alert to now, which changes what the bell shows without changing the count.
+export async function alertsVersion(actor: Actor): Promise<string> {
+  requireOwn(actor, actor.userId);
+  const where = visibleTo(actor);
+  const [unread, newest] = await Promise.all([
+    prisma.notification.count({ where: { ...where, readAt: null } }),
+    prisma.notification.aggregate({ where, _max: { createdAt: true } }),
+  ]);
+  return `${unread}:${newest._max.createdAt?.getTime() ?? 0}`;
+}
+
+export async function ownAlertsSummary(actor: Actor): Promise<AlertSummary> {
+  const [unread, alerts] = await Promise.all([countOwnUnread(actor), latestOwnAlerts(actor)]);
+  return { unread, alerts };
+}
+
 export async function listOwnAlerts(
   actor: Actor,
   page: number,
@@ -69,6 +87,16 @@ export async function markRead(actor: Actor, id: string): Promise<{ href: string
   if (visible === 0) throw new ForbiddenError();
   await prisma.notification.updateMany({ where: { id, readAt: null }, data: { readAt: new Date() } });
   return { href: toAlertView(row).href };
+}
+
+// Opening a thread reads its message alert: the actor's own unread MESSAGE_RECEIVED alert for that
+// thread, and no one else's. It touches nothing for a thread the actor has no alert on.
+export async function markThreadAlertsRead(actor: Actor, threadId: string): Promise<void> {
+  requireOwn(actor, actor.userId);
+  await prisma.notification.updateMany({
+    where: { ...visibleTo(actor), kind: "MESSAGE_RECEIVED", subjectType: "THREAD", subjectId: threadId, readAt: null },
+    data: { readAt: new Date() },
+  });
 }
 
 export async function markAllRead(actor: Actor): Promise<void> {

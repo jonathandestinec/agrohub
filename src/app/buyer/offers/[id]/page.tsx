@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { OpenThreadButton } from "@/components/messages/open-thread-button";
 import { ThreadPanel } from "@/components/messages/thread-panel";
 import { CheckoutForm } from "@/components/orders/checkout-form";
@@ -12,8 +13,8 @@ import { NotFoundError } from "@/lib/errors";
 import { formatNaira } from "@/lib/money";
 import { getPublicLot } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
-import { getOwnOffer, type BuyerOffer } from "@/modules/marketplace/service";
-import { findBuyerThreadId, getThread } from "@/modules/messaging/service";
+import { getOwnOffer, offerVersion, type BuyerOffer } from "@/modules/marketplace/service";
+import { findBuyerThreadId, readThread } from "@/modules/messaging/service";
 import { listUsableQuotes } from "@/modules/orders/service";
 import { BuyerOfferActions } from "./counter-response";
 
@@ -30,7 +31,9 @@ async function BuyerOfferDetail({ params }: { params: PageProps<"/buyer/offers/[
   if (actor.role !== "BUYER") notFound();
   const { id } = await params;
   let offer: BuyerOffer;
+  let version: string;
   try {
+    version = await offerVersion(actor, id);
     offer = await getOwnOffer(actor, id);
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
@@ -40,11 +43,12 @@ async function BuyerOfferDetail({ params }: { params: PageProps<"/buyer/offers/[
   const locale = await getLocale();
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
   const threadId = await findBuyerThreadId(actor, offer.lot.id, actor.userId);
-  const thread = threadId ? await getThread(actor, threadId) : null;
+  const thread = threadId ? await readThread(actor, threadId) : null;
   const live = offer.status === "WAITING" || offer.status === "COUNTERED";
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic={`offer:${id}`} intervalMs={15_000} initialVersion={version} />
       <PageHeading
         title={t("summary", { quantity: offer.quantity, unit: offer.lot.unit, crop: offer.lot.crop })}
         lead={offer.lot.cooperativeName}

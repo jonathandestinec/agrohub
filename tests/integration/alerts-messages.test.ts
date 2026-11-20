@@ -1,11 +1,13 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
+import { NotFoundError } from "@/lib/errors";
 import { fakeStorage } from "@/lib/storage";
 import { approveLot, submitLot } from "@/modules/catalog/service";
 import type { Actor } from "@/modules/identity/policies";
 import { makeOffer } from "@/modules/marketplace/service";
-import { openLotThread, postMessage, postSystemMessage } from "@/modules/messaging/service";
+import { getThread, openLotThread, postMessage, postSystemMessage, readThread } from "@/modules/messaging/service";
 import { quoteDelivery } from "@/modules/orders/service";
+import { countOwnUnread } from "@/modules/notifications/service";
 import { alertKinds, alertsFor } from "./alert-helpers";
 import { cleanDatabase } from "./helpers";
 import { buyerMember, lotWorld, NOW, officerMember, PHOTO, type LotWorld } from "./lot-fixtures";
@@ -88,5 +90,61 @@ describe("message alerts", () => {
     const { threadId } = await openLotThread(buyer, lotId, NOW);
     await expect(postMessage(buyer, threadId, "Call me on 08031234567", NOW)).rejects.toThrow();
     expect(await prisma.notification.count()).toBe(0);
+  });
+});
+
+describe("opening a thread clears its message alert", () => {
+  it("clears_the_viewers_alert_for_that_thread_and_the_bell_count_drops", async () => {
+    const { threadId } = await openLotThread(buyer, lotId, NOW);
+    await postMessage(w.officer, threadId, "Yes, it is dry.", at(MINUTE));
+    expect(await countOwnUnread(buyer)).toBe(1);
+    const view = await readThread(buyer, threadId);
+    expect(view.id).toBe(threadId);
+    expect(await countOwnUnread(buyer)).toBe(0);
+    expect((await alertsFor(buyer.userId))[0].readAt).not.toBeNull();
+  });
+
+  it("a_plain_getThread_still_writes_nothing", async () => {
+    const { threadId } = await openLotThread(buyer, lotId, NOW);
+    await postMessage(w.officer, threadId, "Yes, it is dry.", at(MINUTE));
+    await getThread(buyer, threadId);
+    expect(await countOwnUnread(buyer)).toBe(1);
+  });
+
+  it("leaves_the_other_participants_alerts_alone", async () => {
+    const second = await officerMember("u-officer-2", w.cooperativeId);
+    const { threadId } = await openLotThread(buyer, lotId, NOW);
+    await postMessage(buyer, threadId, "Is the maize dry?", at(MINUTE));
+    await readThread(second, threadId);
+    expect(await countOwnUnread(second)).toBe(0);
+    expect(await countOwnUnread(w.officer)).toBe(1);
+  });
+
+  it("leaves_the_alert_of_another_thread_alone", async () => {
+    const buyerThread = (await openLotThread(buyer, lotId, NOW)).threadId;
+    const farmerThread = (await openLotThread(w.farmer, lotId, NOW)).threadId;
+    await postMessage(buyer, buyerThread, "Is the maize dry?", at(MINUTE));
+    await postMessage(w.farmer, farmerThread, "I can bring it Friday.", at(2 * MINUTE));
+    expect(await countOwnUnread(w.officer)).toBe(2);
+    await readThread(w.officer, buyerThread);
+    expect(await countOwnUnread(w.officer)).toBe(1);
+  });
+
+  it("a_stranger_cannot_open_the_thread_and_clears_nothing", async () => {
+    const { threadId } = await openLotThread(buyer, lotId, NOW);
+    await postMessage(w.officer, threadId, "Yes, it is dry.", at(MINUTE));
+    const stranger = await buyerMember("u-stranger");
+    await expect(readThread(stranger, threadId)).rejects.toBeInstanceOf(NotFoundError);
+    expect(await countOwnUnread(buyer)).toBe(1);
+  });
+
+  it("opening_twice_is_harmless_and_a_new_message_raises_a_new_alert", async () => {
+    const { threadId } = await openLotThread(buyer, lotId, NOW);
+    await postMessage(w.officer, threadId, "First.", at(MINUTE));
+    await readThread(buyer, threadId);
+    await readThread(buyer, threadId);
+    expect(await countOwnUnread(buyer)).toBe(0);
+    await postMessage(w.officer, threadId, "Second.", at(2 * MINUTE));
+    expect(await countOwnUnread(buyer)).toBe(1);
   });
 });

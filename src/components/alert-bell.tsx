@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { markAllAlertsReadAction } from "@/app/alerts/actions";
 import { AlertList } from "@/components/alert-list";
 import { Menu, MENU_ITEM } from "@/components/ui/menu";
+import { useLiveTopic } from "@/lib/live/live-provider";
 import type { AlertSummary } from "@/modules/notifications/views";
 
 const BUTTON =
@@ -35,8 +36,9 @@ function Badge({ count }: { count: number }) {
 
 // The bell in the header. Its first paint comes from the layout (`initial`); after that it asks
 // /api/alerts/summary itself whenever the page changes or the list opens, because the root layout
-// does not render again when someone follows a link inside the app. Below the lg breakpoint it is
-// a plain link to /alerts; from lg up it opens the five newest alerts.
+// does not render again when someone follows a link inside the app. It also watches the shared
+// `alerts` live topic (every 30 s while the tab is visible), so a new alert shows without a click.
+// Below the lg breakpoint it is a plain link to /alerts; from lg up it opens the five newest alerts.
 export function AlertBell({ initial }: { initial: AlertSummary }) {
   const t = useTranslations("alerts");
   const pathname = usePathname();
@@ -48,15 +50,33 @@ export function AlertBell({ initial }: { initial: AlertSummary }) {
     setSummary(initial);
   }
 
+  // When the request behind what is shown was sent. An answer to an older request (a slow live
+  // poll that left before an alert was written) must not replace a newer one.
+  const shownSentAt = useRef(0);
+
   const refresh = useCallback(async () => {
+    const sentAt = Date.now();
     try {
       const response = await fetch("/api/alerts/summary", { cache: "no-store" });
       // Signed out, or a network error: keep what is shown.
-      if (response.ok) setSummary((await response.json()) as AlertSummary);
+      if (response.ok) {
+        const next = (await response.json()) as AlertSummary;
+        if (sentAt >= shownSentAt.current) {
+          shownSentAt.current = sentAt;
+          setSummary(next);
+        }
+      }
     } catch {
       // keep what is shown
     }
   }, []);
+
+  useLiveTopic({ key: "alerts", intervalMs: 30_000 }, (_version, data, _baseline, sentAt) => {
+    if (data && sentAt >= shownSentAt.current) {
+      shownSentAt.current = sentAt;
+      setSummary(data as AlertSummary);
+    }
+  });
 
   const mounted = useRef(false);
   useEffect(() => {
