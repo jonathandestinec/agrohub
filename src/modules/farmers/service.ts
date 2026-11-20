@@ -13,6 +13,7 @@ import { notify, officersOf, person } from "@/modules/notifications/service";
 import { hasUnfinishedOrders } from "./orders-guard";
 import { farmerProfileInput, type FarmerProfileInput } from "./schema";
 import { toOfficerFarmer, toOwnFarmer, type OfficerFarmer, type OwnFarmer } from "./views";
+import { noteMembershipChange } from "@/modules/identity/cache-generation";
 
 export type { FarmerProfile };
 
@@ -147,6 +148,7 @@ export async function joinViaLink(
     throw error;
   }
 
+  noteMembershipChange();
   await recordAudit({
     actorId: user.userId,
     action: "farmer.join",
@@ -260,6 +262,7 @@ async function applyTransition(
     },
   });
   if (count === 0) throw new ConflictError("Illegal transition", "ILLEGAL_TRANSITION");
+  noteMembershipChange();
   await recordAudit({
     actorId: actor.userId,
     action: transition.action,

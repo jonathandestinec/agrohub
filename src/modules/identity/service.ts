@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { recordAudit } from "@/modules/audit/audit";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import type { Role } from "./policies";
+import { noteMembershipChange } from "./cache-generation";
 
 export type { Membership };
 
@@ -68,6 +69,7 @@ export async function addMembership(input: {
     const membership = await prisma.membership.create({
       data: { userId, role, cooperativeId: cooperativeId ?? null, status },
     });
+    noteMembershipChange();
     await recordAudit({
       actorId: null,
       action: "membership.grant",
@@ -159,6 +161,7 @@ export async function becomeBuyer(user: { userId: string }): Promise<{ membershi
       );
       return row;
     });
+    noteMembershipChange();
     return { membershipId: membership.id };
   } catch (error) {
     // A concurrent call created it first: return that one.

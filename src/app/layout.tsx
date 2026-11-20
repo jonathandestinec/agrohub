@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { Suspense } from "react";
 import Link from "next/link";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { siteMetadata } from "@/lib/site-metadata";
 import { AppFooter } from "@/components/app-footer";
@@ -21,11 +20,11 @@ import {
 import { RoleSwitcher } from "@/components/role-switcher";
 import { AccountMenu } from "@/components/account-menu";
 import { AlertBell } from "@/components/alert-bell";
-import { getActor } from "@/modules/identity/session";
+import { getActor, getMemberships, getSession } from "@/modules/identity/session";
 import { countOwnUnread, latestOwnAlerts } from "@/modules/notifications/service";
 import { buttonClass } from "@/components/ui/button";
 import { pickActiveMembership } from "@/modules/identity/active-role";
-import { listMembershipStates, listMemberships } from "@/modules/identity/service";
+import { listMembershipStates } from "@/modules/identity/service";
 import { toSwitcherMembership } from "@/modules/identity/views";
 import { LiveProvider } from "@/lib/live/live-provider";
 import "./globals.css";
@@ -36,9 +35,9 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "sw
 export const metadata: Metadata = siteMetadata(env.BETTER_AUTH_URL);
 
 async function SwitcherSlot() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) return null;
-  const memberships = await listMemberships(session.user.id);
+  const memberships = await getMemberships(session.user.id);
   if (!showRoleSwitcher(memberships.length)) return null;
   const cookieStore = await cookies();
   const active = pickActiveMembership(
@@ -70,9 +69,9 @@ async function AlertSlot() {
 }
 
 async function AccountSlot() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (session) {
-    const memberships = await listMemberships(session.user.id);
+    const memberships = await getMemberships(session.user.id);
     const cookieStore = await cookies();
     const active = pickActiveMembership(
       memberships,
@@ -98,7 +97,7 @@ async function AccountSlot() {
 // cooperative, or the farm page while approval is pending). Pages still check access themselves.
 async function NavSlot() {
   const t = await getTranslations("nav");
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   let rawItems: NavItem[] = navItemsSignedOut();
   let hasSwitcher = false;
   // The bell shows for whoever has a working role (see AlertSlot); the phone menu mirrors it.
@@ -109,7 +108,7 @@ async function NavSlot() {
     } catch {
       hasAlerts = false;
     }
-    const memberships = await listMemberships(session.user.id);
+    const memberships = await getMemberships(session.user.id);
     const cookieStore = await cookies();
     const active = pickActiveMembership(
       memberships,
@@ -161,7 +160,7 @@ async function NavSlot() {
 }
 
 async function FooterSlot() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   return <AppFooter signedIn={Boolean(session)} />;
 }
 
