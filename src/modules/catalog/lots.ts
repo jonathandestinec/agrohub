@@ -32,6 +32,20 @@ export async function photoUrlsOf(lotId: string): Promise<string[]> {
   return Promise.all(photos.map((p) => signedUrl(p.storageKey, PHOTO_URL_TTL_SECONDS)));
 }
 
+// Signed photo URLs for many lots in one query, keyed by lot id, each in position order.
+// A lot with no photos maps to [].
+export async function photoUrlsByLot(lotIds: string[]): Promise<Map<string, string[]>> {
+  const byLot = new Map<string, string[]>(lotIds.map((id) => [id, []]));
+  if (lotIds.length === 0) return byLot;
+  const photos = await prisma.lotPhoto.findMany({
+    where: { lotId: { in: lotIds } },
+    orderBy: [{ lotId: "asc" }, { position: "asc" }],
+  });
+  const urls = await Promise.all(photos.map((p) => signedUrl(p.storageKey, PHOTO_URL_TTL_SECONDS)));
+  photos.forEach((p, i) => byLot.get(p.lotId)?.push(urls[i]));
+  return byLot;
+}
+
 export async function loadLot(lotId: string): Promise<LotRow> {
   const lot = await prisma.lot.findUnique({ where: { id: lotId }, include: LOT_INCLUDE });
   if (!lot) throw new NotFoundError("LOT_NOT_FOUND");

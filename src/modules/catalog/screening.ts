@@ -7,7 +7,7 @@ import { can, type Actor } from "@/modules/identity/policies";
 import { sendAlertEmail } from "@/modules/notifications/alert-emails";
 import { farmersOfLot, notify, officersOf } from "@/modules/notifications/service";
 import { MAX_PRICE_KOBO } from "./lot-schema";
-import { LOT_INCLUDE, loadLot, loadOwnLot, photoUrlsOf } from "./lots";
+import { LOT_INCLUDE, loadLot, loadOwnLot, photoUrlsByLot, photoUrlsOf } from "./lots";
 import { toFarmerLot, toOfficerLot, type FarmerLot, type LotRow, type OfficerLot } from "./views";
 
 const REASON_MIN = 3;
@@ -22,6 +22,30 @@ export async function otherOfficerExists(cooperativeId: string, ownerUserId: str
     where: { cooperativeId, role: "OFFICER", status: "ACTIVE", userId: { not: ownerUserId } },
   });
   return count > 0;
+}
+
+// The ACTIVE officers of each cooperative, in one query, so a list of lots can apply the
+// self-approval rule without a count per lot.
+async function activeOfficersOf(cooperativeIds: string[]): Promise<Map<string, Set<string>>> {
+  const officers = new Map<string, Set<string>>();
+  if (cooperativeIds.length === 0) return officers;
+  const rows = await prisma.membership.findMany({
+    where: { cooperativeId: { in: [...new Set(cooperativeIds)] }, role: "OFFICER", status: "ACTIVE" },
+    select: { cooperativeId: true, userId: true },
+  });
+  for (const { cooperativeId, userId } of rows) {
+    if (!cooperativeId) continue;
+    const set = officers.get(cooperativeId) ?? new Set<string>();
+    set.add(userId);
+    officers.set(cooperativeId, set);
+  }
+  return officers;
+}
+
+// Same answer as otherOfficerExists, read from activeOfficersOf.
+function hasOtherOfficer(officers: Map<string, Set<string>>, lot: LotRow): boolean {
+  for (const userId of officers.get(lot.cooperativeId) ?? []) if (userId !== lot.farmerUserId) return true;
+  return false;
 }
 
 async function mayScreen(actor: Actor, lot: LotRow): Promise<boolean> {
@@ -304,30 +328,26 @@ export async function listScreeningQueue(actor: Actor): Promise<ScreeningLot[]> 
   if (!can(actor, "lot:screen", { cooperativeId: actor.cooperativeId ?? undefined })) {
     throw new ForbiddenError();
   }
-  let lots: LotRow[];
-  if (actor.role === "OFFICER") {
-    lots = await prisma.lot.findMany({
-      where: officerScreeningWhere(actor.cooperativeId as string),
-      include: LOT_INCLUDE,
-      orderBy: { createdAt: "asc" },
-    });
-  } else {
-    const pending = await prisma.lot.findMany({
-      where: ADMIN_SCREENING_WHERE,
-      include: LOT_INCLUDE,
-      orderBy: { createdAt: "asc" },
-    });
-    lots = [];
-    for (const lot of pending) {
-      if (!(await otherOfficerExists(lot.cooperativeId, lot.farmerUserId))) lots.push(lot);
-    }
-  }
-  return Promise.all(
-    lots.map(async (lot) => ({
-      ...toOfficerLot(lot, await photoUrlsOf(lot.id)),
-      canApprove: actor.userId !== lot.farmerUserId && (await mayScreen(actor, lot)),
-    })),
-  );
+  const officerOf = actor.role === "OFFICER" ? (actor.cooperativeId as string) : null;
+  const found = await prisma.lot.findMany({
+    where: officerOf ? officerScreeningWhere(officerOf) : ADMIN_SCREENING_WHERE,
+    include: LOT_INCLUDE,
+    orderBy: { createdAt: "asc" },
+  });
+  const officers = await activeOfficersOf(found.map((lot) => lot.cooperativeId));
+  // An admin sees only the lots no other officer can screen.
+  const lots = officerOf ? found : found.filter((lot) => !hasOtherOfficer(officers, lot));
+  const photos = await photoUrlsByLot(lots.map((lot) => lot.id));
+  return lots.map((lot) => ({
+    ...toOfficerLot(lot, photos.get(lot.id) ?? []),
+    canApprove:
+      actor.userId !== lot.farmerUserId &&
+      can(actor, "lot:approve", {
+        cooperativeId: lot.cooperativeId,
+        ownerUserId: lot.farmerUserId,
+        cooperativeHasOtherOfficer: hasOtherOfficer(officers, lot),
+      }),
+  }));
 }
 
 // One lot for the screening page. An officer of another cooperative, or an admin for a lot a
