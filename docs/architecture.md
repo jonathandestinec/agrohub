@@ -66,6 +66,7 @@ Each module folder holds: `service.ts` (the only public entry), `schema.ts` (zod
 - **Idempotency:** webhooks, payouts, refunds and scheduled jobs are safe to run twice (unique references and a `JobRun` key table).
 - **Audit:** approvals, price changes, role changes, bank changes, name changes, admin actions and every money movement write to the append-only audit log.
 - **Errors:** services throw typed errors (`ForbiddenError`, `NotFoundError`, `ConflictError`, `ValidationError`); route handlers translate them to responses.
+- **Rate limits:** counted in Postgres, never in process memory (each Vercel instance has its own). Offers and messages count their own rows; `/api/live` counts polls per person in a fixed one-minute window (`live_poll_window`, `takeLivePoll` in `modules/live/service.ts`) and answers 429 with `Retry-After`, which the client's live loop waits out.
 - **i18n:** `next-intl`; all user-facing strings in `messages/*.json`. Only `en` is in `enabledLocales` until a native speaker reviews another file.
 
 ## 4. Identity and roles
