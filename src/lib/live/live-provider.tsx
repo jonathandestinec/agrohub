@@ -17,6 +17,13 @@ function isSlowConnection(): boolean {
   return Boolean(connection?.saveData) || /(^|-)2g$/.test(connection?.effectiveType ?? "");
 }
 
+// Retry-After in seconds (the only form /api/live sends). Missing or unreadable means no hint: the
+// controller's own backoff applies.
+function retryAfterMs(response: Response): number | undefined {
+  const seconds = Number(response.headers.get("Retry-After"));
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined;
+}
+
 // The registry (registry.ts, unit-tested) decides who hears what; this makes its controller from
 // the browser: the real clock, fetch, Page Visibility and the network state.
 function createBrowserRegistry(): Registry {
@@ -30,6 +37,7 @@ function createBrowserRegistry(): Registry {
           cache: "no-store",
           signal,
         });
+        if (response.status === 429) return { status: 429, retryAfterMs: retryAfterMs(response) };
         if (response.status !== 200) return { status: response.status };
         const body = (await response.json()) as { topics: Record<string, never> };
         return { status: 200, topics: body.topics };

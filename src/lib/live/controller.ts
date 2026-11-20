@@ -6,8 +6,9 @@ export type TimerId = unknown;
 
 export type TopicResult = { version: string; data?: unknown } | { error: "forbidden" | "not_found" };
 
-// `status` is the HTTP status; `topics` is present on 200.
-export type LiveResponse = { status: number; topics?: Record<string, TopicResult> };
+// `status` is the HTTP status; `topics` is present on 200. `retryAfterMs` comes from the
+// Retry-After header of a 429 (the server's poll limit).
+export type LiveResponse = { status: number; topics?: Record<string, TopicResult>; retryAfterMs?: number };
 
 export type TopicRequest = { key: string; since?: string };
 
@@ -68,6 +69,9 @@ export function createLiveController(deps: LiveDeps): LiveController {
   let inFlight: AbortController | null = null;
   let failures = 0;
   let stopped = false;
+  // After a 429, nothing is sent before this time: not on the timer, a return to the tab, a kick
+  // or a new topic.
+  let blockedUntil = 0;
 
   const canRun = () => !stopped && deps.isVisible() && deps.isOnline();
 
@@ -147,6 +151,11 @@ export function createLiveController(deps: LiveDeps): LiveController {
         const delay = Math.min(MAX_BACKOFF_MS, interval(t) * 2 ** failures);
         t.nextDue = deps.now() + Math.round(delay * (0.8 + 0.4 * deps.random()));
       }
+      if (!failed && response?.status === 429) {
+        // Over the limit: every topic waits at least as long as the server asked.
+        blockedUntil = deps.now() + Math.min(MAX_BACKOFF_MS, response.retryAfterMs ?? 0);
+        for (const t of topics.values()) t.nextDue = Math.max(t.nextDue, blockedUntil);
+      }
       schedule();
       return;
     }
@@ -187,6 +196,7 @@ export function createLiveController(deps: LiveDeps): LiveController {
       t.unchanged = 0;
       if (now - t.lastRunAt >= (t.spec.minGapMs ?? DEFAULT_MIN_GAP_MS)) t.nextDue = now;
       else t.nextDue = Math.max(t.nextDue, t.lastRunAt + (t.spec.minGapMs ?? DEFAULT_MIN_GAP_MS));
+      t.nextDue = Math.max(t.nextDue, blockedUntil);
     }
     schedule();
   }
@@ -200,7 +210,7 @@ export function createLiveController(deps: LiveDeps): LiveController {
         lastRunAt: now,
         // The page just rendered, so its first poll is one interval away. Without an initialVersion
         // that poll's answer is the baseline and carries the data (nothing is missed).
-        nextDue: now + spec.intervalMs * (deps.slow() ? 2 : 1),
+        nextDue: Math.max(now + spec.intervalMs * (deps.slow() ? 2 : 1), blockedUntil),
         unchanged: 0,
       });
       schedule();
@@ -232,7 +242,7 @@ export function createLiveController(deps: LiveDeps): LiveController {
       const now = deps.now();
       for (const t of topics.values()) {
         t.unchanged = 0;
-        t.nextDue = now;
+        t.nextDue = Math.max(now, blockedUntil);
       }
       schedule();
     },
