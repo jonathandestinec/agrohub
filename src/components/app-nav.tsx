@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { SignOutForm } from "@/components/account-menu";
 import { Mark } from "@/components/ui/icons";
 import { useHydrated } from "@/lib/use-hydrated";
+import { useRenderedPathname } from "@/lib/use-rendered-pathname";
 import { Menu, MENU_ITEM } from "@/components/ui/menu";
 import {
   accountInMenu,
@@ -116,7 +116,8 @@ export function AppNav({
   const alerts = useTranslations("alerts");
   const links = items; // the bar's items; "links" in the layout code below
   const allHrefs = items.flatMap((item) => (item.kind === "link" ? [item.href] : item.links.map((l) => l.href)));
-  const pathname = usePathname();
+  // Not usePathname: the nav can hydrate after a client navigation (see the hook).
+  const pathname = useRenderedPathname();
   const hydrated = useHydrated();
   // Open on the page it was opened on; navigating anywhere closes it without an effect.
   const [openOn, setOpenOn] = useState<string | null>(null);
@@ -349,7 +350,7 @@ export function AppNav({
   ) : null;
 
   return (
-    <header className="relative z-30 h-[52px]">
+    <header data-nav-path={pathname} className="relative z-30 h-[52px]">
       {bar}
       {panel}
     </header>
