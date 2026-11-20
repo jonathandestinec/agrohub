@@ -40,7 +40,7 @@ test.describe("live updates", () => {
       await mark(buyerPage, "buyer");
       const reply = officerPage.getByRole("main");
       await reply.getByLabel("Your message").fill("Yes, it is dry.");
-      await reply.getByRole("button", { name: "Send" }).click();
+      await reply.getByRole("button", { name: "Send", exact: true }).click();
       await expect(reply.getByText("Yes, it is dry.")).toBeVisible();
 
       await expect(buyerPage.getByRole("main").getByText("Yes, it is dry.")).toBeVisible(LIVE);
@@ -52,8 +52,13 @@ test.describe("live updates", () => {
 
     await test.step("the officer answers the offer and the buyer's open offer page changes", async () => {
       await clickNav(officerPage, "Offers");
-      await officerPage.getByRole("main").getByRole("link").first().click();
+      await expect(officerPage).toHaveURL(/\/officer\/offers$/);
+      await officerPage.locator('main a[href^="/officer/offers/"]').first().click();
       await expect(officerPage).toHaveURL(/\/officer\/offers\/[^/]+$/);
+      // The buyer is on the offer page (not the thread) while the officer answers.
+      await buyerPage.goto("/buyer/offers");
+      await buyerPage.locator('main a[href^="/buyer/offers/"]').first().click();
+      await expect(buyerPage).toHaveURL(/\/buyer\/offers\/[^/]+$/);
       await mark(buyerPage, "offer-page");
       await officerPage.getByRole("main").getByRole("button", { name: "Reject" }).click();
       await expect(buyerPage.getByRole("main").getByText(/declined/i).first()).toBeVisible(LIVE);
@@ -71,7 +76,9 @@ test.describe("live updates", () => {
       await expect(buyerPage.getByRole("main").getByText("Paid, held until delivery is confirmed")).toBeVisible();
 
       await clickNav(officerPage, "Orders");
-      await officerPage.getByRole("main").getByRole("listitem").first().getByRole("link").click();
+      await expect(officerPage).toHaveURL(/\/officer\/orders$/);
+      await officerPage.locator('main a[href^="/officer/orders/"]').first().click();
+      await expect(officerPage).toHaveURL(/\/officer\/orders\/[^/]+$/);
       await mark(buyerPage, "order-page");
       await officerPage.getByRole("main").getByRole("button", { name: "Start preparing" }).click();
       await expect(buyerPage.getByRole("main").getByText("Being prepared")).toBeVisible(LIVE);
