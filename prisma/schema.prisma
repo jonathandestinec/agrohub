@@ -352,6 +352,19 @@ model Setting {
   @@map("setting")
 }
 
+// How many times a person polled /api/live in the current fixed one-minute window (spec:
+// "rate limiting and input validation everywhere"). One row per person, overwritten when a new window starts, so it never grows.
+// No foreign key: a row left by a deleted user is harmless and is reset on next use. The table is
+// UNLOGGED (edited in the migration): it is written on every poll and losing it in a crash only
+// resets the counts.
+model LivePollWindow {
+  userId      String   @id
+  windowStart DateTime
+  count       Int
+
+  @@map("live_poll_window")
+}
+
 enum CatalogKind {
   CROP
   UNIT

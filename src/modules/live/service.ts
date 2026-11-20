@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { parseTopic, type ParsedTopic, type QueueName } from "@/lib/live/topics";
 import type { Actor } from "@/modules/identity/policies";
@@ -76,4 +77,31 @@ export async function readTopics(actor: Actor, requests: TopicRequest[]): Promis
     }),
   );
   return Object.fromEntries(entries);
+}
+
+// The poll limit. One open tab asks at most every 5 s (12 a minute), and all its topics go in one
+// request, so 120 a minute leaves room for about ten busy tabs before anyone is refused. Counted
+// per person in Postgres, because on Vercel each serverless instance has its own memory.
+export const LIVE_POLLS_PER_WINDOW = 120;
+export const LIVE_WINDOW_MS = 60_000;
+
+export type LivePollAllowance = { ok: true } | { ok: false; retryAfterSeconds: number };
+
+// Counts one poll in the person's current fixed window and says whether it may be answered. One
+// statement: the upsert takes the row lock, so concurrent polls cannot both slip under the limit.
+// Refused polls are counted too; the count only resets when the next window starts.
+export async function takeLivePoll(actor: Actor, now: Date = new Date()): Promise<LivePollAllowance> {
+  const windowStartMs = Math.floor(now.getTime() / LIVE_WINDOW_MS) * LIVE_WINDOW_MS;
+  const windowStart = new Date(windowStartMs);
+  const rows = await prisma.$queryRaw<{ count: number }[]>`
+    INSERT INTO "live_poll_window" ("userId", "windowStart", "count")
+    VALUES (${actor.userId}, ${windowStart}, 1)
+    ON CONFLICT ("userId") DO UPDATE SET
+      "count" = CASE WHEN "live_poll_window"."windowStart" = EXCLUDED."windowStart"
+                     THEN "live_poll_window"."count" + 1 ELSE 1 END,
+      "windowStart" = EXCLUDED."windowStart"
+    RETURNING "count"`;
+  if (rows[0].count <= LIVE_POLLS_PER_WINDOW) return { ok: true };
+  const msLeft = windowStartMs + LIVE_WINDOW_MS - now.getTime();
+  return { ok: false, retryAfterSeconds: Math.max(1, Math.ceil(msLeft / 1000)) };
 }

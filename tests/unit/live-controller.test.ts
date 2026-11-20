@@ -385,4 +385,58 @@ describe("createLiveController", () => {
     await h.advance(500);
     expect(h.calls).toHaveLength(2); // polled again at once, with no inflated delay
   });
+
+  it("waits out Retry-After on 429 before polling again, for every topic", async () => {
+    const h = harness();
+    h.autoAnswer(() => ({ status: 429, retryAfterMs: 45_000 }));
+    const c = createLiveController(h.deps);
+    c.subscribe({ key: "a", intervalMs: 5000, initialVersion: "1" });
+    c.subscribe({ key: "b", intervalMs: 60_000, initialVersion: "1" });
+    await h.advance(5000);
+    expect(h.calls).toHaveLength(1);
+    h.autoAnswer(() => h.ok({ a: { version: "1" }, b: { version: "1" } }));
+    await h.advance(45_000 - 1);
+    expect(h.calls).toHaveLength(1);
+    await h.advance(1);
+    expect(h.calls).toHaveLength(2);
+    expect(h.calls[1].keys.map((k) => k.key)).toEqual(["a"]);
+    expect(h.stops).toEqual([]);
+    await h.advance(5000);
+    expect(h.calls).toHaveLength(3); // back to the normal cadence
+  });
+
+  it("uses the longer of Retry-After and the backoff on 429", async () => {
+    const h = harness();
+    h.autoAnswer(() => ({ status: 429, retryAfterMs: 1000 }));
+    const c = createLiveController(h.deps);
+    c.subscribe({ key: "a", intervalMs: 100_000, initialVersion: "1" });
+    await h.advance(100_000);
+    expect(h.calls).toHaveLength(1);
+    await h.advance(199_999); // backoff 100000 * 2 beats Retry-After
+    expect(h.calls).toHaveLength(1);
+    await h.advance(1);
+    expect(h.calls).toHaveLength(2);
+  });
+
+  it("does not let a return to the tab, a kick or a new topic jump a 429 wait", async () => {
+    const h = harness();
+    h.autoAnswer(() => ({ status: 429, retryAfterMs: 60_000 }));
+    const c = createLiveController(h.deps);
+    c.subscribe({ key: "a", intervalMs: 5000, initialVersion: "1", minGapMs: 1000 });
+    await h.advance(5000);
+    expect(h.calls).toHaveLength(1);
+    h.state.visible = false;
+    c.visibilityChanged();
+    await h.advance(20_000);
+    h.state.visible = true;
+    c.visibilityChanged();
+    c.kick();
+    c.subscribe({ key: "b", intervalMs: 1000, initialVersion: "1" });
+    await h.advance(39_999);
+    expect(h.calls).toHaveLength(1);
+    h.autoAnswer(() => h.ok({ a: { version: "1" }, b: { version: "1" } }));
+    await h.advance(1);
+    expect(h.calls).toHaveLength(2);
+    expect(h.calls[1].keys.map((k) => k.key).sort()).toEqual(["a", "b"]);
+  });
 });
