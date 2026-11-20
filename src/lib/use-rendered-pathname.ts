@@ -1,9 +1,9 @@
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
-// The caller puts data-rendered-path={result} on its root element, so the server HTML records
-// which pathname it was rendered for. One component per page uses it (the nav).
-const RENDERED_PATH_ATTR = "data-rendered-path";
+// The nav puts data-nav-path={result} on its <header>, so the server HTML records
+// which pathname it was rendered for. One component per page uses it (the nav, on its header).
+const RENDERED_PATH_ATTR = "data-nav-path";
 
 const subscribe = () => () => {};
 
@@ -21,6 +21,6 @@ export function useRenderedPathname(): string {
     () =>
       typeof document === "undefined"
         ? pathname
-        : (document.querySelector(`[${RENDERED_PATH_ATTR}]`)?.getAttribute(RENDERED_PATH_ATTR) ?? pathname),
+        : (document.querySelector(`header[${RENDERED_PATH_ATTR}]`)?.getAttribute(RENDERED_PATH_ATTR) ?? pathname),
   );
 }
