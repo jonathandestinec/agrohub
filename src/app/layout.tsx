@@ -27,6 +27,7 @@ import { buttonClass } from "@/components/ui/button";
 import { pickActiveMembership } from "@/modules/identity/active-role";
 import { listMembershipStates, listMemberships } from "@/modules/identity/service";
 import { toSwitcherMembership } from "@/modules/identity/views";
+import { LiveProvider } from "@/lib/live/live-provider";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
@@ -178,6 +179,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
           >
             {t("skip")}
           </a>
+          <LiveProvider>
           <OverscrollReveal>
           <div className="mx-auto w-full max-w-[1360px] p-2 md:p-4">
             <div className="flex min-h-[calc(100vh-1rem)] flex-col rounded-frame bg-paper p-2 md:min-h-[calc(100vh-2rem)] md:p-3">
@@ -191,6 +193,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           </OverscrollReveal>
+          </LiveProvider>
         </NextIntlClientProvider>
       </body>
     </html>

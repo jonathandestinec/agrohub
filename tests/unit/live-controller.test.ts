@@ -20,6 +20,7 @@ function harness(options: { visible?: boolean; online?: boolean; slow?: boolean 
   let pending: { resolve: (r: LiveResponse) => void; reject: (e: unknown) => void } | null = null;
   let auto: ((keys: { key: string; since?: string }[]) => LiveResponse | Error) | null = null;
   const changes: { key: string; version: string; data?: unknown }[] = [];
+  const baselines: (boolean | undefined)[] = [];
   const stops: { key: string; reason: string }[] = [];
 
   const deps: LiveDeps = {
@@ -46,7 +47,10 @@ function harness(options: { visible?: boolean; online?: boolean; slow?: boolean 
     isOnline: () => state.online,
     slow: () => state.slow,
     random: () => 0.5, // jitter factor 1.0
-    onChange: (key, version, data) => changes.push({ key, version, data }),
+    onChange: (key, version, data, baseline) => {
+      changes.push({ key, version, data });
+      baselines.push(baseline);
+    },
     onStop: (key, reason) => stops.push({ key, reason }),
   };
 
@@ -75,6 +79,7 @@ function harness(options: { visible?: boolean; online?: boolean; slow?: boolean 
     calls,
     timers,
     changes,
+    baselines,
     stops,
     flush,
     advance,
@@ -291,6 +296,7 @@ describe("createLiveController", () => {
     version = "2";
     await h.advance(1000);
     expect(h.changes).toEqual([{ key: "a", version: "2", data: undefined }]);
+    expect(h.baselines).toEqual([false]);
     await h.advance(3000);
     expect(h.changes).toHaveLength(1);
   });
@@ -300,9 +306,12 @@ describe("createLiveController", () => {
     h.autoAnswer(() => h.ok({ a: { version: "7", data: { unread: 1 } } }));
     const c = createLiveController(h.deps);
     c.subscribe({ key: "a", intervalMs: 1000 });
-    await h.advance(0);
+    await h.advance(999);
+    expect(h.calls).toHaveLength(0); // the first poll is one interval away
+    await h.advance(1);
     expect(h.calls[0].keys).toEqual([{ key: "a", since: undefined }]);
     expect(h.changes).toEqual([{ key: "a", version: "7", data: { unread: 1 } }]);
+    expect(h.baselines).toEqual([true]);
     await h.advance(1000);
     expect(h.calls[1].keys).toEqual([{ key: "a", since: "7" }]);
   });

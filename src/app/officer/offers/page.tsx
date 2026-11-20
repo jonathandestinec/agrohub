@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { OFFICER_STATUS_TONE } from "@/components/offers/status";
 import { ArrowUpRight, Chip, PageHeading } from "@/components/ui";
 import { formatNaira } from "@/lib/money";
-import { listCooperativeOffers } from "@/modules/marketplace/service";
+import { listCooperativeOffers, offersListVersion } from "@/modules/marketplace/service";
 
 export default function OfficerOffersPage() {
   return (
@@ -22,10 +23,12 @@ async function OfficerOffers() {
   const t = await getTranslations("offers");
   const locale = await getLocale();
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
+  const version = await offersListVersion(actor);
   const offers = await listCooperativeOffers(actor);
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="list:offers" intervalMs={30_000} initialVersion={version} />
       <PageHeading title={t("officer.title")} lead={t("officer.lead")} />
       {offers.length === 0 ? (
         <p className="body-3 text-ink-soft">{t("officer.empty")}</p>

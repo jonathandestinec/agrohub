@@ -21,7 +21,9 @@ export type LiveDeps = {
   // True on a slow or data-saving connection: every interval is doubled.
   slow(): boolean;
   random(): number;
-  onChange(key: string, version: string, data?: unknown): void;
+  // `baseline` is true for the first answer of a topic that had no initialVersion: nothing
+  // changed, the page just learned where it stands (the bell uses the data; pages ignore it).
+  onChange(key: string, version: string, data?: unknown, baseline?: boolean): void;
   // key is a topic key, or "all" when the session is gone.
   onStop(key: string, reason: "unauthenticated" | "forbidden" | "not_found"): void;
 };
@@ -160,12 +162,12 @@ export function createLiveController(deps: LiveDeps): LiveController {
       }
       if (t.lastVersion === undefined) {
         t.lastVersion = result.version;
-        if (result.data !== undefined) deps.onChange(t.spec.key, result.version, result.data);
+        if (result.data !== undefined) deps.onChange(t.spec.key, result.version, result.data, true);
         t.unchanged += 1;
       } else if (result.version !== t.lastVersion) {
         t.lastVersion = result.version;
         t.unchanged = 0;
-        deps.onChange(t.spec.key, result.version, result.data);
+        deps.onChange(t.spec.key, result.version, result.data, false);
       } else {
         t.unchanged += 1;
       }
@@ -193,7 +195,9 @@ export function createLiveController(deps: LiveDeps): LiveController {
         spec,
         lastVersion: spec.initialVersion,
         lastRunAt: now,
-        nextDue: spec.initialVersion === undefined ? now : now + spec.intervalMs * (deps.slow() ? 2 : 1),
+        // The page just rendered, so its first poll is one interval away. Without an initialVersion
+        // that poll's answer is the baseline and carries the data (nothing is missed).
+        nextDue: now + spec.intervalMs * (deps.slow() ? 2 : 1),
         unchanged: 0,
       });
       schedule();

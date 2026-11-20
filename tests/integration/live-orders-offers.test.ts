@@ -5,7 +5,15 @@ import { lagosDateKey } from "@/lib/lagos-date";
 import { fakeStorage } from "@/lib/storage";
 import type { Actor } from "@/modules/identity/policies";
 import { readTopics } from "@/modules/live/service";
-import { makeOffer, offerVersion, offersListVersion, respondToOffer, withdrawOffer } from "@/modules/marketplace/service";
+import {
+  farmerRespondToOffer,
+  listOffersAwaitingFarmer,
+  makeOffer,
+  offerVersion,
+  offersListVersion,
+  respondToOffer,
+  withdrawOffer,
+} from "@/modules/marketplace/service";
 import { openLotThread, postMessage } from "@/modules/messaging/service";
 import {
   cancelOrder,
@@ -196,6 +204,17 @@ describe("offersListVersion", () => {
     await pause();
     await respondToOffer(w.officer, made.id, { decision: "REJECT" });
     expect(await offersListVersion(w.buyer)).not.toBe(afterMake);
+  });
+
+  it("a_farmers_open_lot_page_moves_when_an_officer_refers_an_offer_to_them_and_when_they_answer", async () => {
+    // Below the floor: the buyer's offer waits for the officer, who sends it to the farmer.
+    const { id } = await makeOffer(w.buyer, { lotId: w.lotId, quantity: 10, offeredKobo: 6_000_000 }, new Date());
+    expect(await listOffersAwaitingFarmer(w.farmer)).toHaveLength(0);
+    const read = () => offersListVersion(w.farmer);
+    expect(await moves(read, () => respondToOffer(w.officer, id, { decision: "ACCEPT" }))).toBe(true);
+    expect(await listOffersAwaitingFarmer(w.farmer)).toHaveLength(1);
+    expect(await moves(read, () => farmerRespondToOffer(w.farmer, id, false))).toBe(true);
+    expect(await listOffersAwaitingFarmer(w.farmer)).toHaveLength(0);
   });
 
   it("is_forbidden_for_an_admin", async () => {

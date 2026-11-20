@@ -2,13 +2,14 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { Breakdown } from "@/components/lots/breakdown";
 import { LotDetails } from "@/components/lots/lot-details";
 import { formatNaira } from "@/lib/money";
 import { CounterResponse } from "./counter-response";
 import { OfferDecision } from "./offer-decision";
 import { OpenThreadButton } from "@/components/messages/open-thread-button";
-import { listOffersAwaitingFarmer } from "@/modules/marketplace/service";
+import { listOffersAwaitingFarmer, offersListVersion } from "@/modules/marketplace/service";
 import { ReviseForm, WithdrawButton } from "./revise-form";
 import { boardReference } from "@/modules/board/service";
 import { getPlatformSettings } from "@/modules/settings/service";
@@ -38,11 +39,13 @@ async function FarmerLotView({ params }: { params: Promise<{ id: string }> }) {
   }
   const t = await getTranslations("lots");
   const to = await getTranslations("offers");
+  const version = await offersListVersion(actor);
   const waiting = (await listOffersAwaitingFarmer(actor)).filter((offer) => offer.lotId === lot.id);
   const terms = lot.lockedTerms ?? lot.quoted;
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="list:offers" intervalMs={30_000} initialVersion={version} />
       <PageHeading title={t("mine.summary", { quantity: lot.quantity, unit: lot.unit.name, crop: lot.crop.name })}>
         <Chip tone={LOT_STATUS_TONE[lot.status]}>{t(`status.${lot.status}`)}</Chip>
       </PageHeading>

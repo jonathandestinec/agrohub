@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { ThreadPanel } from "@/components/messages/thread-panel";
 import { OrderActionButton, OrderFieldForm } from "@/components/orders/order-actions";
 import { OFFICER_ORDER_TONE } from "@/components/orders/status";
@@ -10,7 +11,7 @@ import { NotFoundError } from "@/lib/errors";
 import { lagosDateKey } from "@/lib/lagos-date";
 import { formatNaira } from "@/lib/money";
 import { readThread } from "@/modules/messaging/service";
-import { getCooperativeOrder, type OfficerOrder } from "@/modules/orders/service";
+import { getCooperativeOrder, orderVersion, type OfficerOrder } from "@/modules/orders/service";
 import { answerCancelRequestAction, cancelOrderAction, markDeliveredAction, setDeliveryDateAction, startPreparingAction } from "../actions";
 
 // The cooperative's view of one paid order, with its delivery steps.
@@ -27,7 +28,9 @@ async function OfficerOrderDetail({ params }: { params: PageProps<"/officer/orde
   if (actor.role !== "OFFICER") notFound();
   const { id } = await params;
   let order: OfficerOrder;
+  let version: string;
   try {
+    version = await orderVersion(actor, id);
     order = await getCooperativeOrder(actor, id);
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
@@ -41,6 +44,7 @@ async function OfficerOrderDetail({ params }: { params: PageProps<"/officer/orde
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic={`order:${id}`} intervalMs={15_000} initialVersion={version} />
       <PageHeading
         title={t("summary", { quantity: order.quantity, unit: order.lot.unit, crop: order.lot.crop })}
         lead={`${t("officer.buyer", { name: order.buyerName })} · ${t("reference", { reference: order.reference })}`}

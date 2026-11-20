@@ -3,10 +3,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { BUYER_STATUS_TONE, buyerStatusLabelKey } from "@/components/offers/status";
 import { ArrowUpRight, ButtonLink, Chip, PageHeading } from "@/components/ui";
 import { formatNaira } from "@/lib/money";
-import { listOwnOffers } from "@/modules/marketplace/service";
+import { listOwnOffers, offersListVersion } from "@/modules/marketplace/service";
 
 export default function BuyerHomePage() {
   return (
@@ -21,10 +22,12 @@ async function BuyerHome() {
   if (actor.role !== "BUYER") notFound();
   const t = await getTranslations("buyer.home");
   const to = await getTranslations("offers");
+  const version = await offersListVersion(actor);
   const offers = await listOwnOffers(actor);
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="list:offers" intervalMs={30_000} initialVersion={version} />
       <PageHeading title={t("title")} lead={t("lead")}>
         <ButtonLink href="/lots" tone="ink">
           {t("browse")}
