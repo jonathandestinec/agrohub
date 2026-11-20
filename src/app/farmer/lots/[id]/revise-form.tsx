@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
 import { Breakdown } from "@/components/lots/breakdown";
 import { lotErrorKey } from "@/components/lots/error-key";
@@ -65,37 +66,39 @@ export function ReviseForm({
     <details className="rounded-inner bg-step p-4 md:p-6 [&_input]:bg-paper [&_textarea]:bg-paper">
       <summary className="flex min-h-11 cursor-pointer items-center title-3">{t("revise.heading")}</summary>
       <form onSubmit={onSubmit} className="mt-3 flex flex-col gap-4">
-        <p className="body-6 text-ink-soft">{t("revise.intro")}</p>
-        <input type="hidden" name="lotId" value={lot.id} />
-        <div className="grid gap-4 md:grid-cols-3">
-          <Field id="revise-ask" name="ask" label={t("form.ask")} inputMode="decimal" required value={ask} onChange={(e) => setAsk(e.target.value)} />
-          <Field id="revise-quantity" name="quantity" label={t("form.quantity")} inputMode="numeric" required value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-          <Field id="revise-floor" name="floor" label={t("form.floor")} inputMode="decimal" required defaultValue={nairaInput(lot.floorKobo)} />
-        </div>
-        {warned ? (
-          <p role="status" className="rounded-inner bg-paper p-4 body-3">
-            {deviation === "HIGH" ? t("form.warningHigh") : t("form.warningLow")} {t("form.warningNote")}
-          </p>
-        ) : null}
-        {askKobo !== null && qty !== null && qty > 0 ? (
-          <Breakdown askKobo={askKobo} quantity={qty} cutBps={terms.cooperativeCutBps} feeBps={terms.platformFeeBps} unit={lot.unit.name} />
-        ) : null}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="revise-note" className="title-4">
-            {warned ? t("form.noteRequired") : t("form.note")}
-          </label>
-          <textarea
-            id="revise-note"
-            name="note"
-            rows={2}
-            maxLength={500}
-            required={warned}
-            minLength={warned ? 10 : undefined}
-            className="w-full rounded-input px-4 py-3 body-3 text-ink"
-          />
-        </div>
-        <FormError message={error} />
-        <SubmitButton pending={pending} label={t("revise.submit")} pendingLabel={t("form.submitting")} />
+        <HydrationGate>
+          <p className="body-6 text-ink-soft">{t("revise.intro")}</p>
+          <input type="hidden" name="lotId" value={lot.id} />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field id="revise-ask" name="ask" label={t("form.ask")} inputMode="decimal" required value={ask} onChange={(e) => setAsk(e.target.value)} />
+            <Field id="revise-quantity" name="quantity" label={t("form.quantity")} inputMode="numeric" required value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+            <Field id="revise-floor" name="floor" label={t("form.floor")} inputMode="decimal" required defaultValue={nairaInput(lot.floorKobo)} />
+          </div>
+          {warned ? (
+            <p role="status" className="rounded-inner bg-paper p-4 body-3">
+              {deviation === "HIGH" ? t("form.warningHigh") : t("form.warningLow")} {t("form.warningNote")}
+            </p>
+          ) : null}
+          {askKobo !== null && qty !== null && qty > 0 ? (
+            <Breakdown askKobo={askKobo} quantity={qty} cutBps={terms.cooperativeCutBps} feeBps={terms.platformFeeBps} unit={lot.unit.name} />
+          ) : null}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="revise-note" className="title-4">
+              {warned ? t("form.noteRequired") : t("form.note")}
+            </label>
+            <textarea
+              id="revise-note"
+              name="note"
+              rows={2}
+              maxLength={500}
+              required={warned}
+              minLength={warned ? 10 : undefined}
+              className="w-full rounded-input px-4 py-3 body-3 text-ink"
+            />
+          </div>
+          <FormError message={error} />
+          <SubmitButton pending={pending} label={t("revise.submit")} pendingLabel={t("form.submitting")} />
+        </HydrationGate>
       </form>
     </details>
   );

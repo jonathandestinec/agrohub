@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { FormError } from "@/components/auth-ui";
 import { Button } from "@/components/ui";
 import { quoteDeliveryAction } from "@/app/officer/quotes/actions";
@@ -39,23 +40,25 @@ export function QuoteForm({ threadId }: { threadId: string }) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-inner bg-paper/60 p-4 md:p-6">
-      <h2 className="title-2">{t("quote.heading")}</h2>
-      <p className="body-6 text-ink-soft">{t("quote.lead")}</p>
-      <label className="flex flex-col gap-1 body-6">
-        {t("quote.amount")}
-        <input name="amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required className={FIELD} />
-      </label>
-      <label className="flex flex-col gap-1 body-6">
-        {t("quote.note")}
-        <input name="note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} className={FIELD} />
-      </label>
-      <FormError message={error} />
-      {sent ? <p className="body-6" role="status">{t("quote.sent")}</p> : null}
-      <div>
-        <Button type="submit" tone="ink" disabled={pending}>
-          {t("quote.submit")}
-        </Button>
-      </div>
+      <HydrationGate>
+        <h2 className="title-2">{t("quote.heading")}</h2>
+        <p className="body-6 text-ink-soft">{t("quote.lead")}</p>
+        <label className="flex flex-col gap-1 body-6">
+          {t("quote.amount")}
+          <input name="amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required className={FIELD} />
+        </label>
+        <label className="flex flex-col gap-1 body-6">
+          {t("quote.note")}
+          <input name="note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} className={FIELD} />
+        </label>
+        <FormError message={error} />
+        {sent ? <p className="body-6" role="status">{t("quote.sent")}</p> : null}
+        <div>
+          <Button type="submit" tone="ink" disabled={pending}>
+            {t("quote.submit")}
+          </Button>
+        </div>
+      </HydrationGate>
     </form>
   );
 }

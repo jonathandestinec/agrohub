@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { FormError, inputClass } from "@/components/auth-ui";
 import { Button, Chip } from "@/components/ui";
 import type { CatalogItem } from "@/modules/catalog/views";
@@ -43,24 +44,26 @@ export function CatalogPanel({ kind, items }: { kind: Kind; items: CatalogItem[]
         {t(`crops.${copy.heading}`)}
       </h2>
       <form onSubmit={add} className="flex flex-col gap-2">
-        <label htmlFor={`new-${kind}`} className="title-4">
-          {t(`crops.${copy.label}`)}
-        </label>
-        <div className="flex gap-2">
-          <input
-            id={`new-${kind}`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            maxLength={60}
-            autoComplete="off"
-            className={inputClass}
-          />
-          <Button type="submit" disabled={pending} size="lg" className="shrink-0">
-            {pending ? t("crops.adding") : t(`crops.${copy.add}`)}
-          </Button>
-        </div>
-        <FormError message={error} />
+        <HydrationGate>
+          <label htmlFor={`new-${kind}`} className="title-4">
+            {t(`crops.${copy.label}`)}
+          </label>
+          <div className="flex gap-2">
+            <input
+              id={`new-${kind}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={60}
+              autoComplete="off"
+              className={inputClass}
+            />
+            <Button type="submit" disabled={pending} size="lg" className="shrink-0">
+              {pending ? t("crops.adding") : t(`crops.${copy.add}`)}
+            </Button>
+          </div>
+          <FormError message={error} />
+        </HydrationGate>
       </form>
       {items.length === 0 ? (
         <p className="body-3 text-ink-soft">{t(`crops.${copy.empty}`)}</p>
@@ -100,33 +103,35 @@ function CatalogRow({ kind, item }: { kind: Kind; item: CatalogItem }) {
     <li className="flex flex-col gap-2 rounded-inner bg-step p-3">
       {editing ? (
         <form onSubmit={rename} className="flex flex-col gap-2">
-          <label htmlFor={`rename-${item.id}`} className="sr-only">
-            {t("crops.renameLabel", { name: item.name })}
-          </label>
-          <input
-            id={`rename-${item.id}`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            maxLength={60}
-            autoComplete="off"
-            className={inputClass.replace("bg-step", "bg-paper")}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={pending}>
-              {t("crops.saveName")}
-            </Button>
-            <Button
-              tone="paper"
-              onClick={() => {
-                setEditing(false);
-                setName(item.name);
-                setError(null);
-              }}
-            >
-              {t("crops.cancel")}
-            </Button>
-          </div>
+          <HydrationGate>
+            <label htmlFor={`rename-${item.id}`} className="sr-only">
+              {t("crops.renameLabel", { name: item.name })}
+            </label>
+            <input
+              id={`rename-${item.id}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={60}
+              autoComplete="off"
+              className={inputClass.replace("bg-step", "bg-paper")}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={pending}>
+                {t("crops.saveName")}
+              </Button>
+              <Button
+                tone="paper"
+                onClick={() => {
+                  setEditing(false);
+                  setName(item.name);
+                  setError(null);
+                }}
+              >
+                {t("crops.cancel")}
+              </Button>
+            </div>
+          </HydrationGate>
         </form>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2">

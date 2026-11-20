@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { FormError } from "@/components/auth-ui";
 import { offerErrorKey } from "@/components/offers/error-key";
 import { Button } from "@/components/ui";
@@ -58,53 +59,55 @@ export function OfferForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-inner bg-paper/60 p-4 md:p-6">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <HydrationGate>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 body-6">
+            {t("form.quantity", { unit })}
+            <input
+              name="quantity"
+              inputMode="numeric"
+              value={quantity}
+              onChange={(event) => setQuantity(event.target.value)}
+              required
+              className={FIELD}
+            />
+            <span className="text-ink-soft">{t("form.quantityHint", { min: minOrderQty, max: lotQuantity })}</span>
+          </label>
+          <label className="flex flex-col gap-1 body-6">
+            {t("form.price", { unit })}
+            <input
+              name="price"
+              inputMode="decimal"
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+              required
+              className={FIELD}
+            />
+            <span className="text-ink-soft">{t("form.priceHint", { ask: formatNaira(askKobo) })}</span>
+          </label>
+        </div>
+        <p className="heading-6 tabular-nums" aria-live="polite">
+          {total === null ? t("form.totalUnknown") : t("form.total", { total: formatNaira(total) })}
+        </p>
         <label className="flex flex-col gap-1 body-6">
-          {t("form.quantity", { unit })}
-          <input
-            name="quantity"
-            inputMode="numeric"
-            value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
-            required
-            className={FIELD}
+          {t("form.message")}
+          <textarea
+            name="message"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            maxLength={2000}
+            rows={3}
+            className="min-h-24 w-full rounded-tile bg-paper p-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink"
           />
-          <span className="text-ink-soft">{t("form.quantityHint", { min: minOrderQty, max: lotQuantity })}</span>
         </label>
-        <label className="flex flex-col gap-1 body-6">
-          {t("form.price", { unit })}
-          <input
-            name="price"
-            inputMode="decimal"
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            required
-            className={FIELD}
-          />
-          <span className="text-ink-soft">{t("form.priceHint", { ask: formatNaira(askKobo) })}</span>
-        </label>
-      </div>
-      <p className="heading-6 tabular-nums" aria-live="polite">
-        {total === null ? t("form.totalUnknown") : t("form.total", { total: formatNaira(total) })}
-      </p>
-      <label className="flex flex-col gap-1 body-6">
-        {t("form.message")}
-        <textarea
-          name="message"
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          maxLength={2000}
-          rows={3}
-          className="min-h-24 w-full rounded-tile bg-paper p-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink"
-        />
-      </label>
-      <p className="body-6 text-ink-soft">{t("form.explainer")}</p>
-      <FormError message={error} />
-      <div>
-        <Button type="submit" tone="ink" size="lg" disabled={pending}>
-          {t("form.submit")}
-        </Button>
-      </div>
+        <p className="body-6 text-ink-soft">{t("form.explainer")}</p>
+        <FormError message={error} />
+        <div>
+          <Button type="submit" tone="ink" size="lg" disabled={pending}>
+            {t("form.submit")}
+          </Button>
+        </div>
+      </HydrationGate>
     </form>
   );
 }

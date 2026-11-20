@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { FormError } from "@/components/auth-ui";
 import { Button } from "@/components/ui";
 import type { ActionResult } from "@/lib/action-result";
@@ -96,30 +97,32 @@ export function OrderFieldForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-inner bg-paper/60 p-4 md:p-6">
-      {heading ? <h2 className="title-2">{heading}</h2> : null}
-      <label className="flex flex-col gap-1 body-6">
-        {label}
-        {kind === "text" ? (
-          <textarea name={name} value={value} onChange={(e) => setValue(e.target.value)} required={!optional} maxLength={1000} rows={3} className={`${FIELD} py-2`} />
-        ) : (
-          <input
-            name={name}
-            type={kind}
-            inputMode={kind === "number" ? "numeric" : undefined}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            required
-            className={FIELD}
-          />
-        )}
-      </label>
-      {hint ? <p className="body-6 text-ink-soft">{hint}</p> : null}
-      <FormError message={error} />
-      <div>
-        <Button type="submit" tone="ink" disabled={pending}>
-          {submit}
-        </Button>
-      </div>
+      <HydrationGate>
+        {heading ? <h2 className="title-2">{heading}</h2> : null}
+        <label className="flex flex-col gap-1 body-6">
+          {label}
+          {kind === "text" ? (
+            <textarea name={name} value={value} onChange={(e) => setValue(e.target.value)} required={!optional} maxLength={1000} rows={3} className={`${FIELD} py-2`} />
+          ) : (
+            <input
+              name={name}
+              type={kind}
+              inputMode={kind === "number" ? "numeric" : undefined}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              required
+              className={FIELD}
+            />
+          )}
+        </label>
+        {hint ? <p className="body-6 text-ink-soft">{hint}</p> : null}
+        <FormError message={error} />
+        <div>
+          <Button type="submit" tone="ink" disabled={pending}>
+            {submit}
+          </Button>
+        </div>
+      </HydrationGate>
     </form>
   );
 }

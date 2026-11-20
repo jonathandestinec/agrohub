@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { HydrationGate } from "@/components/hydration-gate";
 import { FormError } from "@/components/auth-ui";
 import { Button } from "@/components/ui";
 import { postMessageAction } from "@/app/messages/actions";
@@ -31,24 +32,26 @@ export function ReplyForm({ threadId }: { threadId: string }) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">
-      <label htmlFor={`reply-${threadId}`} className="body-6">
-        {t("reply")}
-      </label>
-      <textarea
-        id={`reply-${threadId}`}
-        value={body}
-        onChange={(event) => setBody(event.target.value)}
-        maxLength={2000}
-        rows={3}
-        required
-        className="min-h-24 w-full rounded-tile bg-paper p-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink"
-      />
-      <FormError message={error} />
-      <div>
-        <Button type="submit" tone="ink" disabled={pending || body.trim().length === 0}>
-          {t("send")}
-        </Button>
-      </div>
+      <HydrationGate>
+        <label htmlFor={`reply-${threadId}`} className="body-6">
+          {t("reply")}
+        </label>
+        <textarea
+          id={`reply-${threadId}`}
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          maxLength={2000}
+          rows={3}
+          required
+          className="min-h-24 w-full rounded-tile bg-paper p-3 body-4 outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink"
+        />
+        <FormError message={error} />
+        <div>
+          <Button type="submit" tone="ink" disabled={pending || body.trim().length === 0}>
+            {t("send")}
+          </Button>
+        </div>
+      </HydrationGate>
     </form>
   );
 }

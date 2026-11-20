@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Field, FormError, SubmitButton } from "@/components/auth-ui";
+import { HydrationGate } from "@/components/hydration-gate";
 import type { ActionResult } from "@/lib/action-result";
 
 type Preview = { accountName: string; matches: boolean; registeredName: string };
@@ -93,80 +94,82 @@ export function BankAccountForm({
 
   return (
     <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="bankCode" className="title-4">
-          {labels.bank}
-        </label>
-        <select
-          id="bankCode"
-          name="bankCode"
-          required
-          value={bankCode}
-          onChange={(e) => {
-            setBankCode(e.target.value);
-            void check(e.target.value, accountNumber);
-          }}
-          className="min-h-12 w-full rounded-input bg-step px-4 body-3 text-ink"
-        >
-          <option value="" disabled>
-            {labels.bankPlaceholder}
-          </option>
-          {banks.map((bank) => (
-            <option key={bank.code} value={bank.code}>
-              {bank.name}
+      <HydrationGate>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="bankCode" className="title-4">
+            {labels.bank}
+          </label>
+          <select
+            id="bankCode"
+            name="bankCode"
+            required
+            value={bankCode}
+            onChange={(e) => {
+              setBankCode(e.target.value);
+              void check(e.target.value, accountNumber);
+            }}
+            className="min-h-12 w-full rounded-input bg-step px-4 body-3 text-ink"
+          >
+            <option value="" disabled>
+              {labels.bankPlaceholder}
             </option>
-          ))}
-        </select>
-      </div>
-      <Field
-        id="accountNumber"
-        name="accountNumber"
-        label={labels.accountNumber}
-        hint={labels.accountNumberHint}
-        inputMode="numeric"
-        autoComplete="off"
-        pattern="[0-9]{10}"
-        maxLength={10}
-        required
-        value={accountNumber}
-        onChange={(e) => {
-          const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-          setAccountNumber(digits);
-          void check(bankCode, digits);
-        }}
-      />
-      <div aria-live="polite">
-        {lookupState.state === "checking" ? (
-          <p className="body-6 text-ink-soft">{t("checking")}</p>
-        ) : lookupState.state === "found" ? (
-          <div className={`flex flex-col gap-1 rounded-inner p-4 body-3 ${mismatch ? "bg-warn-soft" : "bg-step"}`}>
-            <p>
-              {t("found")} <span className="title-4">{lookupState.preview.accountName}</span>
-            </p>
-            <p className="body-6">
-              {lookupState.preview.matches
-                ? t(`matches.${owner}`)
-                : t(`mismatch.${owner}`, { name: lookupState.preview.registeredName })}
-            </p>
-          </div>
-        ) : lookupState.state === "failed" ? (
-          <p className="body-6 text-ink-soft">{t(lookupErrorKey(lookupState.code))}</p>
-        ) : null}
-      </div>
-      <FormError message={error} />
-      {result ? (
-        <div role="status" className="flex flex-col gap-2 rounded-inner bg-step p-4 body-3">
-          <p>{labels.saved(result.accountName)}</p>
-          {result.pending ? <p>{labels.pending}</p> : null}
+            {banks.map((bank) => (
+              <option key={bank.code} value={bank.code}>
+                {bank.name}
+              </option>
+            ))}
+          </select>
         </div>
-      ) : null}
-      <SubmitButton
-        pending={pending}
-        disabled={mismatch}
-        label={labels.save}
-        pendingLabel={labels.saving}
-        waitForHydration
-      />
+        <Field
+          id="accountNumber"
+          name="accountNumber"
+          label={labels.accountNumber}
+          hint={labels.accountNumberHint}
+          inputMode="numeric"
+          autoComplete="off"
+          pattern="[0-9]{10}"
+          maxLength={10}
+          required
+          value={accountNumber}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+            setAccountNumber(digits);
+            void check(bankCode, digits);
+          }}
+        />
+        <div aria-live="polite">
+          {lookupState.state === "checking" ? (
+            <p className="body-6 text-ink-soft">{t("checking")}</p>
+          ) : lookupState.state === "found" ? (
+            <div className={`flex flex-col gap-1 rounded-inner p-4 body-3 ${mismatch ? "bg-warn-soft" : "bg-step"}`}>
+              <p>
+                {t("found")} <span className="title-4">{lookupState.preview.accountName}</span>
+              </p>
+              <p className="body-6">
+                {lookupState.preview.matches
+                  ? t(`matches.${owner}`)
+                  : t(`mismatch.${owner}`, { name: lookupState.preview.registeredName })}
+              </p>
+            </div>
+          ) : lookupState.state === "failed" ? (
+            <p className="body-6 text-ink-soft">{t(lookupErrorKey(lookupState.code))}</p>
+          ) : null}
+        </div>
+        <FormError message={error} />
+        {result ? (
+          <div role="status" className="flex flex-col gap-2 rounded-inner bg-step p-4 body-3">
+            <p>{labels.saved(result.accountName)}</p>
+            {result.pending ? <p>{labels.pending}</p> : null}
+          </div>
+        ) : null}
+        <SubmitButton
+          pending={pending}
+          disabled={mismatch}
+          label={labels.save}
+          pendingLabel={labels.saving}
+          waitForHydration
+        />
+      </HydrationGate>
     </form>
   );
 }
