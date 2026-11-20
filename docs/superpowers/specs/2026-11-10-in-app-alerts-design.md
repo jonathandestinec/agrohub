@@ -24,7 +24,7 @@ Not in this stage:
 - Emails for these events. Spec section 6.11 describes them; they wait for the Resend domain. The existing emails (admin payout alerts, cooperative status, membership decisions, invites, bank changes, certificate expiry) stay exactly as they are.
 - Price-change alerts for followed crops (roadmap item 8.2).
 - Settings to mute alerts or choose alert types.
-- Live updates while a page is open.
+- ~~Live updates while a page is open.~~ Lifted by `docs/superpowers/plans/2026-11-19-agrohub-live-updates.md`: the bell, threads, orders, offers, queues and dashboards now update by polling while the tab is visible (the bell every 30 s on the shared `alerts` topic).
 - Role dashboards. They are the next stage and have their own design.
 
 The interface calls the feature "Alerts". The code and table use `notification`, the name `docs/architecture.md` already gives the entity.
@@ -199,7 +199,7 @@ The read and mark functions take an `Actor` and check `can(actor, "notification:
 
 **`/alerts` page.** The full list for the role in use, newest first, twenty per page, with "Mark all as read". It uses `require-actor-page`.
 
-**Freshness.** The count updates when the person moves to another page or reloads, not while they sit on a page. The root layout does not render again when someone follows a link inside the app, so the slot alone would leave the count stale until a full reload. The bell therefore also asks for its data itself:
+**Freshness.** (Updated: the bell now also polls, see the live-updates plan.) The count updates when the person moves to another page or reloads, and every 30 s while the tab is visible. The root layout does not render again when someone follows a link inside the app, so the slot alone would leave the count stale until a full reload. The bell therefore also asks for its data itself:
 
 - `GET /api/alerts/summary` returns the unread count and the five newest alerts for the signed-in actor, through `countOwnUnread` and `latestOwnAlerts` and the `views.ts` mapper. It answers 401 when signed out and is never cached.
 - The bell calls it when the pathname changes and when the list is opened. The slot's data is only the first paint.
@@ -234,7 +234,7 @@ The read and mark functions take an `Actor` and check `can(actor, "notification:
 Each took the simpler option and is repeated in the pull request description.
 
 1. In-app only; event emails wait.
-2. The count refreshes on page load, with no polling.
+2. The count refreshes on page load, with no polling. (Superseded by the live-updates plan: it now also polls every 30 s while the tab is visible.)
 3. The bell shows the alerts of the role in use, not all roles together.
 4. Alerts are kept indefinitely.
 5. On phones the bell links to the page instead of opening a list.
