@@ -3,9 +3,11 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { HomeHeading, HomeShell, HomeSkeleton, TileGrid } from "@/components/home/grid";
+import { HomeLive } from "@/components/home-live";
 import { ButtonLink } from "@/components/ui";
 import { buyerHome } from "@/modules/home/service";
 import { currentUser } from "@/modules/identity/session";
+import { alertsVersion } from "@/modules/notifications/service";
 
 // The buyer's to-do home: offers to act on, deliveries to confirm and orders on their way.
 export default function BuyerHomePage() {
@@ -25,10 +27,12 @@ export default function BuyerHomePage() {
 async function BuyerHome() {
   const actor = await requireActorForPage();
   if (actor.role !== "BUYER") notFound();
+  const alertsAt = await alertsVersion(actor);
   const [tiles, user, t] = await Promise.all([buyerHome(actor), currentUser(), getTranslations("buyer.home")]);
 
   return (
     <HomeShell>
+      <HomeLive initialVersion={alertsAt} />
       <HomeHeading name={user?.name ?? ""}>
         <ButtonLink href="/lots" tone="ink">
           {t("browse")}

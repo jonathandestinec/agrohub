@@ -515,6 +515,18 @@ async function notifyOfficers(
   }
 }
 
+// A string that changes when a cooperative joins or leaves the verification queue: the count of
+// pending submissions and the newest submittedAt. One aggregate.
+export async function verificationQueueVersion(actor: Actor): Promise<string> {
+  if (!can(actor, "cooperative:queue")) throw new ForbiddenError();
+  const summary = await prisma.cooperative.aggregate({
+    where: { status: "PENDING", submittedAt: { not: null } },
+    _count: { _all: true },
+    _max: { submittedAt: true },
+  });
+  return `${summary._count._all}:${summary._max.submittedAt?.getTime() ?? 0}`;
+}
+
 export async function listVerificationQueue(
   actor: Actor,
   now: Date = new Date(),

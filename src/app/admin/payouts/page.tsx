@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { PayoutActionButton, PayoutFeedback } from "@/components/payout-feedback";
 import { Card, Chip, PageHeading } from "@/components/ui";
 import { formatNaira } from "@/lib/money";
-import { listPayoutIssues } from "@/modules/payments/service";
+import { listPayoutIssues, payoutIssuesVersion } from "@/modules/payments/service";
 import { retryPayoutAction, retryToCurrentAccountAction, unblockPayoutAction } from "./actions";
 
 // Payouts that need an admin: failed, blocked, refused for a low balance, or awaiting Paystack.
@@ -23,10 +24,12 @@ async function Issues() {
   const t = await getTranslations("admin.payouts");
   const locale = await getLocale();
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
+  const version = await payoutIssuesVersion(actor);
   const issues = await listPayoutIssues(actor);
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="queue:payouts" intervalMs={60_000} initialVersion={version} />
       <PageHeading title={t("title")} lead={t("lead")} />
       <PayoutFeedback>
       {issues.length === 0 ? (

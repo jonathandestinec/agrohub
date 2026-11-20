@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
+import { LiveRefresh } from "@/components/live-refresh";
 import { OrderFieldForm } from "@/components/orders/order-actions";
 import { ArrowUpRight, Chip, PageHeading } from "@/components/ui";
-import { listOrderQueue } from "@/modules/orders/service";
+import { adminOrdersQueueVersion, listOrderQueue } from "@/modules/orders/service";
 import { resolveIssueAction } from "./actions";
 
 // Everything waiting for an admin, oldest first: disputes, timeouts, suspended cooperatives'
@@ -24,10 +25,12 @@ async function Queue() {
   const t = await getTranslations("admin.orders");
   const locale = await getLocale();
   const day = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" });
+  const version = await adminOrdersQueueVersion(actor);
   const queue = await listOrderQueue(actor);
 
   return (
     <main id="main" className="flex flex-1 flex-col gap-6 rounded-panel bg-step p-4 md:p-8">
+      <LiveRefresh topic="queue:admin-orders" intervalMs={60_000} initialVersion={version} />
       <PageHeading title={t("title")} lead={t("lead")}>
         <Link href="/admin/payouts" className="inline-flex min-h-11 items-center title-4 underline underline-offset-2">
           {t("payoutsLink")}

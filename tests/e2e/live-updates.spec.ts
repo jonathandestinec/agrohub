@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { clickNav } from "./journey";
 import { bar, bell, makeOffer, startWorld, writeToCooperative } from "./alerts-world";
+import { makeBuyer } from "./home-world";
+import { addPendingLot } from "./lot-actions";
 
 // Pages update by themselves while they are open: one person acts, another person's page changes
 // with no reload. Each page is marked before the action; if it were reloaded the mark would be
@@ -114,5 +116,54 @@ test.describe("live updates", () => {
       document.dispatchEvent(new Event("visibilitychange"));
     });
     await expect.poll(() => posts.length, { timeout: 10_000 }).toBe(1);
+  });
+
+  test("the officer's open screening queue gains a farmer's new lot, and the home tile follows an offer", async ({ browser, request }) => {
+    const world = await startWorld(browser, request);
+    const { officerPage } = world;
+    const marked = async () => officerPage.evaluate(() => (window as unknown as { __live?: string }).__live);
+
+    await test.step("the open home page's offer tile changes after a buyer's offer, with no reload", async () => {
+      await officerPage.goto("/officer");
+      await officerPage.evaluate(() => ((window as unknown as { __live: string }).__live = "home"));
+      const tile = officerPage.getByRole("main").getByRole("group", { name: "Offers to answer" }).locator("..");
+      await makeOffer(world);
+      await expect(tile).toContainText("1", LIVE);
+      expect(await marked()).toBe("home");
+    });
+
+    await test.step("a lot submitted by a farmer shows in the open screening queue, with no reload", async () => {
+      await officerPage.goto("/officer/lots");
+      await officerPage.evaluate(() => ((window as unknown as { __live: string }).__live = "queue"));
+      await expect(officerPage.getByRole("main").getByText(new RegExp(world.crop))).toHaveCount(0);
+      await addPendingLot({ tag: world.tag, farmerEmail: world.farmerEmail, crop: world.crop, unit: world.unit, quantity: 12 });
+      await expect(officerPage.getByRole("main").getByText(new RegExp(world.crop)).first()).toBeVisible(LIVE);
+      expect(await marked()).toBe("queue");
+    });
+  });
+
+  test("a role switched in another tab stops the open page's polling and the server decides what it shows", async ({ browser, request }) => {
+    const world = await startWorld(browser, request);
+    const { officerPage, buyerPage } = world;
+    await writeToCooperative(buyerPage, "Is the maize dry?");
+    await clickNav(officerPage, "Messages");
+    await officerPage.getByRole("main").getByRole("link", { name: new RegExp(world.buyerName) }).click();
+    await expect(officerPage).toHaveURL(/\/messages\/[^/]+$/);
+
+    // The same person also becomes a buyer, and switches to that role in a second tab.
+    await makeBuyer(world.officerEmail);
+    const second = await officerPage.context().newPage();
+    await second.goto("/officer");
+    await second.getByLabel("Acting as").selectOption({ label: "Buyer" });
+    await expect(second).toHaveURL(/\/buyer/);
+
+    // As a buyer they are not in the cooperative's thread: the open page cannot be shown any more.
+    await expect(officerPage.getByRole("heading", { name: /this page could not be found/i })).toBeVisible(LIVE);
+    const polls: string[] = [];
+    officerPage.on("request", (r) => {
+      if (r.url().endsWith("/api/live") && r.method() === "POST") polls.push(r.postData() ?? "");
+    });
+    await officerPage.waitForTimeout(20_000);
+    expect(polls.filter((body) => body.includes("thread:"))).toHaveLength(0);
   });
 });

@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HomeHeading, HomeShell, HomeSkeleton, TileGrid } from "@/components/home/grid";
+import { HomeLive } from "@/components/home-live";
 import { ForbiddenError } from "@/lib/errors";
 import { withNext } from "@/lib/safe-next";
 import { farmerHome } from "@/modules/home/service";
 import type { Actor } from "@/modules/identity/policies";
 import { currentUser, getActor } from "@/modules/identity/session";
+import { alertsVersion } from "@/modules/notifications/service";
 
 // The farmer's to-do home. A pending or removed farmer has no Actor yet, and a person using
 // another role has the wrong one: both go to the farm page, which shows their status. So this
@@ -35,10 +37,12 @@ async function FarmerHome() {
     if (!(error instanceof ForbiddenError)) throw error;
   }
   if (!actor || actor.role !== "FARMER") redirect("/farmer/profile");
+  const alertsAt = await alertsVersion(actor);
   const tiles = await farmerHome(actor);
 
   return (
     <HomeShell>
+      <HomeLive initialVersion={alertsAt} />
       <HomeHeading name={user.name} />
       <TileGrid tiles={tiles} />
     </HomeShell>

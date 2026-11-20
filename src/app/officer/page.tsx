@@ -3,10 +3,12 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { HomeHeading, HomeShell, HomeSkeleton, TileGrid } from "@/components/home/grid";
+import { HomeLive } from "@/components/home-live";
 import { Schedule } from "@/components/home/schedule";
 import { ButtonLink } from "@/components/ui";
 import { officerHome } from "@/modules/home/service";
 import { currentUser } from "@/modules/identity/session";
+import { alertsVersion } from "@/modules/notifications/service";
 
 // The officer's to-do home: what waits on them, and the deliveries coming up.
 export default function OfficerHomePage() {
@@ -26,6 +28,7 @@ export default function OfficerHomePage() {
 async function OfficerHome() {
   const actor = await requireActorForPage();
   if (actor.role !== "OFFICER") notFound();
+  const alertsAt = await alertsVersion(actor);
   const [home, user, t] = await Promise.all([officerHome(actor), currentUser(), getTranslations("home.officer")]);
 
   return (
@@ -33,6 +36,7 @@ async function OfficerHome() {
       <HomeHeading name={user?.name ?? ""} />
       {home.verified ? (
         <>
+          <HomeLive initialVersion={alertsAt} />
           <TileGrid tiles={home.tiles} />
           <Schedule schedule={home.schedule} />
         </>

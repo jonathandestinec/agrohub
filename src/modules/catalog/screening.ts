@@ -258,6 +258,45 @@ export async function respondToCounter(
 
 // ---- Queues ----
 
+// Which lots wait on screening for an officer, or (an admin's superset) anywhere. The list and its
+// live version use the same filters, so they cannot drift apart.
+function officerScreeningWhere(cooperativeId: string): Prisma.LotWhereInput {
+  return {
+    cooperativeId,
+    OR: [
+      { status: { in: ["PENDING_REVIEW", "COUNTERED"] } },
+      { status: "LIVE", revisions: { some: { status: "PENDING" } } },
+    ],
+  };
+}
+
+const ADMIN_SCREENING_WHERE: Prisma.LotWhereInput = {
+  OR: [{ status: "PENDING_REVIEW" }, { status: "LIVE", revisions: { some: { status: "PENDING" } } }],
+};
+
+// A string that changes when a lot joins or leaves the screening queue, or changes while in it: the
+// lots' count and newest updatedAt, and the pending revisions' count and newest createdAt (asking to
+// change a live lot writes a revision and leaves the lot row alone). Aggregates only. For an admin it
+// covers every lot the queue could show, ignoring "another officer could screen it" (a false alarm
+// costs one refresh; a per-lot check would cost a query per lot).
+export async function screeningVersion(actor: Actor): Promise<string> {
+  if (!can(actor, "lot:screen", { cooperativeId: actor.cooperativeId ?? undefined })) throw new ForbiddenError();
+  const officerOf = actor.role === "OFFICER" ? (actor.cooperativeId as string) : null;
+  const [lots, revisions] = await Promise.all([
+    prisma.lot.aggregate({
+      where: officerOf ? officerScreeningWhere(officerOf) : ADMIN_SCREENING_WHERE,
+      _count: { _all: true },
+      _max: { updatedAt: true },
+    }),
+    prisma.lotRevision.aggregate({
+      where: { status: "PENDING", ...(officerOf ? { lot: { cooperativeId: officerOf } } : {}) },
+      _count: { _all: true },
+      _max: { createdAt: true },
+    }),
+  ]);
+  return `${lots._count._all}:${lots._max.updatedAt?.getTime() ?? 0}|${revisions._count._all}:${revisions._max.createdAt?.getTime() ?? 0}`;
+}
+
 // An officer sees their cooperative's lots waiting on screening or on a counter answer, their
 // own included but marked. An admin sees only PENDING_REVIEW lots that no other officer can
 // screen.
@@ -268,24 +307,13 @@ export async function listScreeningQueue(actor: Actor): Promise<ScreeningLot[]> 
   let lots: LotRow[];
   if (actor.role === "OFFICER") {
     lots = await prisma.lot.findMany({
-      where: {
-        cooperativeId: actor.cooperativeId as string,
-        OR: [
-          { status: { in: ["PENDING_REVIEW", "COUNTERED"] } },
-          { status: "LIVE", revisions: { some: { status: "PENDING" } } },
-        ],
-      },
+      where: officerScreeningWhere(actor.cooperativeId as string),
       include: LOT_INCLUDE,
       orderBy: { createdAt: "asc" },
     });
   } else {
     const pending = await prisma.lot.findMany({
-      where: {
-        OR: [
-          { status: "PENDING_REVIEW" },
-          { status: "LIVE", revisions: { some: { status: "PENDING" } } },
-        ],
-      },
+      where: ADMIN_SCREENING_WHERE,
       include: LOT_INCLUDE,
       orderBy: { createdAt: "asc" },
     });

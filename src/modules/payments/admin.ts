@@ -1,4 +1,4 @@
-import type { PayoutRecipient, PayoutStatus } from "@/generated/prisma/client";
+import type { PayoutRecipient, PayoutStatus, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { ConflictError, ForbiddenError, NotFoundError } from "@/lib/errors";
 import { koboFromDb } from "@/lib/money";
@@ -40,18 +40,35 @@ async function namesOf(rows: Array<{ recipientType: PayoutRecipient; recipientId
   return new Map([...coops, ...users].map((r) => [r.id, r.name]));
 }
 
+// Which payouts need an admin. The list and its live version use the same filter.
+function payoutIssueWhere(now: Date): Prisma.PayoutWhereInput {
+  const staleBefore = new Date(now.getTime() - STALE_TRANSFER_HOURS * 3_600_000);
+  return {
+    OR: [
+      { status: { in: ["FAILED", "BLOCKED"] } },
+      { status: "QUEUED", balanceRefusals: { gt: 0 } },
+      { status: "SENT", attempts: { some: { status: "SENT", createdAt: { lt: staleBefore } } } },
+    ],
+  };
+}
+
+// A string that changes when a payout joins or leaves the admin's problem list, or changes in it:
+// the count and the newest updatedAt. One aggregate.
+export async function payoutIssuesVersion(actor: Actor, now: Date = new Date()): Promise<string> {
+  assertManage(actor);
+  const summary = await prisma.payout.aggregate({
+    where: payoutIssueWhere(now),
+    _count: { _all: true },
+    _max: { updatedAt: true },
+  });
+  return `${summary._count._all}:${summary._max.updatedAt?.getTime() ?? 0}`;
+}
+
 /** Payouts that need an admin: failed, blocked, refused for balance, or awaiting Paystack for over 3 days. Oldest first. */
 export async function listPayoutIssues(actor: Actor, now: Date = new Date()): Promise<AdminPayout[]> {
   assertManage(actor);
-  const staleBefore = new Date(now.getTime() - STALE_TRANSFER_HOURS * 3_600_000);
   const rows = await prisma.payout.findMany({
-    where: {
-      OR: [
-        { status: { in: ["FAILED", "BLOCKED"] } },
-        { status: "QUEUED", balanceRefusals: { gt: 0 } },
-        { status: "SENT", attempts: { some: { status: "SENT", createdAt: { lt: staleBefore } } } },
-      ],
-    },
+    where: payoutIssueWhere(now),
     include: { attempts: { orderBy: { attempt: "desc" } } },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     take: 200,
