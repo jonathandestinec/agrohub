@@ -121,10 +121,11 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     await expect(await openNav(page, "My cooperative")).toHaveAttribute("aria-current", "page");
     await page.keyboard.press("Escape");
     await saveBankAccount(page, "Guaranty Trust Bank", accountNumber);
-    await expect(page.getByText(`Saved. The name on the account is ${accountName}.`)).toBeVisible();
+    // Checked after the page has refreshed with the saved account, so both must hold together.
     await expect(
       page.getByText(`Payouts go to ${accountName} at Guaranty Trust Bank.`),
     ).toBeVisible();
+    await expect(page.getByText(`Saved. The name on the account is ${accountName}.`)).toBeVisible();
   });
 
   await test.step("2. an admin, granted in setup, enrols two-factor and verifies the cooperative", async () => {
@@ -196,8 +197,10 @@ test("an officer's cooperative is verified, and a farmer joins it and is approve
     const accountName = `MUSA ${tag} ABUBAKAR`;
     await addFakeBankAccount(request, { bankCode: "044", accountNumber, accountName });
     await saveBankAccount(page, "Access Bank", accountNumber);
-    await expect(page.getByText(`Saved. The name on the account is ${accountName}.`)).toBeVisible();
+    // The page refreshes after the save and the join page then stops offering the form.
+    // Wait for that refresh first, so the confirmation is checked after it, not before.
     await expect(page.getByText(`Payouts go to ${accountName}.`)).toBeVisible();
+    await expect(page.getByText(`Saved. The name on the account is ${accountName}.`)).toBeVisible();
     await expect(page.getByText("Waiting for your officer's approval")).toBeVisible();
   });
 

@@ -23,6 +23,7 @@ export function BankAccountForm({
   lookup,
   save,
   errorMessage,
+  onSaved,
 }: {
   banks: Array<{ name: string; code: string }>;
   owner: "farmer" | "cooperative";
@@ -40,6 +41,8 @@ export function BankAccountForm({
   lookup: (input: { bankCode: string; accountNumber: string }) => Promise<ActionResult<Preview>>;
   save: (form: FormData) => Promise<ActionResult<{ accountName: string; pending: boolean }>>;
   errorMessage: (code: string) => string;
+  // Called after a successful save, before the page refreshes.
+  onSaved?: () => void;
 }) {
   const t = useTranslations("bankLookup");
   const router = useRouter();
@@ -86,6 +89,7 @@ export function BankAccountForm({
     latest.current = "";
     setLookupState({ state: "idle" });
     setResult(outcome.data);
+    onSaved?.();
     router.refresh();
   }
 
