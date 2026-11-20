@@ -298,7 +298,6 @@ export type AdminOrder = {
 
 const ACCOUNTS: LedgerAccount[] = ["PAYSTACK_BALANCE", "HELD", "COOPERATIVE_PAYABLE", "FARMER_PAYABLE", "PLATFORM_FEE", "PAYSTACK_FEES", "REFUND_PAYABLE"];
 
-/** An admin's view of one order: its thread, delivery marks, ledger totals, payouts and disputes. No bank data. */
 // A string that changes when something joins or leaves the admin's order queue: open disputes (count
 // and newest createdAt), unresolved reconciliation issues, and payout problems. Aggregates only.
 export async function adminOrdersQueueVersion(actor: Actor, now: Date = new Date()): Promise<string> {
@@ -311,6 +310,7 @@ export async function adminOrdersQueueVersion(actor: Actor, now: Date = new Date
   return `${disputes._count._all}:${disputes._max.createdAt?.getTime() ?? 0}|${reconciliation}|${payouts}`;
 }
 
+/** An admin's view of one order: its thread, delivery marks, ledger totals, payouts and disputes. No bank data. */
 export async function getOrderForAdmin(actor: Actor, orderId: string): Promise<AdminOrder> {
   if (!can(actor, "order:admin")) throw new ForbiddenError();
   const order = await prisma.order.findUnique({

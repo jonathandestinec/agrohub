@@ -126,7 +126,6 @@ export async function reconcile(now: Date = new Date(), gateway: PayoutGateway =
 
 export type AdminReconciliationIssue = { id: string; kind: string; reference: string; orderId: string | null; createdAt: string };
 
-/** Unresolved reconciliation issues for the admin order queue, oldest first. */
 // A string that changes when an issue is raised or resolved: the unresolved count and the newest
 // createdAt. One aggregate.
 export async function reconciliationVersion(actor: Actor): Promise<string> {
@@ -139,6 +138,7 @@ export async function reconciliationVersion(actor: Actor): Promise<string> {
   return `${summary._count._all}:${summary._max.createdAt?.getTime() ?? 0}`;
 }
 
+/** Unresolved reconciliation issues for the admin order queue, oldest first. */
 export async function listReconciliationIssues(actor: Actor): Promise<AdminReconciliationIssue[]> {
   if (!can(actor, "order:admin")) throw new ForbiddenError();
   const rows = await prisma.reconciliationIssue.findMany({ where: { resolvedAt: null }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: 200 });

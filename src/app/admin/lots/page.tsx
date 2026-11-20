@@ -19,7 +19,7 @@ async function Queue() {
   const version = await screeningVersion(actor);
   return (
     <>
-      <LiveRefresh topic="queue:screening" intervalMs={30_000} initialVersion={version} />
+      <LiveRefresh topic="queue:screening" intervalMs={60_000} initialVersion={version} />
       <ScreeningQueue actor={actor} basePath="/admin/lots" />
     </>
   );
