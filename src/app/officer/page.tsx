@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { HomeHeading, HomeShell, HomeSkeleton, TileGrid } from "@/components/home/grid";
+import { HomeLive } from "@/components/home-live";
 import { Schedule } from "@/components/home/schedule";
 import { ButtonLink } from "@/components/ui";
 import { officerHome } from "@/modules/home/service";
@@ -33,6 +34,7 @@ async function OfficerHome() {
       <HomeHeading name={user?.name ?? ""} />
       {home.verified ? (
         <>
+          <HomeLive />
           <TileGrid tiles={home.tiles} />
           <Schedule schedule={home.schedule} />
         </>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HomeHeading, HomeShell, HomeSkeleton, TileGrid } from "@/components/home/grid";
+import { HomeLive } from "@/components/home-live";
 import { ForbiddenError } from "@/lib/errors";
 import { withNext } from "@/lib/safe-next";
 import { farmerHome } from "@/modules/home/service";
@@ -39,6 +40,7 @@ async function FarmerHome() {
 
   return (
     <HomeShell>
+      <HomeLive />
       <HomeHeading name={user.name} />
       <TileGrid tiles={tiles} />
     </HomeShell>

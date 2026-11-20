@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { clickNav } from "./journey";
 import { bar, bell, makeOffer, startWorld, writeToCooperative } from "./alerts-world";
+import { makeBuyer } from "./home-world";
+import { addPendingLot } from "./lot-actions";
 
 // Pages update by themselves while they are open: one person acts, another person's page changes
 // with no reload. Each page is marked before the action; if it were reloaded the mark would be

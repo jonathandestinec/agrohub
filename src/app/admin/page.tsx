@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { HomeHeading, HomeShell, HomeSkeleton, TileGrid } from "@/components/home/grid";
+import { HomeLive } from "@/components/home-live";
 import { adminHome } from "@/modules/home/service";
 import { currentUser } from "@/modules/identity/session";
 
@@ -27,6 +28,7 @@ async function AdminHome() {
 
   return (
     <HomeShell>
+      <HomeLive />
       <HomeHeading name={user?.name ?? ""} />
       <TileGrid tiles={tiles} />
     </HomeShell>

@@ -14,6 +14,10 @@ export type World = {
   crop: string;
   unit: string;
   buyerName: string;
+  // For specs that add to the world (a pending lot, a second role).
+  tag: string;
+  officerEmail: string;
+  farmerEmail: string;
 };
 
 // A verified cooperative with a live lot, its officer signed in, and a buyer signed in and
@@ -64,7 +68,16 @@ export async function startWorld(browser: Browser, request: APIRequestContext): 
   await main.getByRole("button", { name: "Show lots" }).click();
   await main.getByRole("listitem").filter({ hasText: crop }).getByRole("link").click();
   await expect(buyerPage.getByRole("heading", { name: `30 × ${unit} of ${crop}` })).toBeVisible();
-  return { officerPage, buyerPage, crop, unit, buyerName: buyer.name };
+  return {
+    officerPage,
+    buyerPage,
+    crop,
+    unit,
+    buyerName: buyer.name,
+    tag,
+    officerEmail: officer.email,
+    farmerEmail: farmer.email,
+  };
 }
 
 export async function makeOffer(world: World): Promise<void> {

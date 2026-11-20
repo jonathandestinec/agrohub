@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { requireActorForPage } from "@/app/(auth)/require-actor-page";
 import { HomeHeading, HomeShell, HomeSkeleton, TileGrid } from "@/components/home/grid";
+import { HomeLive } from "@/components/home-live";
 import { ButtonLink } from "@/components/ui";
 import { buyerHome } from "@/modules/home/service";
 import { currentUser } from "@/modules/identity/session";
@@ -29,6 +30,7 @@ async function BuyerHome() {
 
   return (
     <HomeShell>
+      <HomeLive />
       <HomeHeading name={user?.name ?? ""}>
         <ButtonLink href="/lots" tone="ink">
           {t("browse")}
