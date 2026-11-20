@@ -1,3 +1,4 @@
+import { noteMembershipChange } from "@/modules/identity/cache-generation";
 import { randomBytes } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import type {
@@ -114,6 +115,7 @@ export async function createCooperative(
     }
     throw error;
   }
+  noteMembershipChange();
   await recordAudit({
     actorId: user.userId,
     action: "cooperative.create",
