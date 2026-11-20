@@ -159,3 +159,4 @@ Decided (email design): every email renders through one layout, `src/modules/not
 - next-intl: message loading and translations for the App Router; locale comes from a `locale` cookie (no locale-prefixed routing), and only locales listed in `enabledLocales` are ever served.
 - qrcode (+ @types/qrcode, dev): draws the two-factor setup QR code as an SVG in the browser, so the TOTP secret is never sent to a QR service.
 - tsx (dev): runs TypeScript scripts with the `@/` alias, for `npm run admin:grant` (`scripts/grant-role.ts`). It never loads `.env`.
+- pg (dev): the node-postgres driver @prisma/adapter-pg already uses, listed directly so `tests/integration/query-count.ts` can count the SQL statements a service sends (a regression guard against one query per row).
