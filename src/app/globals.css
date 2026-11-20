@@ -303,3 +303,12 @@ p {
     animation: menu-fade 300ms linear both !important;
   }
 }
+
+/* A form waiting for React to hydrate (HydrationGate): its controls are disabled but keep their
+   normal look, with a progress cursor, so the page does not flash grey on a slow phone. Unlayered,
+   so it wins over the disabled: utilities. */
+.hydration-gate:disabled :is(input, select, textarea, button) {
+  opacity: 1;
+  cursor: progress;
+  pointer-events: auto;
+}
